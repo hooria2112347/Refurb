@@ -3,32 +3,56 @@
     <h2>Create Your Account</h2>
     <form @submit.prevent="handleSignup">
       <div class="form-group">
-        <label for="name">Name</label>
-        <input type="text" id="name" v-model="form.name" required />
+        <input
+          type="text"
+          id="name"
+          v-model="form.name"
+          placeholder="Name"
+          required
+        />
       </div>
 
       <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" v-model="form.email" required />
+        <input
+          type="email"
+          id="email"
+          v-model="form.email"
+          placeholder="Email"
+          required
+        />
       </div>
 
       <div class="form-group">
-        <label for="phone">Phone Number</label>
-        <input type="tel" id="phone" v-model="form.phone" required />
+        <input
+          type="tel"
+          id="phone"
+          v-model="form.phone"
+          placeholder="Phone Number"
+          required
+        />
       </div>
 
       <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" v-model="form.password" required />
+        <input
+          type="password"
+          id="password"
+          v-model="form.password"
+          placeholder="Password"
+          required
+        />
       </div>
 
       <div class="form-group">
-        <label for="confirmPassword">Confirm Password</label>
-        <input type="password" id="confirmPassword" v-model="form.confirmPassword" required />
+        <input
+          type="password"
+          id="password_confirmation"
+          v-model="form.password_confirmation"
+          placeholder="Confirm Password"
+          required
+        />
       </div>
 
       <div class="form-group">
-        <label for="role">Role</label>
         <select id="role" v-model="form.role" required>
           <option value="" disabled>Select your role</option>
           <option value="artist">Artist</option>
@@ -42,6 +66,8 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: 'Signup',
   data() {
@@ -51,16 +77,31 @@ export default {
         email: '',
         phone: '',
         password: '',
-        confirmPassword: '',
-        role: '' // Add the role field here
+        password_confirmation: '',
+        role: ''
       }
     };
   },
   methods: {
     handleSignup() {
-      console.log("Form Data:", this.form);
-
-      // TODO: Add validation and submit form data to backend
+      // Send form data to backend API
+      axios.post('/api/signup', this.form)
+        .then(response => {
+          console.log('User registered:', response.data);
+          // Redirect to the login page after successful signup
+          this.$router.push('/login');  // Use Vue Router to navigate
+        })
+        .catch(error => {
+          console.error('Error during registration:', error);
+          if (error.response && error.response.data && error.response.data.errors) {
+            // Display the first validation error
+            const errors = error.response.data.errors;
+            const firstErrorField = Object.keys(errors)[0];
+            alert(errors[firstErrorField][0]);
+          } else {
+            alert('An error occurred during registration.');
+          }
+        });
     }
   }
 };
@@ -69,8 +110,8 @@ export default {
 <style scoped>
 .signup {
   max-width: 400px;
-  margin: 2rem auto;
-  padding: 2rem;
+  margin: 1rem auto;
+  padding: 1.2rem;
   border: 1px solid #ddd;
   border-radius: 8px;
   background-color: #f9f9f9;
@@ -86,13 +127,6 @@ export default {
 
 .form-group {
   margin-bottom: 1rem;
-}
-
-.form-group label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-  color: #3C552D;
 }
 
 .form-group input,

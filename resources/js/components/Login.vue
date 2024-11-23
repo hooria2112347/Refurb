@@ -1,17 +1,28 @@
-<!-- resources/js/components/Login.vue -->
 <template>
   <div class="login">
     <h2>Login</h2>
     <form @submit.prevent="handleLogin">
       <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" v-model="email" required />
+        <input
+          type="email"
+          id="email"
+          v-model="form.email"
+          placeholder="Email"
+          required
+        />
       </div>
 
       <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" v-model="password" required />
+        <input
+          type="password"
+          id="password"
+          v-model="form.password"
+          placeholder="Password"
+          required
+        />
       </div>
+
+      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
       <button type="submit">Login</button>
     </form>
@@ -20,17 +31,47 @@
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
-  name: 'Login',
+  name: "Login",
   data() {
     return {
-      email: '',
-      password: ''
+      form: {
+        email: "",
+        password: ""
+      },
+      errorMessage: "" // For displaying error messages
     };
   },
   methods: {
     handleLogin() {
-      console.log('Logging in with', this.email, this.password);
+      axios.post('/api/login', this.form)
+        .then(response => {
+          if (response.data.success) {
+            // Save user data in localStorage
+            localStorage.setItem('userSession', JSON.stringify(response.data.user));
+
+            // Update the App component's state
+            this.$root.isLoggedIn = true; // Assuming isLoggedIn is globally reactive
+            this.$root.userName = response.data.user.name;
+            this.$root.userRole = response.data.user.role;
+
+            // Redirect to the home page
+            this.$router.push('/');
+          }
+        })
+        .catch(error => {
+          // Handle error (e.g., network issues or server errors)
+          if (error.response && error.response.data && error.response.data.message) {
+            this.errorMessage = error.response.data.message;
+          } else {
+            this.errorMessage = "An error occurred. Please try again.";
+          }
+
+          // Clear any existing user session data
+          localStorage.removeItem("userSession");
+        });
     }
   }
 };
@@ -56,13 +97,6 @@ export default {
 
 .form-group {
   margin-bottom: 1rem;
-}
-
-.form-group label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-  color: #3C552D;
 }
 
 .form-group input {
@@ -107,5 +141,11 @@ a {
 
 a:hover {
   color: #0056b3;
+}
+
+.error-message {
+  color: red;
+  margin-top: 0.5rem;
+  text-align: center;
 }
 </style>

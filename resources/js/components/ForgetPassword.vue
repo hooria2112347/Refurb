@@ -14,18 +14,26 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: 'ForgetPassword',
   data() {
     return {
-      email: ''
+      email: '', // Define the email data property here
     };
   },
   methods: {
-    handleForgetPassword() {
-      console.log("Password reset requested for", this.email);
-    }
-  }
+    async handleForgetPassword() {
+      try {
+        await axios.post('/api/password/forgot', { email: this.email });
+        // Redirect to the code verification page
+        this.$router.push({ name: 'VerifyCode', query: { email: this.email } });
+      } catch (error) {
+        console.error(error.response.data.message);
+      }
+    },
+  },
 };
 </script>
 

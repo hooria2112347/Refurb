@@ -9,6 +9,8 @@ import { createApp } from 'vue';
 import App from './app.vue';
 import router from './router';
 import '../css/app.css';
+import axios from 'axios';
+import Cookies from 'js-cookie';
 /**
  * Next, we will create a fresh Vue application instance. You may then begin
  * registering components with the application instance so they are ready
@@ -20,6 +22,17 @@ createApp(App)
   .mount('#app');
 
 const app = createApp({});
+
+axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+axios.defaults.withCredentials = true;
+
+axios.interceptors.request.use(config => {
+  const token = Cookies.get('XSRF-TOKEN');
+  if (token) {
+    config.headers['X-XSRF-TOKEN'] = token;
+  }
+  return config;
+});
 
 /**
  * The following block of code may be used to automatically register your

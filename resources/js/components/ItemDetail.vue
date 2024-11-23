@@ -136,6 +136,8 @@ export default {
     this.item = this.items.find(item => item.id === itemId);
   }
 };
+
+
 </script>
 
 <style scoped>

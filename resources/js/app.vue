@@ -5,8 +5,17 @@
         <h1 class="logo">Refurb</h1>
         <nav class="main-nav">
           <router-link to="/">Home</router-link>
-          
+
+          <!-- Admin-only feedback management -->
           <router-link v-if="isAdmin" to="/admin-feedback">Feedback Management</router-link>
+
+          <!-- Scrap Seller-specific options -->
+          <router-link v-if="isScrapSeller" to="/add-product">Add Product</router-link>
+          <router-link v-if="isScrapSeller" to="/manage-products">Manage Products</router-link>
+
+          <!-- Artist-specific options -->
+          <router-link v-if="isArtist" to="/portfolio">My Portfolio</router-link>
+          <router-link v-if="isArtist" to="/browse-scrap">Browse Scrap</router-link>
 
           <!-- Conditional display based on login status -->
           <div v-if="!isLoggedIn" class="dropdown">
@@ -21,9 +30,9 @@
           <div v-else class="dropdown">
             <button class="dropbtn">{{ userName }} ▼</button>
             <div class="dropdown-content">
-              <router-link to="/profile">Profile</router-link>
+              <router-link to="/account">Profile</router-link>
               <router-link to="/saved-items">Saved Items</router-link>
-              <router-link @click="logout">Logout</router-link>
+              <a href="#" @click.prevent="logout">Logout</a>
             </div>
           </div>
         </nav>
@@ -37,41 +46,64 @@
 
 <script>
 export default {
-  name: 'App',
+  name: "App",
   data() {
     return {
-      isLoggedIn: false, // Tracks login status, default to not logged in
-      userName: '', // Stores user name when logged in
-      userRole: 'user' // Stores role, could be 'user' or 'admin'
+      isLoggedIn: false, // Tracks login status
+      userName: "", // Stores user name
+      userRole: "", // Stores user role, e.g., 'admin', 'scrap-seller', 'artist'
     };
   },
   computed: {
     isAdmin() {
-      return this.userRole === 'admin';
-    }
+      return this.userRole === "admin";
+    },
+    isScrapSeller() {
+      return this.userRole === "scrapSeller";
+    },
+    isArtist() {
+      return this.userRole === "artist";
+    },
   },
   methods: {
     logout() {
-      // Clear login state and reset user information
-      this.isLoggedIn = false;
-      this.userName = '';
-      this.userRole = 'user'; // Reset to default role
-
-      // Redirect to Home or Login page
-      this.$router.push('/');
+      axios
+        .post('/api/logout')
+        .then(() => {
+          // Clear session-related data
+          localStorage.removeItem('userSession');
+          this.isLoggedIn = false;
+          this.userName = '';
+          this.userRole = '';
+          
+          // Redirect to home page
+          this.$router.push('/');
+        })
+        .catch(error => {
+          console.error('Logout error:', error);
+          alert('Failed to logout. Please try again.');
+        });
+    },
+    checkSession() {
+      // Retrieve session data from localStorage
+      const session = localStorage.getItem("userSession");
+      if (session) {
+        try {
+          const userData = JSON.parse(session);
+          this.isLoggedIn = true;
+          this.userName = userData.name;
+          this.userRole = userData.role;
+        } catch (e) {
+          console.error("Error parsing session data:", e);
+          this.logout(); // Clear session on error
+        }
+      }
     }
   },
   mounted() {
-    // Check session or token to determine if user is logged in
-    const session = localStorage.getItem('userSession');
-    if (session) {
-      // Simulate fetching user data
-      const userData = JSON.parse(session);
-      this.isLoggedIn = true;
-      this.userName = userData.name;
-      this.userRole = userData.role;
-    }
-  }
+    // Check session on page load
+    this.checkSession();
+  },
 };
 </script>
 
