@@ -19,9 +19,9 @@
         <!-- Category -->
         <div class="form-group">
           <label for="category" class="label">Category:</label>
-          <select id="category" v-model="product.category" class="input-field" required>
+          <select id="category" v-model="product.category_id" class="input-field" required>
             <option value="" disabled>Select a category</option>
-            <option v-for="category in categories" :key="category.id" :value="category.name">
+            <option v-for="category in categories" :key="category.category_id" :value="category.category_id">
               {{ category.name }}
             </option>
           </select>
@@ -61,16 +61,19 @@
             <input
               type="file"
               id="image"
+              ref="fileInput"
               @change="onFileChange"
               accept="image/*"
-              required
               class="hidden-input"
               multiple
             />
-            <button type="button" class="upload-btn">Choose Files</button>
+            <button type="button" class="upload-btn" @click="triggerFileInput">Choose Files</button>
             <div class="image-preview">
-              <span v-if="product.image">Images Selected</span>
+              <span v-if="product.image && product.image.length">{{ product.image.length }} Images Selected</span>
               <span v-else>No Files Chosen</span>
+            </div>
+            <div v-if="imageSizeError" class="error-message">
+              One or more files exceed the 20 MB size limit.
             </div>
           </div>
         </div>
@@ -93,23 +96,42 @@ export default {
         name: '',
         description: '',
         price: null,
-        image: null,
-        category: '',
+        image: [],
+        category_id: '',
         additionalInfo: '',
       },
       categories: [
-        { id: 1, name: 'Aluminum' },
-        { id: 2, name: 'Copper' },
-        { id: 3, name: 'Brass' },
-        { id: 4, name: 'Steel' },
-        { id: 5, name: 'Iron' },
-        { id: 6, name: 'Lead' },
+        { category_id: 1, name: 'Aluminum' },
+        { category_id: 2, name: 'Copper' },
+        { category_id: 3, name: 'Brass' },
+        { category_id: 4, name: 'Steel' },
+        { category_id: 5, name: 'Iron' },
+        { category_id: 6, name: 'Lead' },
       ],
+      imageSizeError: false, // Add this property
     };
   },
   methods: {
+    triggerFileInput() {
+      this.$refs.fileInput.click(); // Triggers the file input when the button is clicked
+    },
     onFileChange(event) {
-      this.product.image = event.target.files;
+      const files = Array.from(event.target.files);
+      const maxSize = 20 * 1024 * 1024; // 20 MB in bytes
+
+      this.imageSizeError = false;
+
+      files.forEach(file => {
+        if (file.size > maxSize) {
+          this.imageSizeError = true;
+        }
+      });
+
+      if (!this.imageSizeError) {
+        this.product.image = files;
+      } else {
+        alert('One or more files exceed the 20 MB size limit.');
+      }
     },
     cancel() {
       this.$router.push('/'); // Redirect to home or previous page
@@ -119,13 +141,20 @@ export default {
       formData.append('name', this.product.name);
       formData.append('description', this.product.description);
       formData.append('price', this.product.price);
-      formData.append('category', this.product.category);
-      for (let i = 0; i < this.product.image.length; i++) {
-        formData.append('images[]', this.product.image[i]);
+      formData.append('category_id', this.product.category_id); // Verify this value
+      formData.append('additional_info', this.product.additionalInfo);
+
+      if (this.product.image.length) {
+        for (const file of this.product.image) {
+          formData.append('images[]', file);
+        }
       }
 
+      // Log formData for debugging
+      console.log([...formData.entries()]);
+
       try {
-        const response = await fetch('http://localhost:8000/api/products', {
+        const response = await fetch('http://127.0.0.1:8000/api/products', {
           method: 'POST',
           body: formData,
         });
@@ -235,6 +264,12 @@ export default {
 .image-preview {
   color: #555;
   font-size: 0.85rem;
+}
+
+.error-message {
+  color: red;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
 }
 
 /* Action Buttons */

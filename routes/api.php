@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\ProductController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -29,4 +30,5 @@ Route::post('/logout', [AuthController::class, 'logout']);
 Route::post('/password/forgot', [PasswordResetController::class, 'sendResetCode']);
 Route::post('/password/verify-code', [PasswordResetController::class, 'verifyResetCode']);
 Route::post('/password/reset', [PasswordResetController::class, 'resetPassword']);
+Route::post('/products', [ProductController::class, 'store']);
 
