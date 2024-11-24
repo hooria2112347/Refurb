@@ -31,4 +31,7 @@ Route::post('/password/forgot', [PasswordResetController::class, 'sendResetCode'
 Route::post('/password/verify-code', [PasswordResetController::class, 'verifyResetCode']);
 Route::post('/password/reset', [PasswordResetController::class, 'resetPassword']);
 Route::post('/products', [ProductController::class, 'store']);
+Route::get('/products', [ProductController::class, 'index']);
+Route::put('/products/{id}', [ProductController::class, 'update']);
+Route::delete('/products/{id}', [ProductController::class, 'destroy']);
 
