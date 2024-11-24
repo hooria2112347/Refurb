@@ -1,11 +1,15 @@
-<!-- resources/js/components/ForgetPassword.vue -->
 <template>
   <div class="forget-password">
     <h2>Forgot Password</h2>
     <form @submit.prevent="handleForgetPassword">
       <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" v-model="email" required />
+        <input
+          type="email"
+          id="email"
+          v-model="email"
+          placeholder="Enter your email"
+          required
+        />
       </div>
 
       <button type="submit">Submit</button>
@@ -20,14 +24,13 @@ export default {
   name: 'ForgetPassword',
   data() {
     return {
-      email: '', // Define the email data property here
+      email: '',
     };
   },
   methods: {
     async handleForgetPassword() {
       try {
         await axios.post('/api/password/forgot', { email: this.email });
-        // Redirect to the code verification page
         this.$router.push({ name: 'VerifyCode', query: { email: this.email } });
       } catch (error) {
         console.error(error.response.data.message);
@@ -57,13 +60,6 @@ export default {
 
 .form-group {
   margin-bottom: 1rem;
-}
-
-.form-group label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-  color: #3C552D;
 }
 
 .form-group input {

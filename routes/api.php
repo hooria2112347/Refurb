@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PasswordResetController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -25,5 +26,7 @@ Route::middleware(['auth'])->group(function () {
 Route::post('/signup', [AuthController::class, 'register'])->middleware('api');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout']);
-
+Route::post('/password/forgot', [PasswordResetController::class, 'sendResetCode']);
+Route::post('/password/verify-code', [PasswordResetController::class, 'verifyResetCode']);
+Route::post('/password/reset', [PasswordResetController::class, 'resetPassword']);
 
