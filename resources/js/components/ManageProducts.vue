@@ -15,7 +15,7 @@
 
         <div class="product-actions">
           <button @click="editProduct(product)" class="edit-btn">Edit</button>
-          <button @click="deleteProduct(product.id)" class="delete-btn">Delete</button>
+          <button @click="confirmDelete(product)" class="delete-btn">Delete</button>
         </div>
       </div>
     </div>
@@ -49,6 +49,18 @@
         </form>
       </div>
     </div>
+
+    <!-- Delete Confirmation Popup -->
+    <div v-if="showDeletePopup" class="modal-overlay">
+      <div class="modal">
+        <h2 class="modal-title">Confirm Deletion</h2>
+        <p>Are you sure you want to delete this product?</p>
+        <div class="modal-actions">
+          <button @click="cancelDelete" class="modal-cancel-btn">Cancel</button>
+          <button @click="performDelete" class="modal-save-btn">Delete</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -59,6 +71,8 @@ export default {
       products: [], // List of products fetched from the API
       isEditing: false, // Whether the edit modal is open
       editingProduct: null, // The product being edited
+      showDeletePopup: false, // Show delete confirmation popup
+      productToDelete: null, // The product to be deleted
     };
   },
   methods: {
@@ -102,28 +116,30 @@ export default {
         console.error('Error updating product:', error);
       }
     },
-    async deleteProduct(productId) {
-      if (!productId) {
-        console.error('Invalid product ID');
-        return;
-      }
+    confirmDelete(product) {
+      this.productToDelete = product;
+      this.showDeletePopup = true;
+    },
+    cancelDelete() {
+      this.productToDelete = null;
+      this.showDeletePopup = false;
+    },
+    async performDelete() {
+      try {
+        const response = await fetch(`http://localhost:8000/api/products/${this.productToDelete.id}`, {
+          method: 'DELETE',
+        });
 
-      if (confirm('Are you sure you want to delete this product?')) {
-        try {
-          const response = await fetch(`http://localhost:8000/api/products/${productId}`, {
-            method: 'DELETE',
-          });
-
-          if (response.ok) {
-            alert('Product deleted successfully');
-            this.fetchProducts(); // Refresh the product list
-          } else {
-            const error = await response.json();
-            alert(`Failed to delete the product: ${error.message}`);
-          }
-        } catch (error) {
-          console.error('Error deleting product:', error);
+        if (response.ok) {
+          this.showDeletePopup = false;
+          this.productToDelete = null;
+          this.fetchProducts(); // Refresh the product list
+        } else {
+          const error = await response.json();
+          alert(`Failed to delete the product: ${error.message}`);
         }
+      } catch (error) {
+        console.error('Error deleting product:', error);
       }
     },
     cancelEdit() {
@@ -239,7 +255,7 @@ export default {
   background-color: #B83232;
 }
 
-/* Modal Styles */
+/* Modal Overlay */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -253,23 +269,69 @@ export default {
   z-index: 1000;
 }
 
+/* Modal */
 .modal {
   background: #fff;
   padding: 2rem;
   border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  width: 500px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  width: 400px;
   max-width: 90%;
+  text-align: center;
 }
 
 .modal-title {
   font-size: 1.5rem;
   font-weight: bold;
-  text-align: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   color: #333;
 }
 
+.modal p {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+/* Modal Actions */
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.modal-cancel-btn,
+.modal-save-btn {
+  flex: 1;
+  padding: 0.8rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.modal-cancel-btn {
+  background-color: #ddd;
+  color: #333;
+}
+
+.modal-cancel-btn:hover {
+  background-color: #bbb;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.modal-save-btn {
+  background-color: #4CAF50;
+  color: #fff;
+}
+
+.modal-save-btn:hover {
+  background-color: #45a049;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Edit Modal */
 .modal-form {
   display: flex;
   flex-direction: column;
@@ -308,20 +370,6 @@ export default {
   justify-content: space-between;
 }
 
-.modal-cancel-btn {
-  background: #ddd;
-  border: none;
-  padding: 0.8rem 1.5rem;
-  border-radius: 5px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.modal-cancel-btn:hover {
-  background: #bbb;
-}
-
 .modal-save-btn {
   background: #4CAF50;
   color: #fff;
@@ -336,4 +384,19 @@ export default {
 .modal-save-btn:hover {
   background: #45a049;
 }
+
+.modal-cancel-btn {
+  background: #ddd;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.modal-cancel-btn:hover {
+  background: #bbb;
+}
+
 </style>

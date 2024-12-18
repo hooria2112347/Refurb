@@ -85,6 +85,15 @@
         <button type="submit" class="submit-btn">Add Product</button>
       </div>
     </form>
+
+    <!-- Success Popup -->
+    <div v-if="showPopup" class="popup-overlay">
+      <div class="popup-content">
+        <h2>Product Added Successfully!</h2>
+        <p>Your product has been added to the database.</p>
+        <button class="close-popup-btn" @click="closePopup">Close</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -108,16 +117,17 @@ export default {
         { category_id: 5, name: 'Iron' },
         { category_id: 6, name: 'Lead' },
       ],
-      imageSizeError: false, // Add this property
+      imageSizeError: false,
+      showPopup: false,
     };
   },
   methods: {
     triggerFileInput() {
-      this.$refs.fileInput.click(); // Triggers the file input when the button is clicked
+      this.$refs.fileInput.click();
     },
     onFileChange(event) {
       const files = Array.from(event.target.files);
-      const maxSize = 20 * 1024 * 1024; // 20 MB in bytes
+      const maxSize = 20 * 1024 * 1024;
 
       this.imageSizeError = false;
 
@@ -134,14 +144,14 @@ export default {
       }
     },
     cancel() {
-      this.$router.push('/'); // Redirect to home or previous page
+      this.$router.push('/');
     },
     async submitProduct() {
       const formData = new FormData();
       formData.append('name', this.product.name);
       formData.append('description', this.product.description);
       formData.append('price', this.product.price);
-      formData.append('category_id', this.product.category_id); // Verify this value
+      formData.append('category_id', this.product.category_id);
       formData.append('additional_info', this.product.additionalInfo);
 
       if (this.product.image.length) {
@@ -150,9 +160,6 @@ export default {
         }
       }
 
-      // Log formData for debugging
-      console.log([...formData.entries()]);
-
       try {
         const response = await fetch('http://127.0.0.1:8000/api/products', {
           method: 'POST',
@@ -160,8 +167,7 @@ export default {
         });
 
         if (response.ok) {
-          alert('Product added successfully!');
-          this.$router.push('/');
+          this.showPopup = true;
         } else {
           const error = await response.json();
           alert(`Error: ${error.message}`);
@@ -169,6 +175,10 @@ export default {
       } catch (error) {
         console.error('Error submitting product:', error);
       }
+    },
+    closePopup() {
+      this.showPopup = false;
+      this.$router.push('/');
     },
   },
 };
@@ -307,6 +317,55 @@ export default {
 }
 
 .submit-btn:hover {
+  background-color: #45a049;
+}
+
+/* Popup Styles */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.popup-content {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  max-width: 400px;
+  width: 90%;
+}
+
+.popup-content h2 {
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.popup-content p {
+  margin-bottom: 1.5rem;
+  color: #555;
+}
+
+.close-popup-btn {
+  padding: 0.5rem 1rem;
+  background-color: #4CAF50;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.close-popup-btn:hover {
   background-color: #45a049;
 }
 </style>

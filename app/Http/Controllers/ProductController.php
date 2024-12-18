@@ -11,40 +11,43 @@ use Illuminate\Support\Facades\Log;
 class ProductController extends Controller
 {
     public function store(Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'description' => 'required|string',
-                'price' => 'required|numeric',
-                'category_id' => 'required|exists:categories,category_id',
-                'additional_info' => 'nullable|string',
-                'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:20480', 
-            ]);
+{
+    try {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'required|string',
+            'price' => 'required|numeric',
+            'category_id' => 'required|exists:categories,category_id', // Use `category_id` here
+            'additional_info' => 'nullable|string',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:20480', // 20 MB
+        ]);
+        
 
-            Log::info('Validated data:', $validated);
+        // Create the product
+        $product = Product::create($validated);
 
-            $product = Product::create($validated);
-
-            Log::info('Product created:', $product->toArray());
-
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
-                    $path = $image->store('product_images', 'public');
-                    ProductImage::create([
-                        'product_id' => $product->id, // Use 'id' instead of 'product_id' if that's the primary key
-                        'image_path' => $path,
-                    ]);
-                    Log::info('Image stored at:', ['path' => $path]);
-                }
-            }
-
-            return response()->json(['message' => 'Product added successfully!', 'product' => $product], 201);
-        } catch (\Exception $e) {
-            Log::error('Error adding product:', ['error' => $e->getMessage()]);
-            return response()->json(['message' => 'Error adding product', 'error' => $e->getMessage()], 500);
+        if (!isset($product->product_id)) {
+            throw new \Exception('Product ID not generated');
         }
+
+        // Handle image uploads
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('product_images', 'public');
+
+                ProductImage::create([
+                    'product_id' => $product->product_id,
+                    'image_path' => $path,
+                ]);
+            }
+        }
+
+        return response()->json(['message' => 'Product added successfully!'], 201);
+    } catch (\Exception $e) {
+        Log::error('Error adding product: ' . $e->getMessage());
+        return response()->json(['error' => 'Server error'], 500);
     }
+}
 
     public function index()
 {
