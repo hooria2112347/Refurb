@@ -16,3 +16,8 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+# Flyway configuration
+flyway/conf/flyway.conf
+
+# Database files (if using SQLite or similar)
+*.db

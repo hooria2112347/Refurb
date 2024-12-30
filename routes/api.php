@@ -5,28 +5,19 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CustomRequestController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
-|
 */
 
-Route::middleware(['auth'])->group(function () {
-    Route::post('/change-password', [AuthController::class, 'changePassword']);
-    Route::get('/user', function (Request $request) {
-        return response()->json($request->user());
-    });
-});
-
-
-Route::post('/signup', [AuthController::class, 'register'])->middleware('api');
+// Public (no auth needed)
+Route::post('/signup', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout']);
+
+// Example of other public routes if needed
 Route::post('/password/forgot', [PasswordResetController::class, 'sendResetCode']);
 Route::post('/password/verify-code', [PasswordResetController::class, 'verifyResetCode']);
 Route::post('/password/reset', [PasswordResetController::class, 'resetPassword']);
@@ -35,3 +26,15 @@ Route::get('/products', [ProductController::class, 'index']);
 Route::put('/products/{id}', [ProductController::class, 'update']);
 Route::delete('/products/{id}', [ProductController::class, 'destroy']);
 
+// Protected routes (require a valid Bearer token)
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/user', function (Request $request) {
+        return response()->json($request->user());
+    });
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Custom requests
+    Route::post('/custom-requests', [CustomRequestController::class, 'store']);
+    Route::get('/custom-requests', [CustomRequestController::class, 'index']);
+});

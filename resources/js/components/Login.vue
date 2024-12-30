@@ -45,22 +45,29 @@ export default {
     };
   },
   methods: {
-    handleLogin() {
+    handleLogin() { console.log("handleLogin triggered");
       axios.post('/api/login', this.form)
-        .then(response => {
-          if (response.data.success) {
-            // Save user data in localStorage
-            localStorage.setItem('userSession', JSON.stringify(response.data.user));
+      .then(response => {
+  console.log("Server response:", response.data);
 
-            // Update the App component's state
-            this.$root.isLoggedIn = true; // Assuming isLoggedIn is globally reactive
-            this.$root.userName = response.data.user.name;
-            this.$root.userRole = response.data.user.role;
+  // If the server ALWAYS returns an `access_token` when successful:
+  if (response.data.access_token) {
+    // Save user data
+    localStorage.setItem('userSession', JSON.stringify(response.data.user));
 
-            // Redirect to the home page
-            this.$router.push('/');
-          }
-        })
+    // Store token if it exists
+    localStorage.setItem('token', response.data.access_token);
+
+    // Update global state
+    this.$root.isLoggedIn = true;
+    this.$root.userName = response.data.user.name;
+    this.$root.userRole = response.data.user.role;
+
+    // Redirect
+    this.$router.push('/');
+  }
+})
+
         .catch(error => {
           // Handle error (e.g., network issues or server errors)
           if (error.response && error.response.data && error.response.data.message) {

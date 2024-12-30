@@ -1,0 +1,31 @@
+databaseType = "MySql"
+id = "ad6ebef4-fae8-401e-bac0-5efda42efc1c"
+name = "conf"
+
+[environments.development]
+displayName = "Development database"
+url = "jdbc:mysql://127.0.0.1:3306/refurb"
+user = "root"
+
+[flyway]
+environment = "development"
+locations = [ "filesystem:flyway/sql" ]
+mixed = true
+outOfOrder = true
+schemaModelLocation = "schema-model"
+table = "flyway_schema_history"
+validateMigrationNaming = true
+validateOnMigrate = true
+
+[flyway.check]
+majorTolerance = 0
+
+[flywayDesktop]
+developmentEnvironment = "development"
+shadowEnvironment = "shadow"
+
+[redgateCompare]
+filterFile = "filter.rgf"
+
+[redgateCompare.mysql.options.ignores]
+ignoreNewlinesInTextObjects = "off"

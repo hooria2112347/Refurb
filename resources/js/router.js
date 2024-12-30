@@ -19,7 +19,7 @@ import ManageProducts from './components/ManageProducts.vue';
 import ForgetPassword from './components/ForgetPassword.vue'; // Import ForgetPassword component
 import VerifyCode from '@/components/VerifyCode.vue';
 import ResetPassword from '@/components/ResetPassword.vue';
-
+import ViewCustomRequests from './components/ViewCustomRequests.vue';
 
 // Define routes for each component
 const routes = [
@@ -56,6 +56,8 @@ const routes = [
   },
   { path: '/feedback', component: Feedback },
   { path: '/forget-password', component: ForgetPassword }, // New route for Forget Password
+
+  { path: '/view-custom-requests', component: ViewCustomRequests, name: 'ViewCustomRequests' },
   { path: '/:pathMatch(.*)*', redirect: '/' } // Redirect unknown routes to Home
 ];
 
