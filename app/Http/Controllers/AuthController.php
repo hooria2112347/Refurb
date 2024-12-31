@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
+    /**
+     * Handle user registration and return a token.
+     */
     public function register(Request $request)
     {
         // Validate incoming request
@@ -20,11 +23,14 @@ class AuthController extends Controller
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|max:20',
             'password' => 'required|string|min:6|confirmed',  // password_confirmation is automatically checked
-            'role' => 'required|in:artist,scrapSeller',
+            'role' => 'required|in:artist,scrapSeller,general', // Added 'general' if needed
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['message' => 'Invalid email or password.', 'errors' => $validator->errors()], 422);
+            return response()->json([
+                'message' => 'Invalid input data.',
+                'errors' => $validator->errors()
+            ], 422);
         }
 
         // Hash the password before storing
@@ -34,10 +40,24 @@ class AuthController extends Controller
         // Create the user in the database
         $user = User::create($data);
 
-        // Return a success response
-        return response()->json(['message' => 'User registered successfully'], 201);
-    }
-    public function login(Request $request)
+        // Generate Sanctum token
+        
+        $token = $user->createToken('auth_token', ['add-product'])->plainTextToken;
+
+    // Return a success response with the token
+    return response()->json([
+        'message' => 'User registered successfully.',
+        'access_token' => $token,
+        'token_type' => 'Bearer',
+        'user' => $user
+    ], 201);
+}
+
+    /**
+     * Handle user login and return a token.
+     */
+    
+     public function login(Request $request)
 {
     // Validate credentials (e.g., email, password)
     $credentials = $request->validate([
@@ -46,88 +66,92 @@ class AuthController extends Controller
     ]);
 
     // Attempt login
-    if (!auth()->attempt($credentials)) {
-        return response()->json(['message' => 'Invalid credentials'], 401);
+    if (!Auth::attempt($credentials)) {
+        return response()->json(['message' => 'Invalid credentials.'], 401);
     }
 
-    // If successful, create a personal access token
-    $user = auth()->user();
-    $token = $user->createToken('AppToken')->plainTextToken;  // <-- Important
+    // If successful, create a personal access token with specific abilities
+    $user = Auth::user();
+    $token = $user->createToken('AppToken', ['add-product'])->plainTextToken;  // Assign 'add-product' ability
 
     return response()->json([
         'access_token' => $token,
         'token_type'   => 'Bearer',
         'user'         => $user,
     ], 200);
-}public function logout(Request $request)
-{
-    try {
-        // Log incoming request details
-        \Log::info('Logout attempt:', [
-            'user' => $request->user(),
-            'headers' => $request->headers->all(),
+}
+
+    /**
+     * Handle user logout by revoking the current token.
+     */
+    public function logout(Request $request)
+    {
+        try {
+            // Log incoming request details
+            \Log::info('Logout attempt:', [
+                'user' => $request->user(),
+                'headers' => $request->headers->all(),
+            ]);
+
+            // Retrieve the current access token
+            $token = $request->user()->currentAccessToken();
+
+            // Log token details
+            \Log::info('Token type:', ['type' => get_class($token)]);
+
+            // Check for invalid token type (e.g., TransientToken)
+            if (is_null($token) || get_class($token) === 'Laravel\Sanctum\TransientToken') {
+                throw new \Exception('Invalid token type: TransientToken cannot be deleted.');
+            }
+
+            // Revoke the token
+            $token->delete();
+            \Log::info('Token revoked successfully.', ['tokenId' => $token->id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Logged out successfully.',
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Logout error: ' . $e->getMessage(), [
+                'userId' => $request->user()->id ?? null,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Logout failed.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Handle password change for authenticated users.
+     */
+    public function changePassword(Request $request)
+    {
+        // Validate the request inputs
+        $request->validate([
+            'currentPassword' => 'required',
+            'newPassword' => 'required|min:8|same:confirmPassword',
+            'confirmPassword' => 'required',
         ]);
 
-        // Retrieve the current access token
-        $token = $request->user()->currentAccessToken();
-
-        // Log token details
-        \Log::info('Token type:', ['type' => get_class($token)]);
-
-        // Check for invalid token type (e.g., TransientToken)
-        if (is_null($token) || get_class($token) === 'Laravel\Sanctum\TransientToken') {
-            throw new \Exception('Invalid token type: TransientToken cannot be deleted.');
+        // Get the authenticated user
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => 'User not authenticated.'], 401);
         }
 
-        // Revoke the token
-        $token->delete();
-        \Log::info('Token revoked successfully.', ['tokenId' => $token->id]);
+        // Verify the current password
+        if (!Hash::check($request->currentPassword, $user->password)) {
+            return response()->json(['message' => 'Current password is incorrect.'], 400);
+        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Logged out successfully.',
-        ]);
-    } catch (\Exception $e) {
-        \Log::error('Logout error: ' . $e->getMessage(), [
-            'userId' => $request->user()->id ?? null,
-        ]);
+        // Update the password
+        $user->password = Hash::make($request->newPassword);
+        $user->save();
 
-        return response()->json([
-            'success' => false,
-            'message' => 'Logout failed.',
-            'error' => $e->getMessage(),
-        ], 500);
+        return response()->json(['message' => 'Password changed successfully.'], 200);
     }
-}
-
-
-
-
-
-    public function changePassword(Request $request)
-{
-    // Validate the request inputs
-    $request->validate([
-        'currentPassword' => 'required',
-        'newPassword' => 'required|min:8|same:confirmPassword',
-        'confirmPassword' => 'required',
-    ]);
-
-    // Get the authenticated user
-    $user = Auth::user();
-    if (!$user) {
-        return response()->json(['message' => 'User not authenticated'], 401);
-    }
-
-    // Verify the current password
-    if (!Hash::check($request->currentPassword, $user->password)) {
-        return response()->json(['message' => 'Current password is incorrect'], 400);
-    }
-
-    // Update the password
-    $user->password = Hash::make($request->newPassword);
-    $user->save();
-
-    return response()->json(['message' => 'Password changed successfully'], 200);
-}
 }

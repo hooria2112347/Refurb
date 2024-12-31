@@ -21,14 +21,17 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/password/forgot', [PasswordResetController::class, 'sendResetCode']);
 Route::post('/password/verify-code', [PasswordResetController::class, 'verifyResetCode']);
 Route::post('/password/reset', [PasswordResetController::class, 'resetPassword']);
-Route::post('/products', [ProductController::class, 'store']);
-Route::get('/products', [ProductController::class, 'index']);
-Route::put('/products/{id}', [ProductController::class, 'update']);
-Route::delete('/products/{id}', [ProductController::class, 'destroy']);
 
 // Protected routes (require a valid Bearer token)
-Route::middleware(['auth:sanctum'])->group(function () {     // Logout (requires user to be authenticated, so the token can be revoked)
+Route::middleware(['auth:sanctum'])->group(function () {  
+      // Logout (requires user to be authenticated, so the token can be revoked)
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::post('/products', [ProductController::class, 'store']);
+    Route::get('/products', [ProductController::class, 'index']);
+    Route::put('/products/{id}', [ProductController::class, 'update']);
+    Route::delete('/products/{id}', [ProductController::class, 'destroy']);
+    
     // Shows the currently authenticated user
     Route::get('/user', function (Request $request) {
         return response()->json($request->user());
@@ -36,8 +39,6 @@ Route::middleware(['auth:sanctum'])->group(function () {     // Logout (requires
     
     // Change password
     Route::post('/change-password', [AuthController::class, 'changePassword']);
-
-
 
     // Custom requests
     Route::post('/custom-requests', [CustomRequestController::class, 'store']);

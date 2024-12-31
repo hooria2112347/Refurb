@@ -147,35 +147,43 @@ export default {
       this.$router.push('/');
     },
     async submitProduct() {
-      const formData = new FormData();
-      formData.append('name', this.product.name);
-      formData.append('description', this.product.description);
-      formData.append('price', this.product.price);
-      formData.append('category_id', this.product.category_id);
-      formData.append('additional_info', this.product.additionalInfo);
+    const formData = new FormData();
+    formData.append('name', this.product.name);
+    formData.append('description', this.product.description);
+    formData.append('price', this.product.price);
+    formData.append('category_id', this.product.category_id);
+    formData.append('additional_info', this.product.additionalInfo);
 
-      if (this.product.image.length) {
+    if (this.product.image.length) {
         for (const file of this.product.image) {
-          formData.append('images[]', file);
+            formData.append('images[]', file);
         }
-      }
+    }
 
-      try {
+    const token = localStorage.getItem('access_token'); 
+
+    try {
         const response = await fetch('http://127.0.0.1:8000/api/products', {
-          method: 'POST',
-          body: formData,
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Authorization': `Bearer ${token}`, 
+            },
         });
 
         if (response.ok) {
-          this.showPopup = true;
+            this.showPopup = true;
         } else {
-          const error = await response.json();
-          alert(`Error: ${error.message}`);
+            const error = await response.json();
+            alert(`Error: ${error.error || error.message}`);
         }
-      } catch (error) {
+    } catch (error) {
         console.error('Error submitting product:', error);
-      }
-    },
+        alert('An unexpected error occurred.');
+    }
+}
+
+,
     closePopup() {
       this.showPopup = false;
       this.$router.push('/');
@@ -306,14 +314,15 @@ export default {
 }
 
 .submit-btn {
-  background-color: #4CAF50;
-  color: white;
+  grid-column: span 2;
+  padding: 12px 25px;
+  background-color: #ff6b6b;
+  color: #fff;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-size: 0.9rem;
+  border-radius: 15px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  font-size: 1em;
+  transition: background-color 0.3s;
 }
 
 .submit-btn:hover {

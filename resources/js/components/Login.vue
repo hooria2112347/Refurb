@@ -60,7 +60,7 @@ export default {
           localStorage.setItem('userSession', JSON.stringify(response.data.user));
 
           // Store the token for subsequent requests
-          localStorage.setItem('token', response.data.access_token);
+          localStorage.setItem('access_token', response.data.access_token);
 
           // Update global state (if you use $root or a global store)
           this.$root.isLoggedIn = true;

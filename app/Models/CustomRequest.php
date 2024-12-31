@@ -1,4 +1,4 @@
-<?php
+<?php 
 
 namespace App\Models;
 
@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class CustomRequest extends Model
 {
-    
     use HasFactory;
 
     protected $table = 'custom_requests';
@@ -20,7 +19,22 @@ class CustomRequest extends Model
         'budget',              // Budget
         'deadline',            // Deadline
         'artist_expertise',    // Artist expertise
-        'images',              // JSON-encoded image paths
         'status',              // Default status (e.g., 'Pending')
     ];
+
+    /**
+     * Get the images associated with the custom request.
+     */
+    public function images()
+    {
+        return $this->hasMany(CustomRequestImage::class);
+    }
+
+    /**
+     * Get the user that owns the custom request.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

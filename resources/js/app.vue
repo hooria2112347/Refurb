@@ -17,6 +17,12 @@
           <router-link v-if="isArtist" to="/portfolio">My Portfolio</router-link>
           <router-link v-if="isArtist" to="/browse-scrap">Browse Scrap</router-link>
 
+           <!-- General user and Scrap Seller-specific options -->
+           <router-link v-if="isGeneralUser || isScrapSeller" to="/custom-request">
+            Custom Request
+          </router-link>
+
+
           <!-- Conditional display based on login status -->
           <div v-if="!isLoggedIn" class="dropdown">
             <button class="dropbtn">Guest ▼</button>
@@ -51,7 +57,7 @@ export default {
     return {
       isLoggedIn: false, // Tracks login status
       userName: "", // Stores user name
-      userRole: "", // Stores user role, e.g., 'admin', 'scrap-seller', 'artist'
+      userRole: "", // Stores user role, e.g., 'admin', 'scrapSeller', 'artist', 'general'
     };
   },
   computed: {
@@ -64,58 +70,60 @@ export default {
     isArtist() {
       return this.userRole === "artist";
     },
+    isGeneralUser() {
+      return this.userRole === "general"; // Add support for general users
+    },
   },
   methods: {
     logout() {
-  console.log("Logout button clicked");
+      console.log("Logout button clicked");
 
-  const token = localStorage.getItem('token');
-  if (!token) {
-    console.error("No token found in localStorage. Logging out anyway.");
-    this.handleLogoutCleanup();
-    return;
-  }
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error("No token found in localStorage. Logging out anyway.");
+        this.handleLogoutCleanup();
+        return;
+      }
 
-  axios.post('/api/logout', {}, {
-    headers: {
-      Authorization: `Bearer ${token}`,
+      axios.post('/api/logout', {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+      .then(response => {
+        console.log("Logout API response:", response.data);
+
+        if (response.data.success) {
+          this.handleLogoutCleanup();
+        } else {
+          console.error("Logout failed:", response.data.message);
+        }
+      })
+      .catch(error => {
+        console.error("Logout API error:", error);
+
+        // Cleanup even if API call fails
+        this.handleLogoutCleanup();
+      });
     },
-  })
-  .then(response => {
-    console.log("Logout API response:", response.data);
 
-    if (response.data.success) {
-      this.handleLogoutCleanup();
-    } else {
-      console.error("Logout failed:", response.data.message);
-    }
-  })
-  .catch(error => {
-    console.error("Logout API error:", error);
+    handleLogoutCleanup() {
+      console.log("Handling logout cleanup...");
 
-    // Cleanup even if API call fails
-    this.handleLogoutCleanup();
-  });
-},
+      // Clear local storage
+      localStorage.removeItem('token');
+      localStorage.removeItem('userSession');
 
-handleLogoutCleanup() {
-  console.log("Handling logout cleanup...");
+      // Update global state
+      this.isLoggedIn = false;
+      this.userName = null;
+      this.userRole = null;
 
-  // Clear local storage
-  localStorage.removeItem('token');
-  localStorage.removeItem('userSession');
+      // Redirect to home page
+      console.log("Redirecting to home...");
+      this.$router.push('/').catch(err => console.error("Redirection error:", err));
+    },
 
-  // Update global state
-  this.$root.isLoggedIn = false;
-  this.$root.userName = null;
-  this.$root.userRole = null;
-
-  // Redirect to home page
-  console.log("Redirecting to home...");
-  this.$router.push('/').catch(err => console.error("Redirection error:", err));
-}
-
-,
     checkSession() {
       // Retrieve session data from localStorage
       const session = localStorage.getItem("userSession");
@@ -124,19 +132,20 @@ handleLogoutCleanup() {
           const userData = JSON.parse(session);
           this.isLoggedIn = true;
           this.userName = userData.name;
-          this.userRole = userData.role;
+          this.userRole = userData.role; // Ensure role is stored
         } catch (e) {
           console.error("Error parsing session data:", e);
           this.logout(); // Clear session on error
         }
       }
-    }
+    },
   },
   mounted() {
     // Check session on page load
     this.checkSession();
   },
 };
+
 </script>
 
 <style scoped>
