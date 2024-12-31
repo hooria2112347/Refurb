@@ -67,23 +67,55 @@ export default {
   },
   methods: {
     logout() {
-      axios
-        .post('/api/logout')
-        .then(() => {
-          // Clear session-related data
-          localStorage.removeItem('userSession');
-          this.isLoggedIn = false;
-          this.userName = '';
-          this.userRole = '';
-          
-          // Redirect to home page
-          this.$router.push('/');
-        })
-        .catch(error => {
-          console.error('Logout error:', error);
-          alert('Failed to logout. Please try again.');
-        });
+  console.log("Logout button clicked");
+
+  const token = localStorage.getItem('token');
+  if (!token) {
+    console.error("No token found in localStorage. Logging out anyway.");
+    this.handleLogoutCleanup();
+    return;
+  }
+
+  axios.post('/api/logout', {}, {
+    headers: {
+      Authorization: `Bearer ${token}`,
     },
+  })
+  .then(response => {
+    console.log("Logout API response:", response.data);
+
+    if (response.data.success) {
+      this.handleLogoutCleanup();
+    } else {
+      console.error("Logout failed:", response.data.message);
+    }
+  })
+  .catch(error => {
+    console.error("Logout API error:", error);
+
+    // Cleanup even if API call fails
+    this.handleLogoutCleanup();
+  });
+},
+
+handleLogoutCleanup() {
+  console.log("Handling logout cleanup...");
+
+  // Clear local storage
+  localStorage.removeItem('token');
+  localStorage.removeItem('userSession');
+
+  // Update global state
+  this.$root.isLoggedIn = false;
+  this.$root.userName = null;
+  this.$root.userRole = null;
+
+  // Redirect to home page
+  console.log("Redirecting to home...");
+  this.$router.push('/').catch(err => console.error("Redirection error:", err));
+}
+
+,
     checkSession() {
       // Retrieve session data from localStorage
       const session = localStorage.getItem("userSession");

@@ -23,10 +23,12 @@
       </div>
 
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
-
       <button type="submit">Login</button>
     </form>
-    <p><router-link to="/forget-password">Forgot Password?</router-link></p>
+
+    <p>
+      <router-link to="/forget-password">Forgot Password?</router-link>
+    </p>
   </div>
 </template>
 
@@ -45,40 +47,44 @@ export default {
     };
   },
   methods: {
-    handleLogin() { console.log("handleLogin triggered");
-      axios.post('/api/login', this.form)
-      .then(response => {
-  console.log("Server response:", response.data);
+    async handleLogin() {
+      console.log("handleLogin triggered");
+      try {
+        const response = await axios.post('/api/login', this.form);
 
-  // If the server ALWAYS returns an `access_token` when successful:
-  if (response.data.access_token) {
-    // Save user data
-    localStorage.setItem('userSession', JSON.stringify(response.data.user));
+        console.log("Server response:", response.data);
+        
+        // Check if the server returned an `access_token`
+        if (response.data.access_token) {
+          // Save user data in localStorage
+          localStorage.setItem('userSession', JSON.stringify(response.data.user));
 
-    // Store token if it exists
-    localStorage.setItem('token', response.data.access_token);
+          // Store the token for subsequent requests
+          localStorage.setItem('token', response.data.access_token);
 
-    // Update global state
-    this.$root.isLoggedIn = true;
-    this.$root.userName = response.data.user.name;
-    this.$root.userRole = response.data.user.role;
+          // Update global state (if you use $root or a global store)
+          this.$root.isLoggedIn = true;
+          this.$root.userName = response.data.user.name;
+          this.$root.userRole = response.data.user.role;
 
-    // Redirect
-    this.$router.push('/');
-  }
-})
-
-        .catch(error => {
-          // Handle error (e.g., network issues or server errors)
-          if (error.response && error.response.data && error.response.data.message) {
-            this.errorMessage = error.response.data.message;
-          } else {
-            this.errorMessage = "An error occurred. Please try again.";
-          }
-
-          // Clear any existing user session data
+          // Redirect to home (or any other route)
+          this.$router.push('/');
+        } else {
+          // If no token is returned, show an error or handle accordingly
+          this.errorMessage = "Login failed: No access token returned.";
           localStorage.removeItem("userSession");
-        });
+        }
+      } catch (error) {
+        // Handle error (e.g., network issues or server errors)
+        if (error.response && error.response.data && error.response.data.message) {
+          this.errorMessage = error.response.data.message;
+        } else {
+          this.errorMessage = "An error occurred. Please try again.";
+        }
+
+        // Clear any existing user session data
+        localStorage.removeItem("userSession");
+      }
     }
   }
 };
