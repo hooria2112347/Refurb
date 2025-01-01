@@ -20,7 +20,8 @@ import ForgetPassword from './components/ForgetPassword.vue'; // Import ForgetPa
 import VerifyCode from '@/components/VerifyCode.vue';
 import ResetPassword from '@/components/ResetPassword.vue';
 import ViewCustomRequests from './components/ViewCustomRequests.vue';
-
+import ArtistViewCustomRequests from './components/ArtistViewCustomRequests.vue';
+import ViewAcceptedRequests from './components/ViewAcceptedRequests.vue';
 // Define routes for each component
 const routes = [
   { path: '/', component: Home },
@@ -56,8 +57,23 @@ const routes = [
   },
   { path: '/feedback', component: Feedback },
   { path: '/forget-password', component: ForgetPassword }, // New route for Forget Password
-
+//for general/scrap user
   { path: '/view-custom-requests', component: ViewCustomRequests, name: 'ViewCustomRequests' },
+//to view all the requests
+  {
+    path: '/artist-view-custom-requests',
+    component: ArtistViewCustomRequests,
+    // name: 'ArtistViewCustomRequests',
+    // meta: { requiresAuth: true, role: 'artist' },
+  },
+  //to view the requests that the artist has accepted
+  {
+    path: '/view-accepted-requests',
+    name: 'ViewAcceptedRequests',
+    component: ViewAcceptedRequests,
+    meta: { requiresAuth: true }, // Only authenticated users can access this page
+  }
+,  
   { path: '/:pathMatch(.*)*', redirect: '/' } // Redirect unknown routes to Home
 ];
 
@@ -65,6 +81,5 @@ const router = createRouter({
   history: createWebHistory(),
   routes
 });
-
 
 export default router;

@@ -1,66 +1,86 @@
 <template>
-    <div class="profile-container">
-      <div class="sidebar">
-        <ul class="menu">
-          <li><router-link to="/account" active-class="active">Account</router-link></li>
-          <li><router-link to="/password-change" active-class="active">Change Password</router-link></li>
-          <li><router-link to="/billing-address" active-class="active">Billing Address</router-link></li>
-          <li><router-link to="/shipping-address" active-class="active">Shipping Address</router-link></li>
-          <li><router-link to="/my-orders" active-class="active">My Orders</router-link></li>
-        </ul>
-      </div>
-      <div class="main-content">
-        <h1>Account Details</h1>
-        <div class="form-container">
-          <h2>My Information</h2>
-          <div class="form-group">
-            <label>Name:</label>
-            <p>{{ user.name }}</p>
-          </div>
-          <div class="form-group">
-            <label>Email:</label>
-            <p>{{ user.email }}</p>
-          </div>
+  <div class="profile-container">
+    <div class="sidebar">
+      <ul class="menu">
+        <li><router-link to="/account" active-class="active">Account</router-link></li>
+        <li><router-link to="/password-change" active-class="active">Change Password</router-link></li>
+        <li><router-link to="/billing-address" active-class="active">Billing Address</router-link></li>
+        <li><router-link to="/shipping-address" active-class="active">Shipping Address</router-link></li>
+        <li><router-link to="/my-orders" active-class="active">My Orders</router-link></li>
+        <!-- Show the View Accepted Requests link if the user is an artist -->
+        <li><router-link v-if="isArtist" to="/view-accepted-requests" active-class="active">View Accepted Requests</router-link></li>
+
+        
+      </ul>
+    </div>
+    <div class="main-content">
+      <h1>Account Details</h1>
+      <div class="form-container">
+        <h2>My Information</h2>
+        <div class="form-group">
+          <label>Name:</label>
+          <p>{{ user.name }}</p>
+        </div>
+        <div class="form-group">
+          <label>Email:</label>
+          <p>{{ user.email }}</p>
         </div>
       </div>
     </div>
-  </template>
-  
-  <script>
-  export default {
-    data() {
-      return {
-        user: {
-          name: "",
-          email: "",
-        },
-      };
-    },
-    methods: {
-      fetchUserDetails() {
-        // Retrieve session data from localStorage
-        const session = localStorage.getItem("userSession");
-        if (session) {
-          try {
-            const userData = JSON.parse(session);
-            this.user.name = userData.name;
-            this.user.email = userData.email;
-          } catch (e) {
-            console.error("Error parsing session data:", e);
-            alert("Failed to load user details. Please log in again.");
-            this.$router.push("/login"); // Redirect to login on error
-          }
-        } else {
-          alert("No active session found. Please log in.");
-          this.$router.push("/login");
-        }
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      user: {
+        name: "",
+        email: "",
       },
+    };
+  },
+  computed: {
+    isArtist() {
+      const session = localStorage.getItem("userSession");
+      if (session) {
+        try {
+          const userData = JSON.parse(session);
+          return userData.role === 'artist';
+        } catch (e) {
+          console.error("Error parsing session data:", e);
+          return false;
+        }
+      }
+      return false;
     },
-    mounted() {
-      this.fetchUserDetails(); // Load user details on component mount
+  },
+  methods: {
+    fetchUserDetails() {
+      // Retrieve session data from localStorage
+      const session = localStorage.getItem("userSession");
+      if (session) {
+        try {
+          const userData = JSON.parse(session);
+          this.user.name = userData.name;
+          this.user.email = userData.email;
+        } catch (e) {
+          console.error("Error parsing session data:", e);
+          alert("Failed to load user details. Please log in again.");
+          this.$router.push("/login"); // Redirect to login on error
+        }
+      } else {
+        alert("No active session found. Please log in.");
+        this.$router.push("/login");
+      }
     },
-  };
-  </script>
+  },
+  mounted() {
+    this.fetchUserDetails(); // Load user details on component mount
+  },
+};
+</script>
+
   
   <style scoped>
   .profile-container {

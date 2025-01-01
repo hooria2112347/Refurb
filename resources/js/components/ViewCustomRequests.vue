@@ -1,15 +1,15 @@
-<template> 
+<template>
   <div class="custom-requests-page">
     <h1>Your Custom Requests</h1>
-    
+
     <!-- Loading Indicator -->
     <div v-if="loading" class="loading">Loading...</div>
-    
+
     <!-- No Requests Message -->
     <div v-else-if="requests.length === 0" class="no-requests">
       <p>You have not made any custom requests yet.</p>
     </div>
-    
+
     <!-- Requests List -->
     <div v-else class="requests-list">
       <div v-for="request in requests" :key="request.id" class="request-card">
@@ -27,9 +27,18 @@
           <p><strong>Status:</strong> {{ request.status || 'Pending' }}</p>
           <p><strong>Submitted On:</strong> {{ formatDate(request.created_at) }}</p>
         </div>
+
+        <!-- Display Comments -->
+        <div class="comments-section" v-if="request.comments && request.comments.length">
+          <h4>Comments:</h4>
+          <div v-for="comment in request.comments" :key="comment.id" class="comment-item">
+            <p><strong>{{ comment.artist.name }}:</strong> {{ comment.comment }}</p>
+            <p class="comment-date">{{ formatDate(comment.created_at) }}</p>
+          </div>
+        </div>
       </div>
     </div>
-    
+
     <!-- Image Modal -->
     <div v-if="isImageModalOpen" class="modal-overlay" @click.self="closeImageModal">
       <div class="image-modal">
@@ -57,6 +66,7 @@
     </div>
   </div>
 </template>
+
 <script>
 import axios from "axios";
 
@@ -83,6 +93,7 @@ export default {
         this.requests = response.data.data.map(request => ({
           ...request,
           images: request.images || [], // Ensure images is an array
+          comments: request.comments || [], // Ensure comments are included
         }));
       } catch (error) {
         console.error("Error fetching custom requests:", error);
@@ -131,6 +142,7 @@ export default {
   },
 };
 </script>
+
 <style scoped>
 .custom-requests-page {
   max-width: 1000px;
@@ -222,6 +234,23 @@ export default {
 
 .request-info p strong {
   color: #333;
+}
+
+/* Comments Section */
+.comments-section {
+  margin-top: 20px;
+}
+
+.comment-item {
+  background-color: #f9f9f9;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.comment-date {
+  font-size: 0.9rem;
+  color: #888;
 }
 
 /* Image Modal */

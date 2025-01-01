@@ -1,4 +1,5 @@
 <?php 
+// app/Models/CustomRequest.php
 
 namespace App\Models;
 
@@ -11,15 +12,16 @@ class CustomRequest extends Model
 
     protected $table = 'custom_requests';
     protected $fillable = [
-        'user_id',             // The user creating the request
-        'description',         // Description of the request
-        'materials',           // Preferred materials
-        'dimensions',          // Dimensions of the product
-        'style_preferences',   // Style preferences
-        'budget',              // Budget
-        'deadline',            // Deadline
-        'artist_expertise',    // Artist expertise
-        'status',              // Default status (e.g., 'Pending')
+        'user_id',
+        'description',
+        'materials',
+        'dimensions',
+        'style_preferences',
+        'budget',
+        'deadline',
+        'artist_expertise',
+        'status', // Ensure status is fillable
+        'artist_id',
     ];
 
     /**
@@ -37,4 +39,17 @@ class CustomRequest extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * Get the comments associated with the custom request.
+     */
+    public function comments()
+    {
+        return $this->hasMany(CustomRequestComment::class);
+    }
+
+public function artist()
+{
+    return $this->belongsTo(User::class, 'artist_id'); // Relationship with the artist (user who accepted the request)
+}
 }

@@ -1,4 +1,5 @@
 <?php
+// routes/api.php
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -24,7 +25,17 @@ Route::post('/password/reset', [PasswordResetController::class, 'resetPassword']
 
 // Protected routes (require a valid Bearer token)
 Route::middleware(['auth:sanctum'])->group(function () {  
-      // Logout (requires user to be authenticated, so the token can be revoked)
+
+// Group the routes that require authentication
+  Route::post('custom-requests/{id}/accept', [CustomRequestController::class, 'accept']);
+    
+    // Define the route to decline a custom request
+    Route::post('custom-requests/{id}/decline', [CustomRequestController::class, 'decline']);
+    
+    // Route for adding a comment
+    Route::post('custom-requests/{id}/comments', [CustomRequestController::class, 'addComment']);
+
+    // Logout (requires user to be authenticated, so the token can be revoked)
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::post('/products', [ProductController::class, 'store']);
@@ -43,4 +54,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Custom requests
     Route::post('/custom-requests', [CustomRequestController::class, 'store']);
     Route::get('/custom-requests', [CustomRequestController::class, 'index']);
+    Route::get('/custom-requests/accepted', [CustomRequestController::class, 'getAcceptedRequests']);
+    Route::post('custom-requests/{id}/accept', [CustomRequestController::class, 'accept']);
 });
+

@@ -1,3 +1,5 @@
+<!-- src/App.vue -->
+
 <template>
   <div id="app">
     <header>
@@ -17,11 +19,15 @@
           <router-link v-if="isArtist" to="/portfolio">My Portfolio</router-link>
           <router-link v-if="isArtist" to="/browse-scrap">Browse Scrap</router-link>
 
-           <!-- General user and Scrap Seller-specific options -->
-           <router-link v-if="isGeneralUser || isScrapSeller" to="/custom-request">
-            Custom Request
+          <!-- New Artist-specific button for viewing all custom requests -->
+          <router-link v-if="isArtist" to="/artist-view-custom-requests">
+            View All Custom Requests
           </router-link>
 
+          <!-- General user and Scrap Seller-specific options -->
+          <router-link v-if="isGeneralUser || isScrapSeller" to="/custom-request">
+            Custom Request
+          </router-link>
 
           <!-- Conditional display based on login status -->
           <div v-if="!isLoggedIn" class="dropdown">
@@ -51,6 +57,8 @@
 </template>
 
 <script>
+import axios from "axios"; // Ensure axios is imported
+
 export default {
   name: "App",
   data() {
@@ -78,7 +86,7 @@ export default {
     logout() {
       console.log("Logout button clicked");
 
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       if (!token) {
         console.error("No token found in localStorage. Logging out anyway.");
         this.handleLogoutCleanup();
@@ -97,6 +105,8 @@ export default {
           this.handleLogoutCleanup();
         } else {
           console.error("Logout failed:", response.data.message);
+          // Optionally still logout even if API indicates failure
+          this.handleLogoutCleanup();
         }
       })
       .catch(error => {
@@ -111,7 +121,7 @@ export default {
       console.log("Handling logout cleanup...");
 
       // Clear local storage
-      localStorage.removeItem('token');
+      localStorage.removeItem('access_token');
       localStorage.removeItem('userSession');
 
       // Update global state
@@ -145,7 +155,6 @@ export default {
     this.checkSession();
   },
 };
-
 </script>
 
 <style scoped>
