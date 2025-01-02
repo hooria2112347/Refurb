@@ -101,20 +101,26 @@ export default {
   },
   methods: {
     handleFiles(event) {
-      const files = event.target.files;
-      if (files.length > 0) {
-        this.form.images = Array.from(files);
-        this.imagePreviews = [];
+  const files = event.target.files;
+  if (files.length > 5) {
+    alert("You can only upload a maximum of 5 images.");
+    return; // Exit if there are more than 5 files
+  }
 
-        Array.from(files).forEach((file) => {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            this.imagePreviews.push(e.target.result);
-          };
-          reader.readAsDataURL(file);
-        });
-      }
-    },
+  if (files.length > 0) {
+    this.form.images = Array.from(files);
+    this.imagePreviews = [];
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.imagePreviews.push(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+}
+,
     removeImage(index) {
       this.form.images.splice(index, 1);
       this.imagePreviews.splice(index, 1);
@@ -127,51 +133,52 @@ export default {
       this.$refs.fileInput.files = dt.files;
     },
     async submitForm() {
-      // Clear previous errors
-      this.errors = [];
+  // Clear previous errors
+  this.errors = [];
 
-      // Validate required fields
-      if (!this.form.description.trim()) {
-        this.errors.push("Description is required.");
-      }
-      if (this.form.budget === null || this.form.budget === "") {
-        this.errors.push("Budget is required.");
-      } else if (this.form.budget < 0) {
-        this.errors.push("Budget cannot be negative.");
-      }
+  // Validate required fields
+  if (!this.form.description.trim()) {
+    this.errors.push("Description is required.");
+  }
+  if (this.form.budget === null || this.form.budget === "") {
+    this.errors.push("Budget is required.");
+  } else if (this.form.budget < 0) {
+    this.errors.push("Budget cannot be negative.");
+  }
 
-      if (this.errors.length) {
-        return; // Exit if there are validation errors
-      }
+  if (this.errors.length) {
+    return; // Exit if there are validation errors
+  }
 
-      const formData = new FormData();
-      for (const key in this.form) {
-        if (key === "images") {
-          this.form.images.forEach((file) => {
-            formData.append("images[]", file);
-          });
-        } else {
-          formData.append(key, this.form[key]);
-        }
-      }
+  const formData = new FormData();
+  for (const key in this.form) {
+    if (key === "images") {
+      this.form.images.forEach((file) => {
+        formData.append("images[]", file); // This sends each image file in the array
+      });
+    } else {
+      formData.append(key, this.form[key]);
+    }
+  }
 
-      try {
-        const response = await axios.post("/api/custom-requests", formData, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-        alert(response.data.message); // Display success message
-        this.resetForm(); // Reset form on success
-      } catch (error) {
-        if (error.response && error.response.data.errors) {
-          this.errors = Object.values(error.response.data.errors).flat();
-        } else {
-          console.error("Unexpected error:", error);
-          alert("An unexpected error occurred.");
-        }
-      }
-    },
+  try {
+    const response = await axios.post("/api/custom-requests", formData, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+      },
+    });
+    alert(response.data.message); // Display success message
+    this.resetForm(); // Reset form on success
+  } catch (error) {
+    if (error.response && error.response.data.errors) {
+      this.errors = Object.values(error.response.data.errors).flat();
+    } else {
+      console.error("Unexpected error:", error);
+      alert("An unexpected error occurred.");
+    }
+  }
+}
+,
     resetForm() {
       this.form = {
         description: "",

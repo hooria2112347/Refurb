@@ -7,10 +7,14 @@
         <li><router-link to="/billing-address" active-class="active">Billing Address</router-link></li>
         <li><router-link to="/shipping-address" active-class="active">Shipping Address</router-link></li>
         <li><router-link to="/my-orders" active-class="active">My Orders</router-link></li>
+        
+        <!-- Show My Custom Requests for scrap sellers or general users -->
+        <li v-if="!isArtist">
+          <router-link to="/view-custom-requests" active-class="active">My Custom Requests</router-link>
+        </li>
+
         <!-- Show the View Accepted Requests link if the user is an artist -->
         <li><router-link v-if="isArtist" to="/view-accepted-requests" active-class="active">View Accepted Requests</router-link></li>
-
-        
       </ul>
     </div>
     <div class="main-content">
@@ -80,6 +84,7 @@ export default {
   },
 };
 </script>
+
 
   
   <style scoped>

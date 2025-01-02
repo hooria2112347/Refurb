@@ -49,8 +49,10 @@
         error: null,
       };
     },
-    methods: {
-      async fetchAcceptedRequests() {
+
+       
+  methods: {
+    async getAcceptedRequests() {
         try {
           const token = localStorage.getItem('access_token');
           if (!token) {
@@ -79,10 +81,11 @@
       },
     },
     mounted() {
-      this.fetchAcceptedRequests();
+      this.getAcceptedRequests();
     },
   };
-  </script>
+</script>
+
   
   <style scoped>
   /* General styles */

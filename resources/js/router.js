@@ -22,7 +22,7 @@ import ResetPassword from '@/components/ResetPassword.vue';
 import ViewCustomRequests from './components/ViewCustomRequests.vue';
 import ArtistViewCustomRequests from './components/ArtistViewCustomRequests.vue';
 import ViewAcceptedRequests from './components/ViewAcceptedRequests.vue';
-// Define routes for each component
+import RequestDetailPage from './components/RequestDetailPage.vue';  
 const routes = [
   { path: '/', component: Home },
   { path: '/item/:itemId', component: ItemDetail, props: true },
@@ -74,6 +74,13 @@ const routes = [
     meta: { requiresAuth: true }, // Only authenticated users can access this page
   }
 ,  
+{
+  path: '/custom-requests/:id', // Dynamic route to view a single request's details
+  name: 'RequestDetailPage',
+  component: RequestDetailPage,
+  props: true,
+},
+
   { path: '/:pathMatch(.*)*', redirect: '/' } // Redirect unknown routes to Home
 ];
 
