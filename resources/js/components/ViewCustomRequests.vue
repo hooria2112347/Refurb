@@ -160,8 +160,8 @@ async declineRequest(id) {
 </script>
 <style scoped>
 .custom-requests-page { font-family: Arial, sans-serif;
-  max-width: 800px; /* Reduce the max width for a smaller layout */
-  margin: 10px auto;
+  /* max-width: 800px; Reduce the max width for a smaller layout */
+  margin: 40px;
   padding: 5px;
   background-color: #ffffff;
 }
@@ -170,7 +170,7 @@ async declineRequest(id) {
   text-align: center;
   color: #5d5b5b;
   margin-bottom: 30px;
-  font-size: 2rem; /* Smaller font size */
+  font-size: 1.5rem; /* Smaller font size */
   font-weight: bold; 
 }
 
@@ -197,14 +197,14 @@ async declineRequest(id) {
 
 /* Request Card */
 .request-card {
-  border: 1px solid #ddd;
+  /* border: 1px solid #ddd; */
   border-radius: 15px;
   padding: 15px;
-  background-color: #fefefe;
+  
   width: 100%;
   cursor: pointer;
   transition: transform 0.3s, box-shadow 0.3s;
-  font-size: 0.9rem; /* Smaller font size */
+  font-size: 0.5rem; font-family: Arial, sans-serif;
 }
 
 .request-card:hover {
@@ -214,7 +214,7 @@ async declineRequest(id) {
 
 /* When the request status is Accepted */
 .accepted-card {
-  background-color: #e1ffe0; /* Pastel green background */
+  background-color: #f9fff8; /* Pastel green background */
 }
 
 /* Request Header */

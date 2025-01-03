@@ -57,7 +57,7 @@
 
               <!-- Display artist information if the logged-in user is the request creator -->
               <div v-if="request.user.id === currentUser.id && request.artist" class="info-item">
-                <p><strong>Accepted by:</strong>
+                <p>Accepted by 
                   <em>
                     <router-link :to="'/user-profile/' + request.artist.id">{{ request.artist.name }}</router-link>
                   </em>

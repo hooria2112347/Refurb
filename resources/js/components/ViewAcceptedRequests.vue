@@ -1,7 +1,7 @@
 <template>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
   <div class="custom-requests-page">
-    <h1>Your Accepted Custom Requests</h1>
+    <h1>Accepted Requests</h1>
 
     <!-- Loading Indicator -->
     <div v-if="loading" class="loading">Loading...</div>
@@ -132,8 +132,8 @@ export default {
 
 <style scoped>
 .custom-requests-page { font-family: Arial, sans-serif;
-  max-width: 800px;
-  margin: 10px auto;
+  /* max-width: 800px; */
+  margin: 40px ;
   padding: 5px;
   background-color: #ffffff;
 }
@@ -142,7 +142,7 @@ export default {
   text-align: center;
   color: #5d5b5b;
   margin-bottom: 30px;
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: bold;
 }
 
@@ -163,16 +163,20 @@ export default {
 
 /* Request Card */ 
 .request-card {
-  border: 1px solid #ddd;
+  /* border: 1px solid #ddd; */
   border-radius: 15px;
   padding: 15px;
-  background-color: #f3fff0;
+  background-color: #f9fff8;
   width: 100%;
   cursor: pointer;
   transition: transform 0.3s, box-shadow 0.3s;
   font-size: 0.5rem; font-family: Arial, sans-serif;
 }
 
+.request-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
 /* .request-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
