@@ -14,7 +14,18 @@ class AuthController extends Controller
 {
     /**
      * Handle user registration and return a token.
-     */
+     */public function showProfile($id)
+{
+    try {
+        // Retrieve the user by ID
+        $user = User::findOrFail($id);
+
+        return response()->json($user, 200);  // Return the user details as JSON
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'User not found'], 404);
+    }
+}
+
     public function register(Request $request)
     {
         // Validate incoming request

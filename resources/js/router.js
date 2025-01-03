@@ -2,6 +2,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 // Importing all components
+import UserProfile from './components/UserProfile.vue'; // Import the user profile component
 import Home from './components/Home.vue';
 import ItemDetail from './components/ItemDetail.vue';
 import ArtistDetail from './components/ArtistDetail.vue';
@@ -23,7 +24,11 @@ import ViewCustomRequests from './components/ViewCustomRequests.vue';
 import ArtistViewCustomRequests from './components/ArtistViewCustomRequests.vue';
 import ViewAcceptedRequests from './components/ViewAcceptedRequests.vue';
 import RequestDetailPage from './components/RequestDetailPage.vue';  
-const routes = [
+const routes = [  {
+  path: '/user-profile/:id',
+  name: 'UserProfile',
+  component: UserProfile,
+},
   { path: '/', component: Home },
   { path: '/item/:itemId', component: ItemDetail, props: true },
   { path: '/artist/:artistId', component: ArtistDetail, props: true },

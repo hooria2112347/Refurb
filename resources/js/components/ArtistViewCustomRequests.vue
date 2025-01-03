@@ -17,7 +17,7 @@
           <h3>{{ request.description }}</h3>
         </div>
         <div class="request-info">
-          <p><strong>Budget:</strong> {{ request.budget ? `$${request.budget}` : 'N/A' }}</p>
+          <p><strong>Budget:</strong> {{ request.budget ? `${request.budget}  PKR` : 'N/A' }}</p>
           <p><strong>Deadline:</strong> {{ formatDate(request.deadline) }}</p>
         </div>
         <div class="request-actions">
@@ -160,9 +160,9 @@ export default {
 </script>
 
 <style scoped>
-.artist-view-custom-requests {
-  max-width: 1200px;
-  margin: 40px auto;
+.artist-view-custom-requests { font-family: Arial, sans-serif;
+  /* max-width: 1200px; */
+  margin: 10px auto;
   padding: 20px;
 }
 
@@ -210,7 +210,7 @@ export default {
 
 .request-info p {
   margin: 5px 0;
-  color: #7f8c8d;
+  color:  #CA7373;
 }
 
 .request-actions {
@@ -231,7 +231,7 @@ export default {
 }
 
 .accept-btn {
-  background-color: #2ecc71;
+  background-color: #2aff83;
 }
 
 .accept-btn:hover {
@@ -239,7 +239,7 @@ export default {
 }
 
 .decline-btn {
-  background-color: #e74c3c;
+  background-color: #ff6e5e;
 }
 
 .decline-btn:hover {

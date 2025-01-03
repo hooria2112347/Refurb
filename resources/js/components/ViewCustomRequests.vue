@@ -159,9 +159,9 @@ async declineRequest(id) {
 };
 </script>
 <style scoped>
-.custom-requests-page {
+.custom-requests-page { font-family: Arial, sans-serif;
   max-width: 800px; /* Reduce the max width for a smaller layout */
-  margin: 40px auto;
+  margin: 10px auto;
   padding: 5px;
   background-color: #ffffff;
 }
@@ -171,7 +171,7 @@ async declineRequest(id) {
   color: #5d5b5b;
   margin-bottom: 30px;
   font-size: 2rem; /* Smaller font size */
-  font-weight: bold;
+  font-weight: bold; 
 }
 
 /* Loading Indicator */
@@ -226,7 +226,7 @@ async declineRequest(id) {
 
 .request-description {
   font-size: 1.3rem; /* Slightly smaller font size */
-  font-weight: bold;
+  /* font-weight: bold; */
   color: #6e7277;
   margin: 0;
 }

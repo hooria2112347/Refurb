@@ -11,21 +11,37 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 class CustomRequestController extends Controller {
-    public function accept($id)
-{
-    try {
-        $customRequest = CustomRequest::findOrFail($id);
-        $customRequest->status = 'Accepted';
-        $customRequest->save();
-
-        return response()->json([
-            'message' => 'Request accepted successfully.',
-        ]);
-    } catch (\Exception $e) {
-        Log::error('Error accepting request: ' . $e->getMessage());
-        return response()->json(['error' => 'Failed to accept request.'], 500);
+    public function accept(Request $request, $id): JsonResponse
+    {
+        try {
+            $user = $request->user(); // Get the logged-in user
+    
+            // Ensure the user is an artist
+            if ($user->role !== 'artist') {
+                return response()->json(['error' => 'Unauthorized.'], 403);
+            }
+    
+            // Find the custom request by ID
+            $customRequest = CustomRequest::findOrFail($id);
+    
+            // Check if the request is still pending
+            if ($customRequest->status !== 'Pending') {
+                return response()->json(['error' => 'Request is not pending.'], 400);
+            }
+    
+            // Update the status to 'Accepted' and set the artist's ID
+            $customRequest->status = 'Accepted';  // Change the status to accepted
+            $customRequest->artist_id = $user->id;  // Assign the artist's ID to the 'artist_id' column
+            $customRequest->save();  // Save the changes to the database
+    
+            return response()->json(['message' => 'Custom request accepted successfully.'], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $mnfe) {
+            return response()->json(['error' => 'Custom request not found.'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Failed to accept custom request.'], 500);
+        }
     }
-}
+    
 
 public function decline($id)
 {
@@ -46,20 +62,28 @@ public function decline($id)
     
     // Show a single custom request and its associated details like comments, artist, images
     public function show($id): JsonResponse
-    {
-        try {
-            $request = CustomRequest::with(['images', 'comments.artist', 'artist'])->find($id);
+{
+    try {
+        // Fetch the custom request along with associated images, comments, artist, and user data
+        $request = CustomRequest::with(['images', 'comments.artist', 'artist', 'user'])->find($id);
 
-            if (!$request) {
-                return response()->json(['message' => 'Request not found'], 404);
-            }
-
-            return response()->json($request);
-        } catch (\Exception $e) {
-            Log::error('Failed to fetch request details: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to fetch request details.'], 500);
+        // Check if the request exists
+        if (!$request) {
+            return response()->json(['message' => 'Request not found'], 404);
         }
+
+        // Ensure user data is included in the response
+        $request->load('user'); // Optional, but ensures user is always included.
+
+        // Return the request along with user details
+        return response()->json($request);
+    } catch (\Exception $e) {
+        Log::error('Failed to fetch request details: ' . $e->getMessage());
+        return response()->json(['error' => 'Failed to fetch request details.'], 500);
     }
+}
+
+
 
     // Add a comment on a custom request (allow comments on all requests regardless of status)
     public function addComment(Request $request, $id): JsonResponse

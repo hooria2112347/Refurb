@@ -24,7 +24,7 @@ Route::post('/password/reset', [PasswordResetController::class, 'resetPassword']
 
 // Protected routes (require a valid Bearer token)
 Route::middleware(['auth:sanctum'])->group(function () {
-
+    Route::get('/users/{id}', [AuthController::class, 'showProfile']);
        // Change password
        Route::post('/change-password', [AuthController::class, 'changePassword']);
 

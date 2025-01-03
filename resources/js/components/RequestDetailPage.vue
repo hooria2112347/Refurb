@@ -1,85 +1,99 @@
 <template>
-    <div class="request-detail-page" v-if="request">
-      <div class="container mt-4">
-        <div class="row">
-          <!-- Left Side: Image Section (Carousel for multiple images, smaller image size) -->
-          <div class="col-md-6 mb-4">
-            <div id="carouselExampleSlidesOnly" class="carousel slide" data-bs-ride="carousel">
-              <div class="carousel-inner">
-                <!-- Loop through images and display them in the carousel -->
-                <div v-for="(image, index) in request.images" :key="image.id" class="carousel-item" :class="{'active': index === 0}">
-                  <img :src="image.url" class="d-block w-100 request-image img-fluid rounded" alt="Request Image" />
-                </div>
+  <div class="request-detail-page" v-if="request">
+    <div class="container mt-4">
+      <div class="row">
+        <!-- Left Side: Image Section (Carousel for multiple images, smaller image size) -->
+        <div class="col-md-6 mb-4">
+          <div id="carouselExampleSlidesOnly" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+              <!-- Loop through images and display them in the carousel -->
+              <div v-for="(image, index) in request.images" :key="image.id" class="carousel-item" :class="{'active': index === 0}">
+                <img :src="image.url" class="d-block w-100 request-image img-fluid rounded" alt="Request Image" />
               </div>
-              <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleSlidesOnly" data-bs-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Previous</span>
-              </button>
-              <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleSlidesOnly" data-bs-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Next</span>
-              </button>
             </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleSlidesOnly" data-bs-slide="prev">
+              <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+              <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleSlidesOnly" data-bs-slide="next">
+              <span class="carousel-control-next-icon" aria-hidden="true"></span>
+              <span class="visually-hidden">Next</span>
+            </button>
           </div>
-  
-          <!-- Right Side: Description, Request Details, and Comments Section -->
-          <div class="col-md-6">
-            <div class="request-info-section">
-              <h1>{{ request.description }}</h1>
-  
-              <div class="request-info">
-                <div class="info-item">
-                  <p><strong>Materials:</strong> {{ request.materials || 'N/A' }}</p>
-                </div>
-                <div class="info-item">
-                  <p><strong>Dimensions:</strong> {{ request.dimensions || 'N/A' }}</p>
-                </div>
-                <div class="info-item">
-                  <p><strong>Budget:</strong> {{ request.budget ? `$${request.budget}` : 'N/A' }}</p>
-                </div>
-                <div class="info-item">
-                  <p><strong>Deadline:</strong> {{ request.deadline || 'N/A' }}</p>
-                </div>
-                <div class="info-item">
-                  <p><strong>Status:</strong> {{ request.status || 'Pending' }}</p>
-                </div>
-                <div class="info-item">
-                  <p><strong>Submitted On:</strong> {{ formatDate(request.created_at) }}</p>
-                </div>
+        </div>
+
+        <!-- Right Side: Description, Request Details, and Comments Section -->
+        <div class="col-md-6">
+          <div class="request-info-section">
+            <h1>{{ request.description }}</h1>
+
+            <div class="request-info">
+              <div class="info-item">
+                <p><strong>Materials:</strong> {{ request.materials || 'N/A' }}</p>
               </div>
-  
-              <!-- Comments Section -->
-              <div class="comments-section">
-                <h4>Comments:</h4>
-                <div class="comments-list">
-                  <div v-for="comment in request.comments" :key="comment.id" class="comment-item">
-                    <p><strong>{{ comment.artist.name }}:</strong> {{ comment.comment }}</p>
-                    <p class="comment-date">{{ formatDate(comment.created_at) }}</p>
-  
-                    <!-- Delete button (only visible if the comment was made by the logged-in user) -->
-                    <div v-if="comment.artist.id === currentUser.id" class="delete-btn-container">
-                      <button @click="deleteComment(comment.id)" class="delete-comment-btn btn btn-sm btn-danger">Delete</button>
-                    </div>
+              <div class="info-item">
+                <p><strong>Dimensions:</strong> {{ request.dimensions || 'N/A' }}</p>
+              </div>
+              <div class="info-item">
+                <p><strong>Budget:</strong> {{ request.budget ? `PKR ${request.budget}` : 'N/A' }}</p>
+              </div>
+              <div class="info-item">
+                <p><strong>Deadline:</strong> {{ request.deadline || 'N/A' }}</p>
+              </div>
+              <div class="info-item">
+                <p><strong>Status:</strong> {{ request.status || 'Pending' }}</p>
+              </div>
+              <div class="info-item">
+                <p><strong>Submitted On:</strong> {{ formatDate(request.created_at) }}</p>
+              </div>
+              <!-- User Name with hyperlink to profile -->
+              <div class="info-item">
+                <p class="description-by">
+                  By <em>
+                    <router-link :to="'/user-profile/' + request.user.id">{{ request.user.name }}</router-link>
+                  </em>
+                </p>
+              </div>
+
+              <!-- Display artist information if the logged-in user is the request creator -->
+              <div v-if="request.user.id === currentUser.id && request.artist" class="info-item">
+                <p><strong>Accepted by:</strong>
+                  <em>
+                    <router-link :to="'/user-profile/' + request.artist.id">{{ request.artist.name }}</router-link>
+                  </em>
+                </p>
+              </div>
+            </div>
+
+            <!-- Comments Section -->
+            <div class="comments-section">
+              <h4>Comments:</h4>
+              <div class="comments-list">
+                <div v-for="comment in request.comments" :key="comment.id" class="comment-item">
+                  <p><strong>{{ comment.artist.name }}:</strong> {{ comment.comment }}</p>
+                  <p class="comment-date">{{ formatDate(comment.created_at) }}</p>
+
+                  <!-- Delete button (only visible if the comment was made by the logged-in user) -->
+                  <div v-if="comment.artist.id === currentUser.id" class="delete-btn-container">
+                    <button @click="deleteComment(comment.id)" class="delete-comment-btn btn btn-sm btn-danger">Delete</button>
                   </div>
                 </div>
-  
-                <!-- Add Comment Form -->
-                <div v-if="request.status !== 'Accepted'" class="comment-form">
-                  <textarea v-model="newComment" placeholder="Add a comment..." class="comment-input form-control"></textarea>
-                  <button @click="addComment(request.id)" class="comment-btn btn">Add Comment</button>
-                </div>
+              </div>
+
+              <!-- Add Comment Form -->
+              <div v-if="true" class="comment-form">
+                <textarea v-model="newComment" placeholder="Add a comment..." class="comment-input form-control"></textarea>
+                <button @click="addComment(request.id)" class="comment-btn btn">Add Comment</button>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <div v-else>Loading request details...</div>
-  </template>
-  
-  
-  
-  
+  </div>
+  <div v-else>Loading request details...</div>
+</template>
+
 <script>
 import axios from "axios";
 
@@ -100,6 +114,7 @@ export default {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
         });
+        console.log(response.data); // Log the response to verify if artist info is present
         this.request = response.data; // Store the request details
       } catch (error) {
         console.error("Error fetching request details:", error);
@@ -144,24 +159,29 @@ export default {
     this.fetchRequestDetail(); // Fetch the request details when the component mounts
   },
 };
-</script><style scoped>
+</script>
+
+
+
+<style scoped>
 .request-detail-page {
-  max-width: 1200px;
+  /* max-width: 1200px; */
   margin: 40px auto;
-  padding: 20px;
+  padding: 10px;
   background-color: #fff;
-  border-radius: 15px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  /* border-radius: 15px; */
+  /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); */
+  font-family: Arial, sans-serif;
 }
 
 .request-info p {
   margin: 8px 0;
   font-size: 1rem;
-  color: #555;
+  color:  #484545;; font-family: Arial, sans-serif;
 }
 
 .request-info p strong {
-  color: #333;
+  color:  #CA7373;;
 }
 
 .carousel-inner .carousel-item img {
@@ -171,8 +191,8 @@ export default {
 }
 
 .request-info {
-  padding: 20px;
-  background-color: #f9f9f9;
+  padding: 10px;
+  background-color: #f9f9f9; font-family: Arial, sans-serif;
 }
 
 .info-item {
@@ -183,21 +203,23 @@ export default {
 .comment-form {
   display: flex;
   flex-direction: column;
+  padding: 10px;
 }
 
 .comment-input {
   width: 100%;
-  padding: 12px;
+  padding: 10px;
   font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 15px;
-  margin-bottom: 15px;
+  /* border: 1px solid #ccc; */
+  /* border-radius: 15px; */
+  margin-bottom: 15px; 
+ 
 }
 
 .comment-btn {
   padding: 10px 20px;
   background-color: #CA7373;
-  color: #fff;
+  color: #fff; font-family: Arial, sans-serif;
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -211,7 +233,7 @@ export default {
 
 .comments-section {
   display: flex;
-  flex-direction: column;
+  flex-direction: column; font-family: Arial, sans-serif;
   gap: 20px;
   overflow-y: auto;
 }
@@ -221,14 +243,14 @@ export default {
   flex-direction: column;
   gap: 20px;
   max-height: 300px;
-  overflow-y: auto;
+  overflow-y: auto; 
 }
 
 .comment-item {
-  background-color: #f9f9f9;
+  background-color: #fbfbfb;
   padding: 10px;
   border-radius: 5px;
-  margin-bottom: 10px;
+  margin-bottom: 10px; font-family: Arial, sans-serif;
 }
 
 .comment-date {
@@ -244,22 +266,31 @@ export default {
   position: absolute;
   bottom: 10px;
   right: 10px;
-  background-color: #e74c3c;
-  color: white;
+  background-color: #fffbfb;
+  color: #CA7373;
   padding: 5px 10px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 1rem;
 }
 
 .delete-comment-btn:hover {
-  background-color: #c0392b;
+  /* background-color: #c0392b; */
 }
 
-/* Ensure the image is not too large */
 .request-image {
   max-width: 100%;
   height: auto;
+}
+
+a {
+  color: #3498db;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+a:hover {
+  text-decoration: underline;
 }
 </style>
