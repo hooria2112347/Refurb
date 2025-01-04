@@ -17,7 +17,7 @@
 
           <!-- Artist-specific options -->
           <router-link v-if="isArtist" to="/portfolio">My Portfolio</router-link>
-          <router-link v-if="isArtist" to="/browse-scrap">Browse Scrap</router-link>
+          <router-link to="/scrap-items">Browse Scrap</router-link>
 
           <!-- New Artist-specific button for viewing all custom requests -->
           <router-link v-if="isArtist" to="/artist-view-custom-requests">

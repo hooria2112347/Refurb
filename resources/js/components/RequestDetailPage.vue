@@ -1,4 +1,5 @@
-<template>
+<template>  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+
   <div class="request-detail-page" v-if="request">
     <div class="container mt-4">
       <div class="row">
@@ -275,9 +276,6 @@ export default {
   font-size: 1rem;
 }
 
-.delete-comment-btn:hover {
-  /* background-color: #c0392b; */
-}
 
 .request-image {
   max-width: 100%;

@@ -22,6 +22,9 @@ Route::post('/password/forgot', [PasswordResetController::class, 'sendResetCode'
 Route::post('/password/verify-code', [PasswordResetController::class, 'verifyResetCode']);
 Route::post('/password/reset', [PasswordResetController::class, 'resetPassword']);
 
+// Fetch all products (for browsing)
+Route::get('/products/all', [ProductController::class, 'getAllProducts']);
+Route::get('/products/{id}', [ProductController::class, 'show']);
 // Protected routes (require a valid Bearer token)
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/users/{id}', [AuthController::class, 'showProfile']);

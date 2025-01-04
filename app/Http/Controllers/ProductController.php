@@ -7,72 +7,157 @@ use App\Models\ProductImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\JsonResponse;
 
 class ProductController extends Controller
 {public function store(Request $request)
     {
         try {
-            // Log all request headers for debugging
-            Log::info('Request Headers:', $request->headers->all());
-    
-            // Log the Authorization header
-            Log::info('Authorization Header:', ['Authorization' => $request->header('Authorization')]);
-    
-            // Log the authenticated user
-            Log::info('Authenticated User:', ['user' => $request->user()]);
-    
-            if (!$request->user()) {
-                throw new \Exception('User not authenticated');
-            }
-    
-            // Proceed with product creation
+            // Validate the request
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'description' => 'required|string',
                 'price' => 'required|numeric',
                 'category_id' => 'required|exists:categories,category_id',
-                'additional_info' => 'nullable|string',
                 'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:20480', // 20 MB
             ]);
     
+            // Save the product
             $product = new Product($validated);
             $product->user_id = $request->user()->id;
             $product->save();
     
+            // Handle image upload
+            if ($request->hasFile('images')) {
+                $images = $request->file('images');
+                foreach ($images as $image) {
+                    $path = $image->store('products', 'public'); // Save to public disk
+                    ProductImage::create([
+                        'product_id' => $product->product_id,
+                        'image_path' => $path,
+                    ]);
+                }
+            }
+    
             return response()->json(['message' => 'Product added successfully!', 'product' => $product], 201);
         } catch (\Exception $e) {
-            Log::error('Error adding product: ' . $e->getMessage(), [
-                'exception' => $e->getTraceAsString()
-            ]);
             return response()->json(['error' => 'Server error: ' . $e->getMessage()], 500);
         }
-    }
+    } // app/Http/Controllers/ProductController.php
+
+    // public function show($id)
+    // {
+    //     try {
+    //         // Find the product by its ID
+    //         $product = Product::with(['category', 'images'])->findOrFail($id);
+    
+    //         // Format the response
+    //         return response()->json([
+    //             'id' => $product->product_id,
+    //             'name' => $product->name,
+    //             'description' => $product->description,
+    //             'price' => $product->price,
+    //             'category' => $product->category ? $product->category->name : null,
+    //             'image' => $product->images->first()
+    //                 ? asset('storage/' . $product->images->first()->image_path)
+    //                 : null,
+    //         ], 200);
+    //     } catch (\Exception $e) {
+    //         return response()->json(['error' => 'Product not found.'], 404);
+    //     }
+    // }
+    
     public function index(Request $request)
     {
         try {
-            Log::info('Fetching products for user:', ['user_id' => $request->user()->id]);
-            $products = Product::where('user_id', $request->user()->id)->with('images')->get();
-
+            // Fetch only products for the logged-in user
+            $products = Product::where('user_id', $request->user()->id)
+                ->with(['category', 'images']) // Eager load the category and images relationships
+                ->get();
+    
+            // Format the products for the response
             $response = $products->map(function ($product) {
                 return [
-                    'id' => $product->product_id, // Use 'product_id' instead of 'id'
+                    'id' => $product->product_id,
                     'name' => $product->name,
                     'description' => $product->description,
                     'price' => $product->price,
+                    'category' => $product->category ? $product->category->name : null,
                     'image' => $product->images->first()
                         ? asset('storage/' . $product->images->first()->image_path)
                         : null,
                 ];
             });
-
-            Log::info('Fetched products successfully:', ['products' => $response]);
-
+    
             return response()->json($response, 200);
         } catch (\Exception $e) {
-            Log::error('Error fetching products:', ['error' => $e->getMessage()]);
             return response()->json(['message' => 'Error fetching products', 'error' => $e->getMessage()], 500);
         }
-    }
+    }public function getAllProducts(Request $request)
+    {
+        try {
+            // Fetch all products, eager load category and images
+            $products = Product::with(['category', 'images'])->get();
+    
+            // Map the products into the desired response format
+            $response = $products->map(function ($product) {
+                return [
+                    'id' => $product->product_id,
+                    'name' => $product->name,
+                    'description' => $product->description,
+                    'price' => $product->price,
+                    'category' => $product->category ? $product->category->name : null,
+                    'images' => $product->images->map(function ($image) {
+                        // Assuming your images are stored in the public storage folder
+                        return asset('storage/' . $image->image_path);
+                    }),
+                ];
+            });
+    
+            return response()->json($response, 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error fetching products', 'error' => $e->getMessage()], 500);
+        }}
+
+
+        
+        public function show($id): JsonResponse
+        {
+            try {
+                // Fetch the product with images and other related data
+                $product = Product::with(['category', 'images', 'user'])->find($id);
+        
+                if (!$product) {
+                    return response()->json(['message' => 'Product not found'], 404);
+                }
+        
+                // Format the product data as needed
+                $productData = [
+                    'id' => $product->product_id,
+                    'name' => $product->name,
+                    'description' => $product->description,
+                    'price' => $product->price,
+                    'category' => $product->category ? $product->category->name : null,
+                    'images' => $product->images->map(function ($image) {
+                        return asset('storage/' . $image->image_path); // Full image URL
+                    }),
+                    'user' => $product->user->name, // Assuming user has a 'name' field
+                ];
+        
+                // Log product data for debugging
+                \Log::info('Product details fetched:', ['product' => $productData]);
+        
+                // Return the product data as JSON response
+                return response()->json($productData, 200);
+        
+            } catch (\Exception $e) {
+                // Log the exception for debugging
+                \Log::error('Error fetching product details: ' . $e->getMessage());
+                return response()->json(['error' => 'Failed to fetch product details.'], 500);
+            }
+        }
+        
+    
 
     public function update(Request $request, $id)
     {

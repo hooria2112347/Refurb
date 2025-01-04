@@ -76,21 +76,27 @@ export default {
     };
   },
   methods: {
-    async fetchProducts() {
-      try {
-        const response = await fetch('http://localhost:8000/api/products', {
-          method: 'GET',
-        });
+    
+  async fetchProducts() {
+    try {
+      const token = localStorage.getItem('access_token'); // Get the token from local storage
 
-        if (response.ok) {
-          this.products = await response.json();
-        } else {
-          console.error('Failed to fetch products');
-        }
-      } catch (error) {
-        console.error('Error fetching products:', error);
+      const response = await fetch('http://localhost:8000/api/products', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`, // Add the token to the Authorization header
+        },
+      });
+
+      if (response.ok) {
+        this.products = await response.json();
+      } else {
+        console.error('Failed to fetch products');
       }
-    },
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  },
     editProduct(product) {
       this.editingProduct = { ...product }; // Clone the product to avoid modifying the original
       this.isEditing = true;
@@ -148,8 +154,16 @@ export default {
     },
   },
   mounted() {
-    this.fetchProducts();
-  },
+  const token = localStorage.getItem('access_token');
+  
+  if (!token) {
+    // Redirect to login page if no token is found
+    this.$router.push('/login');
+  } else {
+    this.fetchProducts(); // Fetch the products after ensuring the user is logged in
+  }
+}
+,
 };
 </script>
 

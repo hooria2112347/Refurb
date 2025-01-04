@@ -4,7 +4,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 // Importing all components
 import UserProfile from './components/UserProfile.vue'; // Import the user profile component
 import Home from './components/Home.vue';
-import ItemDetail from './components/ItemDetail.vue';
+import ProductDetails from './components/ProductDetails.vue';
 import ArtistDetail from './components/ArtistDetail.vue';
 import Login from './components/Login.vue';
 import Signup from './components/Signup.vue';
@@ -24,13 +24,24 @@ import ViewCustomRequests from './components/ViewCustomRequests.vue';
 import ArtistViewCustomRequests from './components/ArtistViewCustomRequests.vue';
 import ViewAcceptedRequests from './components/ViewAcceptedRequests.vue';
 import RequestDetailPage from './components/RequestDetailPage.vue';  
+import BrowseScrap from './components/BrowseScrap.vue';
 const routes = [  {
   path: '/user-profile/:id',
   name: 'UserProfile',
   component: UserProfile,
+}, 
+   {
+      path: '/products/:id',  // Path for product details with dynamic ID
+      name: 'product-details',
+      component: ProductDetails,
+      props: true, // Pass the `id` as a prop to the ProductDetails component
+    }, {
+  path: '/scrap-items',   // Route for browsing all scrap products
+  name: 'browse-scrap',
+  component: BrowseScrap,
 },
   { path: '/', component: Home },
-  { path: '/item/:itemId', component: ItemDetail, props: true },
+  // { path: '/item/:itemId', component: ItemDetail, props: true },
   { path: '/artist/:artistId', component: ArtistDetail, props: true },
   { path: '/login', component: Login },
   { path: '/add-product', component: AddProduct },
