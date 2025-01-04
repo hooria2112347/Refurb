@@ -18,7 +18,9 @@
         <!-- Product Name and Price below the image -->
         <div class="product-info">
           <h2 class="product-name">{{ product.name }}</h2>
-          <span class="price">{{ product.price }} USD</span>
+          <span class="price">{{ product.price }} PKR</span>
+          <!-- Display user name (scrap seller) -->
+          <p class="product-user">Product by: {{ product.user }}</p> <!-- Added this line -->
         </div>
       </div>
     </div>
@@ -64,7 +66,6 @@ export default {
   },
 };
 </script>
-
 
 <style scoped>
 .browse-scrap {
@@ -114,6 +115,12 @@ export default {
 .price {
   font-size: 1rem;
   color: #444;
+}
+
+.product-user {
+  font-size: 0.9rem;
+  color: #888;
+  margin-top: 0.5rem;
 }
 
 .no-products {

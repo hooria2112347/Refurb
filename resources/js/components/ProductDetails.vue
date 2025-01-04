@@ -2,24 +2,16 @@
   <div v-if="product" class="product-detail-page">
     <div class="container mt-4">
       <div class="row">
-        <!-- Left Side: Image Section -->
+        <!-- Left Side: Image Section (Image display) -->
         <div class="col-md-6 mb-4">
-          <!-- Display the first image -->
-          <div v-if="product.images && product.images.length">
-            <img 
-              :src="product.images[0]" 
-              class="d-block w-100 product-image img-fluid rounded" 
-              alt="Product Image" 
-            />
-          </div>
-          <p v-else>No image available.</p>
+          <img :src="product.images.length ? product.images[0] : 'default-image.jpg'" class="d-block w-100 product-image img-fluid rounded" alt="Product Image" />
         </div>
 
-        <!-- Right Side: Product Info Section -->
+        <!-- Right Side: Product Details Section -->
         <div class="col-md-6">
           <div class="product-info-section">
             <h1>{{ product.name }}</h1>
-            <span class="price">${{ product.price }}</span>
+            <span class="price">PKR {{ product.price }}</span>
 
             <div class="product-details">
               <div class="details-item">
@@ -33,39 +25,61 @@
               </div>
             </div>
 
+            <!-- Display user who uploaded the product -->
+            <div class="info-item">
+              <p class="description-by">
+                By <em>
+                  <router-link :to="'/user-profile/' + product.user.id">{{ product.user.name }}</router-link>
+                </em>
+              </p>
+            </div>
+
+            <!-- Display artist information if the logged-in user is the creator -->
+            <div v-if="product.artist" class="info-item">
+              <p>Accepted by
+                <em>
+                  <router-link :to="'/user-profile/' + product.artist.id">{{ product.artist.name }}</router-link>
+                </em>
+              </p>
+            </div>
+
             <!-- Add to Cart Button -->
             <button @click="addToCart" class="add-to-cart-btn">Add to Cart</button>
-
-            <!-- Comments Section -->
-            <div class="comments-section">
-              <h4>Customer Reviews & Feedback</h4>
-              <div v-if="product.reviews && product.reviews.length">
-                <div v-for="review in product.reviews" :key="review.id" class="review">
-                  <p><strong>{{ review.user.name }}:</strong> {{ review.comment }}</p>
-                  <p class="review-rating">Rating: {{ review.rating }} / 5</p>
-                </div>
-              </div>
-              <div v-else>
-                <p>No reviews yet. Be the first to review!</p>
-              </div>
-
-              <!-- Add a Review Form -->
-              <div class="comment-form">
-                <textarea v-model="newReview.comment" placeholder="Leave your feedback or question here..." rows="4" class="form-control"></textarea>
-                <div>
-                  <label>Rating: </label>
-                  <select v-model="newReview.rating" class="form-control">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                  </select>
-                </div>
-                <button @click="submitReview" class="submit-review-btn">Submit Review</button>
-              </div>
-            </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Comment Section -->
+      <div class="comments-section mt-4">
+        <h4>Customer Reviews & Feedback</h4>
+
+        <!-- Display existing comments -->
+        <div v-if="product.comments && product.comments.length">
+          <div v-for="comment in product.comments" :key="comment.id" class="review">
+            <p><strong>{{ comment.user.name }}:</strong> {{ comment.comment }}</p>
+            <p class="review-rating">Rating: {{ comment.rating }} / 5</p>
+          </div>
+        </div>
+
+        <!-- Display no reviews message if no comments -->
+        <div v-else>
+          <p>No reviews yet. Be the first to review!</p>
+        </div>
+
+        <!-- Add Review Form -->
+        <div class="comment-form">
+          <textarea v-model="newReview.comment" placeholder="Leave your feedback or question here..." rows="4" class="form-control"></textarea>
+          <div>
+            <label>Rating: </label>
+            <select v-model="newReview.rating" class="form-control">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </div>
+          <button @click="submitReview" class="submit-review-btn">Submit Review</button>
         </div>
       </div>
     </div>
@@ -76,9 +90,8 @@
   </div>
 </template>
 
-
 <script>
-import axios from 'axios';
+import axios from "axios";
 
 export default {
   data() {
@@ -87,18 +100,15 @@ export default {
       newReview: {
         comment: '',
         rating: 5,
-      },
+      }, // Store the new review
     };
   },
   methods: {
+    // Fetch product details based on ID
     async fetchProductDetails() {
       const productId = this.$route.params.id; // Get the product ID from the route params
       try {
-        const response = await axios.get(`http://127.0.0.1:8000/api/products/${productId}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          },
-        });
+        const response = await axios.get(`http://127.0.0.1:8000/api/products/${productId}`);
         this.product = response.data; // Store product details
       } catch (error) {
         console.error("Error fetching product details:", error);
@@ -106,28 +116,30 @@ export default {
       }
     },
 
-    async addToCart() {
-      const cart = JSON.parse(localStorage.getItem('cart')) || [];
-      const cartItem = {
-        id: this.product.id,
-        name: this.product.name,
-        price: this.product.price,
-        quantity: 1,
-      };
+    // Add to cart logic
+    addToCart() {
+      // Your add to cart logic here
+    },
 
-      const existingProduct = cart.find(item => item.id === cartItem.id);
-      if (existingProduct) {
-        existingProduct.quantity += 1;
-      } else {
-        cart.push(cartItem);
+    // Submit new review
+    async submitReview() {
+      if (!this.newReview.comment.trim()) return; // Do not submit empty comment
+      try {
+        await axios.post(`/api/products/${this.product.id}/reviews`, {
+          comment: this.newReview.comment,
+          rating: this.newReview.rating,
+        });
+        this.newReview.comment = ''; // Clear the form after submission
+        this.newReview.rating = 5; // Reset rating to 5
+        this.fetchProductDetails(); // Reload product details to show new review
+      } catch (error) {
+        console.error("Error submitting review:", error);
+        alert("Failed to submit review.");
       }
-
-      localStorage.setItem('cart', JSON.stringify(cart));
-      alert('Product added to cart');
     },
   },
   mounted() {
-    this.fetchProductDetails();
+    this.fetchProductDetails(); // Fetch the product details when the component mounts
   },
 };
 </script>
@@ -151,15 +163,15 @@ export default {
 .price {
   font-size: 1.5rem;
   color: #CA7373;
-  margin-top: 10px;
 }
 
-.product-details {
-  margin-top: 20px;
+.info-item {
+  font-size: 1rem;
+  color: #555;
 }
 
-.details-item {
-  margin-bottom: 10px;
+.description-by {
+  color: #333;
 }
 
 .add-to-cart-btn {
@@ -170,6 +182,54 @@ export default {
   border: none;
   border-radius: 5px;
   cursor: pointer;
+}
+
+.comments-section {
   margin-top: 20px;
+}
+
+.review {
+  background-color: #f9f9f9;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 5px;
+}
+
+.review-rating {
+  color: #CA7373;
+}
+
+.comment-form {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
+.comment-form textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 1rem;
+  margin-bottom: 10px;
+}
+
+.comment-form select {
+  width: 100%;
+  padding: 10px;
+  font-size: 1rem;
+  margin-bottom: 10px;
+}
+
+.submit-review-btn {
+  background-color: #CA7373;
+  color: white;
+  padding: 10px;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.submit-review-btn:hover {
+  background-color: #D7B26D;
 }
 </style>

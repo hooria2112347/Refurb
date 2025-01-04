@@ -96,8 +96,8 @@ class ProductController extends Controller
     }public function getAllProducts(Request $request)
     {
         try {
-            // Fetch all products, eager load category and images
-            $products = Product::with(['category', 'images'])->get();
+            // Fetch all products with their associated category, images, and user (scrap seller)
+            $products = Product::with(['category', 'images', 'user'])->get();
     
             // Map the products into the desired response format
             $response = $products->map(function ($product) {
@@ -108,54 +108,56 @@ class ProductController extends Controller
                     'price' => $product->price,
                     'category' => $product->category ? $product->category->name : null,
                     'images' => $product->images->map(function ($image) {
-                        // Assuming your images are stored in the public storage folder
-                        return asset('storage/' . $image->image_path);
+                        return asset('storage/' . $image->image_path); // Full image URL
                     }),
+                    'user' => $product->user->name, // Get the name of the user who uploaded the product
                 ];
             });
     
             return response()->json($response, 200);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Error fetching products', 'error' => $e->getMessage()], 500);
-        }}
-
-
-        
-        public function show($id): JsonResponse
-        {
-            try {
-                // Fetch the product with images and other related data
-                $product = Product::with(['category', 'images', 'user'])->find($id);
-        
-                if (!$product) {
-                    return response()->json(['message' => 'Product not found'], 404);
-                }
-        
-                // Format the product data as needed
-                $productData = [
-                    'id' => $product->product_id,
-                    'name' => $product->name,
-                    'description' => $product->description,
-                    'price' => $product->price,
-                    'category' => $product->category ? $product->category->name : null,
-                    'images' => $product->images->map(function ($image) {
-                        return asset('storage/' . $image->image_path); // Full image URL
-                    }),
-                    'user' => $product->user->name, // Assuming user has a 'name' field
-                ];
-        
-                // Log product data for debugging
-                \Log::info('Product details fetched:', ['product' => $productData]);
-        
-                // Return the product data as JSON response
-                return response()->json($productData, 200);
-        
-            } catch (\Exception $e) {
-                // Log the exception for debugging
-                \Log::error('Error fetching product details: ' . $e->getMessage());
-                return response()->json(['error' => 'Failed to fetch product details.'], 500);
-            }
         }
+    }
+    
+
+    public function show($id): JsonResponse
+    {
+        try {
+            // Fetch the product with associated user, category, images, and artist (if applicable)
+            $product = Product::with(['category', 'images', 'user'])->find($id);
+            
+            if (!$product) {
+                return response()->json(['message' => 'Product not found'], 404);
+            }
+            
+            // Prepare product data to send back to the frontend
+            $productData = [
+                'id' => $product->product_id,
+                'name' => $product->name,
+                'description' => $product->description,
+                'price' => $product->price,
+                'category' => $product->category ? $product->category->name : null,
+                'images' => $product->images->map(function ($image) {
+                    return asset('storage/' . $image->image_path); // Full image URL
+                }),
+                'user' => [
+                    'id' => $product->user->id,  // User ID
+                    'name' => $product->user->name,  // User name (scrap seller)
+                ]
+            ];
+    
+            // Log the product data for debugging purposes
+            \Log::info('Product details fetched:', ['product' => $productData]);
+    
+            return response()->json($productData, 200);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error fetching product details: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to fetch product details.'], 500);
+        }
+    }
+    
         
     
 
