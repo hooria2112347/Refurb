@@ -21,7 +21,7 @@ class CustomRequestComment extends Model
      */
     public function customRequest()
     {
-        return $this->belongsTo(CustomRequest::class);
+        return $this->belongsTo(CustomRequest::class, 'custom_request_id');
     }
 
     /**

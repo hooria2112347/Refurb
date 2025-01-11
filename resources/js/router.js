@@ -8,8 +8,6 @@ import ProductDetails from './components/ProductDetails.vue';
 import ArtistDetail from './components/ArtistDetail.vue';
 import Login from './components/Login.vue';
 import Signup from './components/Signup.vue';
-import Dashboard from './components/Dashboard.vue';
-import Collaboration from './components/Collaboration.vue';
 import CustomRequest from './components/CustomRequest.vue';
 import Portfolio from './components/Portfolio.vue';
 import AddProduct from './components/AddProduct.vue';
@@ -25,11 +23,26 @@ import ArtistViewCustomRequests from './components/ArtistViewCustomRequests.vue'
 import ViewAcceptedRequests from './components/ViewAcceptedRequests.vue';
 import RequestDetailPage from './components/RequestDetailPage.vue';  
 import BrowseScrap from './components/BrowseScrap.vue';
+import AdminDashboard from '@/components/AdminDashboard.vue';
+import ArtistDashboard from '@/components/ArtistDashboard.vue';
+import ScrapSellerDashboard from '@/components/ScrapSellerDashboard.vue';
+import MyInvitations from './components/MyInvitations.vue';
+import MyProjects from './components/MyProjects.vue';
+import ProjectCreate from './components/ProjectCreate.vue';
+import ProjectDetail from './components/ProjectDetail.vue';
+import ProjectList from './components/ProjectList.vue';
+import MySentInvitations from './components/MySentInvitations.vue';
+
 const routes = [  {
   path: '/user-profile/:id',
   name: 'UserProfile',
   component: UserProfile,
 }, 
+{
+  path: '/my-sent-invitations',
+  name: 'MySentInvitations',
+  component: MySentInvitations
+},
    {
       path: '/products/:id',  // Path for product details with dynamic ID
       name: 'product-details',
@@ -46,11 +59,40 @@ const routes = [  {
   { path: '/login', component: Login },
   { path: '/add-product', component: AddProduct },
   { path: '/signup', component: Signup },
-  { path: '/dashboard', component: Dashboard },
-  { path: '/collaborations', component: Collaboration },
+  { path: '/admin-dashboard', name: 'AdminDashboard', component: AdminDashboard },
+  { path: '/artist-dashboard', name: 'ArtistDashboard', component: ArtistDashboard },
+  { path: '/scrap-seller-dashboard', name: 'ScrapSellerDashboard', component: ScrapSellerDashboard },
   { path: '/custom-request', component: CustomRequest },
   { path: '/portfolio', component: Portfolio },
   { path: '/manage-products', component: ManageProducts, name: 'ManageProducts' },
+
+  {
+    path: '/my-invitations',
+    name: 'MyInvitations',
+    component: MyInvitations
+  },
+  {
+    path: '/my-projects',
+    name: 'MyProjects',
+    component: MyProjects
+  },
+  {
+    path: '/projects/create',
+    name: 'ProjectCreate',
+    component: ProjectCreate
+  },
+  {
+    // For viewing a specific project (details, collaboration, etc.)
+    path: '/projects/:id',
+    name: 'ProjectDetail',
+    component: ProjectDetail,
+    props: true  // allows route params -> props
+  },
+  {
+    path: '/projects',
+    name: 'ProjectList',
+    component: ProjectList
+  },
   {
     path: '/verify-code',
     name: 'VerifyCode',

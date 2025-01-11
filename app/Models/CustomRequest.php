@@ -45,7 +45,7 @@ class CustomRequest extends Model
      */
     public function comments()
     {
-        return $this->hasMany(CustomRequestComment::class);
+        return $this->hasMany(CustomRequestComment::class, 'custom_request_id');
     }
 
 public function artist()

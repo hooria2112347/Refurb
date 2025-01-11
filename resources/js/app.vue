@@ -8,27 +8,6 @@
         <nav class="main-nav">
           <router-link to="/">Home</router-link>
 
-          <!-- Admin-only feedback management -->
-          <router-link v-if="isAdmin" to="/admin-feedback">Feedback Management</router-link>
-
-          <!-- Scrap Seller-specific options -->
-          <router-link v-if="isScrapSeller" to="/add-product">Add Product</router-link>
-          <router-link v-if="isScrapSeller" to="/manage-products">Manage Products</router-link>
-
-          <!-- Artist-specific options -->
-          <router-link v-if="isArtist" to="/portfolio">My Portfolio</router-link>
-          <router-link to="/scrap-items">Browse Scrap</router-link>
-
-          <!-- New Artist-specific button for viewing all custom requests -->
-          <router-link v-if="isArtist" to="/artist-view-custom-requests">
-            View All Custom Requests
-          </router-link>
-
-          <!-- General user and Scrap Seller-specific options -->
-          <router-link v-if="isGeneralUser || isScrapSeller" to="/custom-request">
-            Custom Request
-          </router-link>
-
           <!-- Conditional display based on login status -->
           <div v-if="!isLoggedIn" class="dropdown">
             <button class="dropbtn">Guest ▼</button>
@@ -40,13 +19,14 @@
 
           <!-- User dropdown when logged in -->
           <div v-else class="dropdown">
-            <button class="dropbtn">{{ userName }} ▼</button>
-            <div class="dropdown-content">
-              <router-link to="/account">Profile</router-link>
-              <router-link to="/saved-items">Saved Items</router-link>
-              <a href="#" @click.prevent="logout">Logout</a>
-            </div>
-          </div>
+  <button class="dropbtn">{{ userName }} ▼</button>
+  <div class="dropdown-content">
+    <!-- Use computed property for dashboard route -->
+    <router-link :to="dashboardRoute">Dashboard</router-link>
+    <a href="#" @click.prevent="logout">Logout</a>
+  </div>
+</div>
+
         </nav>
       </div>
     </header>
@@ -80,6 +60,21 @@ export default {
     },
     isGeneralUser() {
       return this.userRole === "general"; // Add support for general users
+    },
+
+    dashboardRoute() {
+      switch (this.userRole) {
+        case "artist":
+          return "/artist-dashboard";
+        case "admin":
+          return "/admin-dashboard"; // Ensure this route exists
+        case "scrapSeller":
+          return "/scrap-seller-dashboard"; // Ensure this route exists
+        case "general":
+          return "/general-dashboard"; // Ensure this route exists or change as needed
+        default:
+          return "/"; // Fallback route
+      }
     },
   },
   methods: {

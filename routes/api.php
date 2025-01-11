@@ -6,6 +6,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CustomRequestController;
+use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\ArtistProfileController;
 
 /*
 |----------------------------------------------------------------------
@@ -63,8 +66,45 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Shows the currently authenticated user
     Route::get('/user', function (Request $request) {
         return response()->json($request->user());
+    });        
+    Route::middleware('auth:sanctum')->group(function () {
+        // PROJECTS
+        Route::get('/projects', [ProjectController::class, 'index']);
+        Route::post('/projects', [ProjectController::class, 'store']);
+        Route::get('/projects/{id}', [ProjectController::class, 'show']);
+        Route::post('/projects/{id}/complete', [ProjectController::class, 'completeProject']);
+    
+        // INVITATIONS
+        Route::post('/projects/{projectId}/invite', [InvitationController::class, 'invite']);
+        Route::post('/invitations/{id}/respond', [InvitationController::class, 'respond']);
+    
+        // JOIN REQUESTS
+        Route::post('/projects/{projectId}/request-join', [InvitationController::class, 'requestJoin']);
+        Route::post('/invitations/{id}/owner-respond', [InvitationController::class, 'ownerRespondToRequest']);
     });
 
- 
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/my-owned-projects', [ArtistProfileController::class, 'getOwnedProjects']);
+        Route::get('/my-collaborations', [ArtistProfileController::class, 'getCollaborationProjects']);
+      });
+
+
+      Route::middleware(['auth:sanctum'])->group(function () {
+        // Retrieve pending invitations for the logged-in user
+        Route::get('/my-invitations', [InvitationController::class, 'indexPendingInvitations']);
+    
+        // Respond to an invitation
+        Route::post('/invitations/{id}/respond', [InvitationController::class, 'respond']);
+    });
+
+
+    Route::get('/projects/{id}/available-artists', [ProjectController::class, 'getAvailableArtists']);
+
+    Route::get('/my-sent-invitations', [InvitationController::class, 'indexSentInvitations']);
+
+    Route::delete('/invitations/{id}', [InvitationController::class, 'destroy']);
+
+
 });
 

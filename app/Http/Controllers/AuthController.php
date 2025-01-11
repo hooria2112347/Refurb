@@ -32,7 +32,7 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'phone' => 'required|string|max:20',
+            'phone' => 'required|digits_between:1,11', // Only digits, up to 11
             'password' => 'required|string|min:6|confirmed',  // password_confirmation is automatically checked
             'role' => 'required|in:artist,scrapSeller,general', // Added 'general' if needed
         ]);

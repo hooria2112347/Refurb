@@ -2,6 +2,7 @@
   <div class="login">
     <h2>Login</h2>
     <form @submit.prevent="handleLogin">
+      <!-- Email -->
       <div class="form-group">
         <input
           type="email"
@@ -12,17 +13,30 @@
         />
       </div>
 
-      <div class="form-group">
+      <!-- Password with toggle -->
+      <div class="form-group password-wrapper">
         <input
-          type="password"
+          :type="passwordFieldType"
           id="password"
           v-model="form.password"
           placeholder="Password"
           required
         />
+        <button
+          type="button"
+          class="toggle-button"
+          @click="togglePasswordVisibility"
+        >
+          <!-- Show appropriate icon or text depending on current type -->
+          <span v-if="passwordFieldType === 'password'">👁️</span>
+          <span v-else>🙈</span>
+        </button>
       </div>
 
+      <!-- Error message -->
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+
+      <!-- Submit -->
       <button type="submit">Login</button>
     </form>
 
@@ -43,46 +57,60 @@ export default {
         email: "",
         password: ""
       },
-      errorMessage: "" // For displaying error messages
+      errorMessage: "",
+      // Controls whether password is visible or hidden
+      passwordFieldType: "password"
     };
   },
   methods: {
+    // Toggles the input field type between "password" and "text"
+    togglePasswordVisibility() {
+      this.passwordFieldType =
+        this.passwordFieldType === "password" ? "text" : "password";
+    },
+
     async handleLogin() {
       console.log("handleLogin triggered");
       try {
-        const response = await axios.post('/api/login', this.form);
-
+        const response = await axios.post("/api/login", this.form);
         console.log("Server response:", response.data);
-        
-        // Check if the server returned an `access_token`
+
+        // Check for token
         if (response.data.access_token) {
-          // Save user data in localStorage
-          localStorage.setItem('userSession', JSON.stringify(response.data.user));
+          // Save user data
+          localStorage.setItem(
+            "userSession",
+            JSON.stringify(response.data.user)
+          );
+          localStorage.setItem("access_token", response.data.access_token);
 
-          // Store the token for subsequent requests
-          localStorage.setItem('access_token', response.data.access_token);
-
-          // Update global state (if you use $root or a global store)
+          // Update global state if needed
           this.$root.isLoggedIn = true;
           this.$root.userName = response.data.user.name;
           this.$root.userRole = response.data.user.role;
 
-          // Redirect to home (or any other route)
-          this.$router.push('/');
+          // Redirect to the correct dashboard
+          const role = response.data.user.role;
+          if (role === "admin") {
+            this.$router.push("/admin-dashboard");
+          } else if (role === "artist") {
+            this.$router.push("/artist-dashboard");
+          } else if (role === "scrapSeller") {
+            this.$router.push("/scrap-seller-dashboard");
+          } else {
+            // general or any other role
+            this.$router.push("/");
+          }
         } else {
-          // If no token is returned, show an error or handle accordingly
           this.errorMessage = "Login failed: No access token returned.";
           localStorage.removeItem("userSession");
         }
       } catch (error) {
-        // Handle error (e.g., network issues or server errors)
         if (error.response && error.response.data && error.response.data.message) {
           this.errorMessage = error.response.data.message;
         } else {
           this.errorMessage = "An error occurred. Please try again.";
         }
-
-        // Clear any existing user session data
         localStorage.removeItem("userSession");
       }
     }
@@ -120,7 +148,31 @@ export default {
   font-size: 1rem;
 }
 
-button {
+/* 
+  Wrap the password field and toggle button in a container
+  so they can be positioned cleanly.
+*/
+.password-wrapper {
+  position: relative;
+}
+
+/* 
+  Make sure the toggle button doesn't push content
+  by placing it absolutely.
+*/
+.toggle-button {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem; /* Adjust icon/text size as desired */
+  outline: none;
+}
+
+button[type="submit"] {
   width: 100%;
   padding: 0.75rem;
   background-color: #CA7373;
@@ -133,11 +185,11 @@ button {
   margin-top: 1rem;
 }
 
-button:hover {
+button[type="submit"]:hover {
   background-color: #D7B26D;
 }
 
-button:active {
+button[type="submit"]:active {
   background-color: #EEE2B5;
 }
 
