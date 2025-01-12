@@ -119,47 +119,53 @@ export default {
 </script>
 
 <style scoped>
+/* LOGIN COMPONENT STYLING */
 .login {
-  max-width: 400px;
+  max-width: 420px;
   margin: 2rem auto;
   padding: 2rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  font-family: Arial, sans-serif;
+  border: 1px solid #e4e4e4;
+  border-radius: 12px;
+  background-color: #ffffff;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  font-family: 'Poppins', sans-serif;
 }
 
+/* HEADER STYLING */
 .login h2 {
   text-align: center;
-  margin-bottom: 1.5rem;
-  color: #3C552D;
+  margin-bottom: 1.8rem;
+  font-size: 24px;
+  font-weight: bold;
+  color: #3a3d40;
 }
 
+/* FORM GROUP STYLING */
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .form-group input {
   width: 100%;
-  padding: 0.5rem;
+  padding: 12px 16px;
+  font-size: 16px;
   border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 1rem;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  transition: border-color 0.3s ease;
 }
 
-/* 
-  Wrap the password field and toggle button in a container
-  so they can be positioned cleanly.
-*/
+.form-group input:focus {
+  border-color: #5d9b8b;
+  outline: none;
+  background-color: #ffffff;
+}
+
+/* PASSWORD TOGGLE BUTTON */
 .password-wrapper {
   position: relative;
 }
 
-/* 
-  Make sure the toggle button doesn't push content
-  by placing it absolutely.
-*/
 .toggle-button {
   position: absolute;
   right: 1rem;
@@ -168,49 +174,66 @@ export default {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 1.2rem; /* Adjust icon/text size as desired */
-  outline: none;
+  font-size: 1.4rem;
+  color: #555;
 }
 
+/* ERROR MESSAGE */
+.error-message {
+  color: #b00000;
+  margin-top: 0.5rem;
+  text-align: center;
+  font-weight: bold;
+}
+
+/* SUBMIT BUTTON */
 button[type="submit"] {
   width: 100%;
-  padding: 0.75rem;
-  background-color: #CA7373;
-  color: #fff;
+  padding: 14px;
+  font-size: 18px;
+  font-weight: bold;
+  background-color: #5d9b8b;
+  color: #ffffff;
   border: none;
-  border-radius: 4px;
-  font-size: 1rem;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s;
-  margin-top: 1rem;
+  transition: background-color 0.3s ease;
+  margin-top: 1.5rem;
 }
 
 button[type="submit"]:hover {
-  background-color: #D7B26D;
+  background-color: #76b29d;
 }
 
 button[type="submit"]:active {
-  background-color: #EEE2B5;
+  background-color: #426b5c;
 }
 
+/* LINK STYLING */
 p {
   text-align: center;
   margin-top: 1rem;
 }
 
 a {
-  color: #007bff;
+  color: #5d9b8b;
   text-decoration: none;
-  transition: color 0.3s;
+  font-weight: bold;
 }
 
 a:hover {
-  color: #0056b3;
+  color: #76b29d;
 }
 
-.error-message {
-  color: red;
-  margin-top: 0.5rem;
-  text-align: center;
+/* RESPONSIVE DESIGN */
+@media screen and (max-width: 480px) {
+  .login {
+    padding: 1.5rem;
+  }
+
+  button {
+    padding: 12px;
+    font-size: 16px;
+  }
 }
 </style>

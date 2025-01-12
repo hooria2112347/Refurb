@@ -2,7 +2,6 @@
     <div class="scrap-seller-dashboard">
       <!-- Side navigation for Scrap Seller -->
       <aside class="side-nav">
-        <h3>Scrap Seller Menu</h3>
         <router-link to="/scrap-seller-dashboard">Seller Overview</router-link>
         <router-link to="/account">Account</router-link>
         <router-link to="/add-product">Add Product</router-link>
@@ -38,37 +37,91 @@
   </script>
   
   <style scoped>
-  .scrap-seller-dashboard {
-    display: flex;
-  }
-  
-  /* Side nav styling */
+/* MAIN WRAPPER FOR SCRAP SELLER DASHBOARD */
+.scrap-seller-dashboard {
+  display: flex;
+  background-color: #f7f9fc;
+  min-height: 100vh;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* SIDE NAVIGATION STYLING */
+.side-nav {
+  width: 220px;
+  background-color: #ffffff;
+  padding: 1rem;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+  border-right: 1px solid #e4e4e4;
+  display: flex;
+  flex-direction: column;
+}
+
+.side-nav h3 {
+  font-size: 18px;
+  color: #3C552D;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.side-nav a {
+  display: block;
+  margin-bottom: 0.8rem;
+  padding: 10px;
+  color: #3C552D;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.side-nav a:hover {
+  background-color: #e4f2ea;
+  color: #5d9b8b;
+}
+
+.side-nav a.active {
+  background-color: #5d9b8b;
+  color: #ffffff;
+}
+
+/* DASHBOARD CONTENT STYLING */
+.dashboard-content {
+  flex: 1;
+  padding: 2rem;
+  background-color: #f7f9fc;
+}
+
+.dashboard-content h2 {
+  font-size: 28px;
+  color: #3a3d40;
+  margin-bottom: 1rem;
+}
+
+.dashboard-content p {
+  font-size: 16px;
+  color: #6b6f74;
+  margin-bottom: 2rem;
+}
+
+/* RESPONSIVE DESIGN */
+@media screen and (max-width: 768px) {
   .side-nav {
-    width: 200px;
-    border-right: 1px solid #ddd;
-    padding: 1rem;
+    width: 180px;
   }
-  
-  .side-nav h3 {
-    margin-top: 0;
-    color: #3C552D;
-  }
-  
-  .side-nav a {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: #3C552D;
-    text-decoration: none;
-    font-weight: 500;
-  }
-  
-  .side-nav a:hover {
-    color: #0056b3;
-  }
-  
+
   .dashboard-content {
-    flex: 1;
     padding: 1rem;
   }
-  </style>
-  
+}
+
+@media screen and (max-width: 480px) {
+  .side-nav {
+    display: none;
+  }
+
+  .dashboard-content {
+    padding: 1rem;
+  }
+}
+</style>

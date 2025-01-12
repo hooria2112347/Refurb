@@ -160,19 +160,27 @@ export default {
 </script>
 
 <style scoped>
-.artist-view-custom-requests { font-family: Arial, sans-serif;
-  /* max-width: 1200px; */
-  margin: 10px auto;
+/* MAIN WRAPPER FOR ARTIST VIEW CUSTOM REQUESTS */
+.artist-view-custom-requests {
+  font-family: 'Poppins', sans-serif;
+  max-width: 1200px;
+  margin: 30px auto;
   padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
+/* HEADER STYLING */
 .artist-view-custom-requests h1 {
   text-align: center;
   margin-bottom: 30px;
-  color: #2c3e50;
+  color: #3C552D;
+  font-size: 2rem;
+  font-weight: bold;
 }
 
-/* Loading and Error Messages */
+/* LOADING AND ERROR MESSAGES */
 .loading,
 .error-message {
   text-align: center;
@@ -180,22 +188,30 @@ export default {
   color: #e74c3c;
 }
 
-/* Requests List */
+/* REQUESTS LIST */
 .requests-list {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-/* Request Card */
+/* REQUEST CARD STYLING */
 .request-card {
-  border: 1px solid #ddd;
-  border-radius: 10px;
+  background-color: #ffffff;
+  border-radius: 12px;
   padding: 20px;
-  background-color: #fff;
+  border: 1px solid #ddd;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
+.request-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* REQUEST HEADER */
 .request-header {
   display: flex;
   justify-content: space-between;
@@ -208,11 +224,18 @@ export default {
   color: #34495e;
 }
 
+/* REQUEST INFO */
 .request-info p {
   margin: 5px 0;
-  color:  #CA7373;
+  font-size: 1rem;
+  color: #555;
 }
 
+.request-info strong {
+  color: #CA7373;
+}
+
+/* REQUEST ACTION BUTTONS */
 .request-actions {
   margin-top: 15px;
   display: flex;
@@ -222,44 +245,49 @@ export default {
 
 .accept-btn,
 .decline-btn {
-  padding: 8px 15px;
+  padding: 10px 20px;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
-  color: #fff;
-  transition: background-color 0.3s;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #ffffff;
+  transition: background-color 0.3s ease;
 }
 
+/* ACCEPT BUTTON */
 .accept-btn {
-  background-color: #2aff83;
-}
-
-.accept-btn:hover {
   background-color: #27ae60;
 }
 
+.accept-btn:hover {
+  background-color: #218c53;
+}
+
+/* DECLINE BUTTON */
 .decline-btn {
-  background-color: #ff6e5e;
+  background-color: #e74c3c;
 }
 
 .decline-btn:hover {
   background-color: #c0392b;
 }
 
-/* Pagination Controls */
+/* PAGINATION CONTROLS */
 .pagination-controls {
   display: flex;
   justify-content: center;
+  align-items: center;
   margin-top: 20px;
-  gap: 10px;
+  gap: 15px;
 }
 
 .pagination-controls button {
-  padding: 8px 16px;
+  padding: 10px 20px;
   background-color: #3498db;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
   transition: background-color 0.3s ease;
@@ -276,6 +304,23 @@ export default {
 
 .pagination-controls span {
   font-size: 1.1rem;
-  align-self: center;
+  font-weight: bold;
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 768px) {
+  .request-card {
+    padding: 15px;
+  }
+
+  .accept-btn,
+  .decline-btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+
+  .pagination-controls button {
+    padding: 8px 16px;
+  }
 }
 </style>

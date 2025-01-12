@@ -154,63 +154,71 @@ export default {
 </script>
 
 <style scoped>
+/* GLOBAL STYLING */
 .signup {
-  max-width: 400px;
-  margin: 1rem auto;
-  padding: 1.2rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  font-family: Arial, sans-serif;
+  max-width: 420px;
+  margin: 2rem auto;
+  padding: 1.8rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  font-family: 'Poppins', sans-serif;
+  border: 1px solid #e4e4e4;
 }
 
+/* HEADER STYLING */
 .signup h2 {
   text-align: center;
-  margin-bottom: 1.5rem;
-  color: #3C552D;
+  margin-bottom: 2rem;
+  font-size: 24px;
+  font-weight: bold;
+  color: #3a3d40;
 }
 
+/* FORM GROUP STYLING */
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .form-group input,
 .form-group select {
   width: 100%;
-  padding: 0.5rem;
+  padding: 12px 16px;
+  font-size: 16px;
   border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 1rem;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  transition: border-color 0.3s ease;
 }
 
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #5d9b8b;
+  outline: none;
+  background-color: #ffffff;
+}
+
+/* BUTTON STYLING */
 button {
   width: 100%;
-  padding: 0.75rem;
-  background-color: #CA7373;
-  color: #fff;
+  padding: 14px;
+  font-size: 18px;
+  font-weight: bold;
+  background-color: #5d9b8b;
+  color: #ffffff;
   border: none;
-  border-radius: 4px;
-  font-size: 1rem;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s;
-  margin-top: 1rem;
+  transition: background-color 0.3s ease;
+  margin-top: 1.5rem;
 }
 
 button:hover {
-  background-color: #D7B26D;
+  background-color: #76b29d;
 }
 
 button:active {
-  background-color: #EEE2B5;
-}
-
-/* FADE TRANSITION */
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-.fade-enter, .fade-leave-to {
-  opacity: 0;
+  background-color: #426b5c;
 }
 
 /* ERROR POPUP OVERLAY */
@@ -220,52 +228,70 @@ button:active {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* semi-transparent black overlay */
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999; /* on top of everything */
+  z-index: 9999;
 }
 
-/* POPUP CONTENT */
+/* ERROR POPUP CONTENT */
 .error-popup-content {
-  background-color: #fff;
-  padding: 1.5rem;
-  border-radius: 8px;
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
   width: 90%;
   max-width: 400px;
   text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 .error-popup-content h3 {
-  margin-top: 0;
-  color: #B00000;
+  color: #b00000;
+  font-size: 22px;
+  margin-bottom: 1rem;
 }
 
 .error-popup-content ul {
   list-style: none;
   padding: 0;
   margin: 1rem 0;
-  text-align: left;
 }
 
-.error-popup-content p {
-  margin: 0.25rem 0;
-  color: #B00000; /* error text color */
+.error-popup-content li {
+  color: #b00000;
+  font-size: 16px;
+  margin-bottom: 0.5rem;
 }
 
-/* Close button styling inside popup */
 .error-popup-content button {
-  background-color: #CA7373;
-  color: #fff;
-  margin-top: 1rem;
-  width: auto;
+  background-color: #b00000;
+  color: #ffffff;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
+  margin-top: 1.5rem;
+  transition: background-color 0.3s ease;
 }
+
 .error-popup-content button:hover {
-  background-color: #D7B26D;
+  background-color: #d9534f;
 }
+
 .error-popup-content button:active {
-  background-color: #EEE2B5;
+  background-color: #a52a2a;
+}
+
+/* RESPONSIVE DESIGN */
+@media screen and (max-width: 480px) {
+  .signup {
+    padding: 1.2rem;
+  }
+
+  button {
+    padding: 12px;
+    font-size: 16px;
+  }
 }
 </style>

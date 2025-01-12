@@ -199,52 +199,57 @@ export default {
 };
 </script>
 <style scoped>
+/* MAIN FORM WRAPPER */
 .custom-request-form {
-  max-width: 600px;
+  max-width: 720px;
   margin: 40px auto;
-  padding: 20px;
-  background-color: #fdfdfd;
+  padding: 25px;
+  background-color: #ffffff;
   border-radius: 15px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  font-family: 'Poppins', sans-serif;
 }
 
+/* HEADER STYLING */
 .custom-request-form h1 {
   text-align: center;
-  color: #333;
-  margin-bottom: 20px;
+  color: #3C552D;
+  margin-bottom: 25px;
   font-size: 1.8em;
+  font-weight: bold;
 }
 
+/* ERROR MESSAGE BOX */
 .error-messages {
-  margin-bottom: 15px;
-  color: #ff4d4f;
-  background-color: #ffe6e6;
-  padding: 10px;
+  margin-bottom: 20px;
+  color: #b00020;
+  background-color: #fdecec;
+  padding: 15px;
   border-radius: 10px;
+  font-size: 0.95em;
 }
 
 .error {
   margin: 5px 0;
-  font-size: 0.9em;
 }
 
+/* FORM GRID LAYOUT */
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 15px;
+  gap: 20px;
 }
 
+/* FORM GROUP STYLING */
 .form-group {
   display: flex;
   flex-direction: column;
 }
 
 .form-group label {
-  margin-bottom: 5px;
-  font-weight: bold;
-  color: #555;
-  display: flex;
-  align-items: center;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
 }
 
 .required {
@@ -254,7 +259,7 @@ export default {
 
 .form-group input,
 .form-group textarea {
-  padding: 10px;
+  padding: 12px 15px;
   border: 1px solid #ccc;
   border-radius: 10px;
   font-size: 0.95em;
@@ -263,27 +268,29 @@ export default {
 
 .form-group input:focus,
 .form-group textarea:focus {
-  border-color: #007bff;
+  border-color: #5d9b8b;
   outline: none;
 }
 
+/* TEXTAREA STYLING */
 .form-group textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 100px;
 }
 
+/* IMAGE PREVIEWS SECTION */
 .image-previews {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 12px;
+  margin-top: 15px;
 }
 
 .image-preview {
   position: relative;
-  width: 80px;
-  height: 80px;
-  border: 1px solid #ddd;
+  width: 90px;
+  height: 90px;
+  border: 1px solid #e4e4e4;
   border-radius: 10px;
   overflow: hidden;
 }
@@ -296,13 +303,13 @@ export default {
 
 .image-preview button {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  background-color: rgba(255, 255, 255, 0.7);
+  top: 4px;
+  right: 4px;
+  background-color: rgba(255, 255, 255, 0.8);
   border: none;
   border-radius: 50%;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   cursor: pointer;
   font-weight: bold;
   color: #ff4d4f;
@@ -315,24 +322,26 @@ export default {
   background-color: rgba(255, 255, 255, 1);
 }
 
+/* SUBMIT BUTTON STYLING */
 .submit-button {
   grid-column: span 2;
-  padding: 12px 25px;
-  background-color: #ff6b6b;
-  color: #fff;
+  padding: 14px 20px;
+  background-color: #5d9b8b;
+  color: #ffffff;
   border: none;
-  border-radius: 15px;
+  border-radius: 12px;
   cursor: pointer;
   font-size: 1em;
+  font-weight: bold;
   transition: background-color 0.3s;
 }
 
 .submit-button:hover {
-  background-color: #218838;
+  background-color: #76b29d;
 }
 
-/* Responsive Design */
-@media (max-width: 600px) {
+/* RESPONSIVE DESIGN */
+@media (max-width: 768px) {
   .form-grid {
     grid-template-columns: 1fr;
   }
