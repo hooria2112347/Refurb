@@ -1,140 +1,194 @@
 <template>
   <div class="project-create-form">
-    <h1>Create Collaborative Project</h1>
+    <h1>Create a New Collaborative Project</h1>
     <form @submit.prevent="createProject">
-      <div>
+      <div class="form-group">
         <label for="title">Project Title</label>
-        <input id="title" v-model="form.title" required />
+        <input 
+          id="title" 
+          v-model="form.title" 
+          required 
+          placeholder="Enter a descriptive title..."
+        />
       </div>
 
-      <div>
-        <label for="description">Description</label>
-        <textarea id="description" v-model="form.description"></textarea>
+      <div class="form-group">
+        <label for="description">Project Description</label>
+        <textarea
+          id="description"
+          v-model="form.description"
+          placeholder="Brief overview or objectives..."
+        ></textarea>
       </div>
 
-      <button type="submit">Post Project</button>
+      <div class="form-group">
+        <label for="required_roles">Required Roles</label>
+        <input 
+          id="required_roles" 
+          v-model="form.required_roles"
+          required
+          placeholder="Example: Designer, Copywriter..."
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="skills_required">Skills Required</label>
+        <input 
+          id="skills_required" 
+          v-model="form.skills_required" 
+          required
+          placeholder="e.g. UX Design, Photoshop..."
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="deadline">Deadline</label>
+        <input 
+          id="deadline"
+          type="date"
+          v-model="form.deadline"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="budget">Budget (Optional)</label>
+        <input 
+          id="budget"
+          type="number"
+          v-model="form.budget"
+          placeholder="e.g. 500"
+        />
+      </div>
+
+      <button type="submit">Create Project</button>
     </form>
   </div>
 </template>
 
-  
-  <script>
-  import axios from 'axios';
-  
-  export default {
-    name: "ProjectCreate",
-    data() {
-      return {
-        form: {
-          title: '',
-          description: ''
-        }
-      };
-    },
-    methods: {
-      async createProject() {
-        try {
-          const res = await axios.post('/api/projects', this.form);
-          // on success, redirect or show success message
-          this.$router.push(`/projects/${res.data.project.id}`);
-        } catch (error) {
-          console.error(error);
-        }
+<script>
+import axios from 'axios';
+
+export default {
+  name: 'ProjectCreate',
+  data() {
+    return {
+      form: {
+        title: '',
+        description: '',
+        required_roles: '',
+        skills_required: '',
+        deadline: '',
+        budget: null
+      }
+    };
+  },
+  methods: {
+    async createProject() {
+      try {
+        const res = await axios.post('/api/projects', this.form);
+        // Redirect to the new project's detail page
+        this.$router.push(`/projects/${res.data.project.id}`);
+      } catch (error) {
+        console.error(error);
       }
     }
-  };
-  </script>
-  
-  <style scoped>
-/* MAIN FORM WRAPPER */
+  }
+};
+</script>
+
+<style scoped>
+/* WRAPPER */
 .project-create-form {
-  max-width: 720px;
+  max-width: 600px;
   margin: 40px auto;
-  padding: 20px;
+  padding: 25px;
   background-color: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   font-family: 'Poppins', sans-serif;
 }
 
-/* FORM HEADER */
-.project-create-form h1 {
+/* HEADING */
+.project-create-form > h1 {
   text-align: center;
-  font-size: 2rem;
+  font-size: 1.8rem;
   color: #3C552D;
-  margin-bottom: 30px;
-  font-weight: bold;
+  margin-bottom: 25px;
+  font-weight: 600;
 }
 
 /* FORM GROUP */
-.project-create-form div {
+.form-group {
   margin-bottom: 20px;
 }
 
-.project-create-form label {
+/* LABEL */
+.form-group label {
   display: block;
+  margin-bottom: 6px;
   font-size: 1rem;
+  font-weight: 500;
   color: #333;
-  margin-bottom: 8px;
-  font-weight: bold;
 }
 
-/* INPUT AND TEXTAREA FIELDS */
-.project-create-form input,
-.project-create-form textarea {
+/* INPUT AND TEXTAREA */
+.form-group input,
+.form-group textarea {
   width: 100%;
-  padding: 12px 15px;
-  font-size: 1rem;
+  padding: 12px;
+  font-size: 0.95rem;
   border: 1px solid #ccc;
   border-radius: 8px;
-  background-color: #f9f9f9;
-  transition: border-color 0.3s ease;
+  background-color: #fafafa;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
 }
 
-.project-create-form input:focus,
-.project-create-form textarea:focus {
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #aaa;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
   border-color: #5d9b8b;
   outline: none;
-  background-color: #ffffff;
+  background-color: #fff;
 }
 
-.project-create-form textarea {
+.form-group textarea {
   resize: vertical;
-  min-height: 120px;
+  min-height: 100px;
 }
 
-/* SUBMIT BUTTON */
-.project-create-form button {
-  display: block;
+/* BUTTON */
+button[type="submit"] {
   width: 100%;
-  padding: 12px 20px;
-  font-size: 1.2rem;
-  font-weight: bold;
-  background-color: #CA7373;
+  padding: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background-color: #5D9B8B;
   color: #ffffff;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: opacity 0.3s ease;
 }
 
-.project-create-form button:hover {
-  background-color: #D7B26D;
+button[type="submit"]:hover {
+  opacity: 0.9;
 }
 
-/* RESPONSIVE DESIGN */
-@media screen and (max-width: 768px) {
+/* RESPONSIVE TWEAKS */
+@media (max-width: 480px) {
   .project-create-form {
+    margin: 20px;
     padding: 15px;
   }
 
-  .project-create-form h1 {
-    font-size: 1.8rem;
-  }
-
-  .project-create-form button {
-    font-size: 1rem;
-    padding: 10px 16px;
+  .project-create-form > h1 {
+    font-size: 1.4rem;
+    margin-bottom: 20px;
   }
 }
 </style>

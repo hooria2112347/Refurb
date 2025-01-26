@@ -1,65 +1,156 @@
 <template>
-    <div>
-      <h1>My Projects</h1>
-  
-      <div v-if="allProjects.length === 0">
-        <p>You have no active or completed projects yet.</p>
-      </div>
-      
-      <div v-else>
-        <div 
-          v-for="project in allProjects" 
-          :key="project.id" 
-          class="project-item"
+  <div class="project-list-container">
+    <h1>Collaborative Projects</h1>
+    <input 
+      v-model="searchTerm" 
+      class="search-input" 
+      placeholder="Search..." 
+      @input="fetchProjects" 
+    />
+
+    <div v-if="projects.length === 0" class="no-projects">
+      <p>No collaborative projects found.</p>
+    </div>
+    <div v-else class="projects-grid">
+      <div 
+        v-for="project in projects" 
+        :key="project.id" 
+        class="project-card"
+      >
+        <h2>{{ project.title }}</h2>
+        <p>{{ project.description }}</p>
+        <router-link 
+          :to="`/projects/${project.id}`" 
+          class="details-link"
         >
-          <h2>{{ project.title }} <small>({{ project.status }})</small></h2>
-          <p>{{ project.description }}</p>
-          <router-link :to="`/projects/${project.id}`">View Project</router-link>
-        </div>
+          View Details
+        </router-link>
       </div>
     </div>
-  </template>
-  
-  <script>
-  import axios from 'axios';
-  
-  export default {
-    name: "MyProjects",
-    data() {
-      return {
-        allProjects: []
-      };
-    },
-    async created() {
-      const session = localStorage.getItem('userSession');
-      if (!session) {
-        return this.$router.push('/login');
-      }
-      const userData = JSON.parse(session);
-  
+  </div>
+</template>
+
+<script>
+import axios from 'axios';
+
+export default {
+  name: "ProjectList",
+  data() {
+    return {
+      projects: [],
+      searchTerm: ''
+    };
+  },
+  async created() {
+    await this.fetchProjects();
+  },
+  methods: {
+    async fetchProjects() {
       try {
-        // 1) Fetch projects this user OWNS
-        const ownedRes = await axios.get('/api/my-owned-projects'); 
-        const ownedProjects = ownedRes.data; // e.g. from your controller
-  
-        // 2) Fetch projects this user COLLABORATES on
-        const collabRes = await axios.get('/api/my-collaborations');
-        const collabProjects = collabRes.data;
-  
-        // Combine them or keep them separate
-        this.allProjects = [...ownedProjects, ...collabProjects];
+        // If you have an API endpoint for searching, pass query params
+        const res = await axios.get('/api/projects', { params: { q: this.searchTerm }});
+        this.projects = res.data;
       } catch (error) {
         console.error(error);
       }
     }
-  };
-  </script>
-  
-  <style scoped>
-  .project-item {
-    border: 1px solid #ddd;
-    margin-bottom: 1rem;
-    padding: 1rem;
   }
-  </style>
-  
+};
+</script>
+
+<style scoped>
+/* Container for the list */
+.project-list-container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 0 16px;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Main title */
+.project-list-container h1 {
+  text-align: center;
+  margin-bottom: 24px;
+  color: #3C552D;
+  font-size: 2rem;
+}
+
+/* Search input styling */
+.search-input {
+  display: block;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto 24px;
+  padding: 10px 14px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  transition: border-color 0.3s ease;
+}
+.search-input:focus {
+  border-color: #3C552D;
+  outline: none;
+}
+
+/* No projects text */
+.no-projects {
+  text-align: center;
+  font-style: italic;
+  color: #666;
+}
+
+/* Grid layout for project cards */
+.projects-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+/* Two columns on medium screens */
+@media (min-width: 600px) {
+  .projects-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Individual project card */
+.project-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transition: box-shadow 0.3s ease;
+}
+
+.project-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.project-card h2 {
+  margin-bottom: 8px;
+  font-size: 1.25rem;
+  color: #333;
+}
+
+.project-card p {
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+  color: #555;
+}
+
+/* Link to project details */
+.details-link {
+  display: inline-block;
+  padding: 8px 12px;
+  background-color: #5D9B8B;
+  color: #ffffff;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: opacity 0.3s ease;
+}
+
+.details-link:hover {
+  opacity: 0.9;
+}
+</style>

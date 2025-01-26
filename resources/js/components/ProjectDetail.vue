@@ -1,45 +1,61 @@
 <template>
   <div class="project-detail-page" v-if="project">
-    <!-- Project Title and Description -->
-    <h1>{{ project.title }}</h1>
-    <p>{{ project.description }}</p>
-    <p>Status: <strong>{{ project.status }}</strong></p>
+    <div class="project-card">
+      <!-- Title & Basic Info -->
+      <h1 class="project-title">{{ project.title }}</h1>
+      <p class="project-description">{{ project.description }}</p>
+      <p class="project-status">
+        Status: <strong>{{ project.status }}</strong>
+      </p>
 
-    <!-- Collaborators Section -->
-    <h2>Collaborators</h2>
-    <ul class="collaborators-list">
-      <li v-for="collab in project.collaborators" :key="collab.id">
-        {{ collab.user.name }} - {{ collab.role }}
-      </li>
-    </ul>
-
-    <!-- Invite an Artist Section (Only for Owners) -->
-    <div class="invite-section" v-if="isOwner && project.status === 'active'">
-      <h3>Invite an Artist</h3>
-      <div>
-        <label for="artistSelect">Select Artist:</label>
-        <select id="artistSelect" v-model="selectedArtistId">
-          <option value="">-- Choose an Artist --</option>
-          <option v-for="artist in availableArtists" :key="artist.id" :value="artist.id">
-            {{ artist.name }} (ID: {{ artist.id }})
-          </option>
-        </select>
+      <!-- Collaborators -->
+      <div class="section">
+        <h2>Collaborators</h2>
+        <ul class="collaborators-list">
+          <li v-for="collab in project.collaborators" :key="collab.id">
+            {{ collab.user.name }}
+            <span class="role">({{ collab.role }})</span>
+          </li>
+        </ul>
       </div>
-      <button @click="sendInvite" :disabled="!selectedArtistId">Invite</button>
-    </div>
 
-    <!-- Request to Join Section (For Non-Owners) -->
-    <div v-else-if="!isCollaborator && project.status === 'active'">
-      <button @click="requestJoin">Request to Join</button>
-    </div>
+      <!-- Invite an Artist (Only if owner, project active, and artists available) -->
+      <div 
+        class="section invite-section" 
+        v-if="isOwner && project.status === 'active' && availableArtists.length > 0"
+      >
+        <h2>Invite an Artist</h2>
+        <div class="form-group">
+          <label for="artistSelect">Select Artist:</label>
+          <select id="artistSelect" v-model="selectedArtistId">
+            <option value="">-- Choose an Artist --</option>
+            <option 
+              v-for="artist in availableArtists" 
+              :key="artist.id" 
+              :value="artist.id"
+            >
+              {{ artist.name }} (ID: {{ artist.id }})
+            </option>
+          </select>
+        </div>
+        <button 
+          class="primary-button" 
+          @click="sendInvite"
+          :disabled="!selectedArtistId"
+        >
+          Invite
+        </button>
+      </div>
 
-    <!-- Mark as Completed Button (Only for Owners) -->
-    <div v-if="isOwner && project.status === 'active'">
-      <button @click="markAsCompleted">Mark as Completed</button>
+      <!-- Mark as Completed (Only if owner & active) -->
+      <div class="section" v-if="isOwner && project.status === 'active'">
+        <button class="complete-button" @click="markAsCompleted">
+          Mark as Completed
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- Loading Indicator -->
   <div v-else>
     <p>Loading project details...</p>
   </div>
@@ -62,22 +78,19 @@ export default {
     isOwner() {
       return this.project && this.project.owner_id === this.currentUserId;
     },
-    isCollaborator() {
-      if (!this.project) return false;
-      return this.project.collaborators.some(
-        (collab) => collab.user_id === this.currentUserId
-      );
-    },
   },
   async created() {
+    // Load current user if available
     const session = localStorage.getItem("userSession");
     if (session) {
       const userData = JSON.parse(session);
       this.currentUserId = userData.id;
     }
 
+    // Fetch project details
     await this.fetchProject();
 
+    // If user is owner & project is active, fetch possible invitees
     if (this.isOwner && this.project.status === "active") {
       await this.fetchAvailableArtists();
     }
@@ -104,7 +117,7 @@ export default {
     async sendInvite() {
       try {
         if (!this.selectedArtistId) {
-          alert("Please select an artist before inviting.");
+          alert("Please select an artist first.");
           return;
         }
         await axios.post(`/api/projects/${this.project.id}/invite`, {
@@ -112,18 +125,11 @@ export default {
         });
         alert("Invitation sent!");
 
+        // Remove invited artist from the list
         this.availableArtists = this.availableArtists.filter(
           (a) => a.id !== parseInt(this.selectedArtistId)
         );
         this.selectedArtistId = "";
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    async requestJoin() {
-      try {
-        await axios.post(`/api/projects/${this.project.id}/request-join`);
-        alert("Request to join sent!");
       } catch (error) {
         console.error(error);
       }
@@ -142,116 +148,122 @@ export default {
 </script>
 
 <style scoped>
-/* MAIN WRAPPER */
+/* Container for entire detail page */
 .project-detail-page {
-  max-width: 900px;
+  max-width: 700px;
   margin: 40px auto;
-  padding: 20px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   font-family: "Poppins", sans-serif;
+  padding: 0 16px;
 }
 
-/* HEADER STYLING */
-.project-detail-page h1 {
-  font-size: 2rem;
+/* Main card holding project info */
+.project-card {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+  padding: 24px;
+}
+
+/* Title, description, status */
+.project-title {
+  font-size: 1.8rem;
   color: #3c552d;
-  margin-bottom: 20px;
-  font-weight: bold;
+  margin-bottom: 8px;
+  font-weight: 600;
 }
-
-.project-detail-page h2 {
-  font-size: 1.5rem;
-  color: #3c552d;
-  margin-top: 30px;
-  font-weight: bold;
-}
-
-/* PROJECT DESCRIPTION */
-.project-detail-page p {
+.project-description {
   font-size: 1rem;
   color: #555;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.project-status {
+  margin-bottom: 16px;
+  color: #333;
+}
+.project-status strong {
+  color: #3c552d;
+}
+
+/* Section grouping (Collaborators, Invite, etc.) */
+.section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+.section h2 {
+  font-size: 1.2rem;
+  color: #3c552d;
   margin-bottom: 10px;
+  font-weight: 600;
 }
 
-/* INVITE ARTIST SECTION */
-.invite-section {
-  margin-top: 20px;
-  padding: 15px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
+/* Collaborators list */
+.collaborators-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
-
-.invite-section label {
-  font-weight: bold;
-  margin-right: 10px;
-}
-
-.invite-section select {
+.collaborators-list li {
+  background-color: #fafafa;
   padding: 10px;
-  font-size: 1rem;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  background-color: #ffffff;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  color: #333;
+  font-size: 0.95rem;
+}
+.collaborators-list .role {
+  font-style: italic;
+  color: #777;
 }
 
-/* BUTTONS */
-.project-detail-page button {
-  padding: 10px 20px;
+/* Form group styling */
+.form-group {
+  margin-bottom: 12px;
+}
+.form-group label {
+  margin-right: 8px;
+  font-weight: 500;
+}
+.form-group select {
+  padding: 8px;
   font-size: 1rem;
-  font-weight: bold;
-  color: #ffffff;
-  background-color: #ca7373;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+/* Buttons */
+.primary-button,
+.complete-button {
+  display: inline-block;
+  padding: 10px 16px;
+  font-size: 1rem;
+  font-weight: 500;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
+  color: #fff;
+  background-color: #5d9b8b;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  margin-top: 10px;
 }
-
-.project-detail-page button:hover {
-  background-color: #d7b26d;
+.primary-button:hover,
+.complete-button:hover {
+  background-color: #537f73;
 }
-
-.project-detail-page button:disabled {
+.primary-button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
 }
 
-/* COLLABORATORS LIST */
-.collaborators-list {
-  list-style: none;
-  padding: 0;
-}
-
-.collaborators-list li {
-  font-size: 1rem;
-  color: #555;
-  padding: 8px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-}
-
-/* RESPONSIVE DESIGN */
-@media (max-width: 768px) {
+/* Responsive tweaks */
+@media (max-width: 480px) {
+  .project-title {
+    font-size: 1.5rem;
+  }
   .project-detail-page {
-    padding: 15px;
-  }
-
-  .project-detail-page h1 {
-    font-size: 1.8rem;
-  }
-
-  .project-detail-page h2 {
-    font-size: 1.4rem;
-  }
-
-  .project-detail-page button {
-    font-size: 0.9rem;
-    padding: 8px 16px;
+    margin: 20px auto;
+    padding: 0 10px;
   }
 }
 </style>

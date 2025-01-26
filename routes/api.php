@@ -58,11 +58,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Product routes
-    Route::post('/products', [ProductController::class, 'store']);
+    Route::group(['middleware' => ['auth:sanctum']], function () {
+        Route::post('/products', [ProductController::class, 'store']); 
     Route::get('/products', [ProductController::class, 'index']);
     Route::put('/products/{id}', [ProductController::class, 'update']);
     Route::delete('/products/{id}', [ProductController::class, 'destroy']);
-
+}); 
     // Shows the currently authenticated user
     Route::get('/user', function (Request $request) {
         return response()->json($request->user());

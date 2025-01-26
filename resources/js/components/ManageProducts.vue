@@ -5,17 +5,64 @@
     <!-- Display Products -->
     <div v-if="products.length" class="products-grid">
       <div v-for="product in products" :key="product.id" class="product-card">
-        <img :src="product.image" alt="Product Image" class="product-image" />
+        <!-- Product Image -->
+        <img
+          :src="product.image"
+          alt="Product Image"
+          class="product-image"
+        />
 
+        <!-- Product Info -->
         <div class="product-info">
           <h2 class="product-name">{{ product.name }}</h2>
           <p class="product-description">{{ product.description }}</p>
           <p class="product-price">Price: ${{ product.price }}</p>
         </div>
 
+        <!-- Actions: Edit & Delete -->
         <div class="product-actions">
-          <button @click="editProduct(product)" class="edit-btn">Edit</button>
-          <button @click="confirmDelete(product)" class="delete-btn">Delete</button>
+          <!-- If we're editing this product, show "Close" instead of "Edit" -->
+          <button
+            v-if="editingProduct && editingProduct.id === product.id"
+            class="edit-btn"
+            @click="cancelEdit"
+          >
+            Close
+          </button>
+          <button
+            v-else
+            class="edit-btn"
+            @click="startEdit(product)"
+          >
+            Edit
+          </button>
+
+          <button class="delete-btn" @click="deleteProduct(product)">
+            Delete
+          </button>
+        </div>
+
+        <!-- Inline Edit Form for this product -->
+        <div
+          v-if="editingProduct && editingProduct.id === product.id"
+          class="inline-edit-form"
+        >
+          <h3>Edit Product</h3>
+          <form @submit.prevent="updateProduct">
+            <div class="form-group">
+              <label>Name:</label>
+              <input type="text" v-model="editingProduct.name" />
+            </div>
+            <div class="form-group">
+              <label>Description:</label>
+              <textarea v-model="editingProduct.description"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Price:</label>
+              <input type="number" v-model="editingProduct.price" />
+            </div>
+            <button type="submit" class="save-changes">Save Changes</button>
+          </form>
         </div>
       </div>
     </div>
@@ -24,152 +71,140 @@
     <div v-else class="no-products">
       <p>No products found. Add some products to display here.</p>
     </div>
-
-    <!-- Edit Modal -->
-    <div v-if="isEditing" class="modal-overlay">
-      <div class="modal">
-        <h2 class="modal-title">Edit Product</h2>
-        <form @submit.prevent="updateProduct" class="modal-form">
-          <div class="modal-form-group">
-            <label for="name" class="modal-label">Name:</label>
-            <input type="text" id="name" v-model="editingProduct.name" class="modal-input" />
-          </div>
-          <div class="modal-form-group">
-            <label for="description" class="modal-label">Description:</label>
-            <textarea id="description" v-model="editingProduct.description" class="modal-input"></textarea>
-          </div>
-          <div class="modal-form-group">
-            <label for="price" class="modal-label">Price:</label>
-            <input type="number" id="price" v-model="editingProduct.price" class="modal-input" />
-          </div>
-          <div class="modal-actions">
-            <button type="button" @click="cancelEdit" class="modal-cancel-btn">Cancel</button>
-            <button type="submit" class="modal-save-btn">Save</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Delete Confirmation Popup -->
-    <div v-if="showDeletePopup" class="modal-overlay">
-      <div class="modal">
-        <h2 class="modal-title">Confirm Deletion</h2>
-        <p>Are you sure you want to delete this product?</p>
-        <div class="modal-actions">
-          <button @click="cancelDelete" class="modal-cancel-btn">Cancel</button>
-          <button @click="performDelete" class="modal-save-btn">Delete</button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script>
 export default {
+  name: "ManageProducts",
   data() {
     return {
-      products: [], // List of products fetched from the API
-      isEditing: false, // Whether the edit modal is open
-      editingProduct: null, // The product being edited
-      showDeletePopup: false, // Show delete confirmation popup
-      productToDelete: null, // The product to be deleted
+      products: [],
+      editingProduct: null, // The product we are currently editing (inline)
     };
   },
   methods: {
-    
-  async fetchProducts() {
-    try {
-      const token = localStorage.getItem('access_token'); // Get the token from local storage
-
-      const response = await fetch('http://localhost:8000/api/products', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`, // Add the token to the Authorization header
-        },
-      });
-
-      if (response.ok) {
-        this.products = await response.json();
-      } else {
-        console.error('Failed to fetch products');
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    }
-  },
-    editProduct(product) {
-      this.editingProduct = { ...product }; // Clone the product to avoid modifying the original
-      this.isEditing = true;
-    },
-    async updateProduct() {
+    // Fetch all products for the authenticated user
+    async fetchProducts() {
       try {
-        const response = await fetch(`http://localhost:8000/api/products/${this.editingProduct.id}`, {
-          method: 'PUT',
+        // 1) Retrieve the token
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          console.error("No token found. Please log in first.");
+          return;
+        }
+
+        // 2) Send GET request with Authorization header
+        const response = await fetch("http://localhost:8000/api/products", {
+          method: "GET",
           headers: {
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(this.editingProduct),
         });
 
         if (response.ok) {
-          alert('Product updated successfully');
-          this.isEditing = false;
-          this.fetchProducts(); // Refresh the product list
+          this.products = await response.json();
         } else {
-          console.error('Failed to update product');
+          console.error("Failed to fetch products");
         }
       } catch (error) {
-        console.error('Error updating product:', error);
+        console.error("Error fetching products:", error);
       }
     },
-    confirmDelete(product) {
-      this.productToDelete = product;
-      this.showDeletePopup = true;
+
+    // Show the inline form for this product
+    startEdit(product) {
+      // Clone the product so we don't mutate the original
+      this.editingProduct = { ...product };
     },
-    cancelDelete() {
-      this.productToDelete = null;
-      this.showDeletePopup = false;
+
+    // Cancel editing and hide the form
+    cancelEdit() {
+      this.editingProduct = null;
     },
-    async performDelete() {
+
+    // Send updated data to the server
+    async updateProduct() {
       try {
-        const response = await fetch(`http://localhost:8000/api/products/${this.productToDelete.id}`, {
-          method: 'DELETE',
-        });
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          alert("No token found. Please log in first.");
+          return;
+        }
+
+        const response = await fetch(
+          `http://localhost:8000/api/products/${this.editingProduct.id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              name: this.editingProduct.name,
+              description: this.editingProduct.description,
+              price: this.editingProduct.price,
+            }),
+          }
+        );
 
         if (response.ok) {
-          this.showDeletePopup = false;
-          this.productToDelete = null;
-          this.fetchProducts(); // Refresh the product list
+          alert("Product updated successfully!");
+          this.editingProduct = null;
+          this.fetchProducts(); // Refresh list
+        } else {
+          console.error("Failed to update product");
+          const errorData = await response.json();
+          alert(`Error: ${errorData.message || "Failed to update product."}`);
+        }
+      } catch (error) {
+        console.error("Error updating product:", error);
+      }
+    },
+
+    // Delete product with a simple JS confirm
+    async deleteProduct(product) {
+      if (!confirm(`Are you sure you want to delete "${product.name}"?`)) {
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          alert("No token found. Please log in first.");
+          return;
+        }
+
+        const response = await fetch(
+          `http://localhost:8000/api/products/${product.id}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.ok) {
+          alert(`Product "${product.name}" deleted successfully!`);
+          this.fetchProducts();
         } else {
           const error = await response.json();
           alert(`Failed to delete the product: ${error.message}`);
         }
       } catch (error) {
-        console.error('Error deleting product:', error);
+        console.error("Error deleting product:", error);
       }
-    },
-    cancelEdit() {
-      this.isEditing = false;
-      this.editingProduct = null;
     },
   },
   mounted() {
-  const token = localStorage.getItem('access_token');
-  
-  if (!token) {
-    // Redirect to login page if no token is found
-    this.$router.push('/login');
-  } else {
-    this.fetchProducts(); // Fetch the products after ensuring the user is logged in
-  }
-}
-,
+    this.fetchProducts();
+  },
 };
 </script>
 
-
 <style scoped>
-/* General Styles */
+/* Same CSS as before */
 .manage-products-container {
   max-width: 1200px;
   margin: 2rem auto;
@@ -188,7 +223,6 @@ export default {
   color: #333;
 }
 
-/* Product Grid */
 .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -234,15 +268,14 @@ export default {
   color: #333;
 }
 
-/* Product Actions */
 .product-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   gap: 0.5rem;
 }
 
 .edit-btn {
-  background-color: #4CAF50;
+  background-color: #4caf50;
   color: white;
   border: none;
   padding: 0.5rem 1rem;
@@ -256,7 +289,7 @@ export default {
 }
 
 .delete-btn {
-  background-color: #CA3E3E;
+  background-color: #ca3e3e;
   color: white;
   border: none;
   padding: 0.5rem 1rem;
@@ -266,151 +299,61 @@ export default {
 }
 
 .delete-btn:hover {
-  background-color: #B83232;
+  background-color: #b83232;
 }
 
-/* Modal Overlay */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-/* Modal */
-.modal {
-  background: #fff;
-  padding: 2rem;
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  width: 400px;
-  max-width: 90%;
+.no-products {
   text-align: center;
-}
-
-.modal-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
-  color: #333;
-}
-
-.modal p {
-  font-size: 1rem;
+  font-size: 1.2rem;
   color: #666;
-  margin-bottom: 1.5rem;
 }
 
-/* Modal Actions */
-.modal-actions {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.modal-cancel-btn,
-.modal-save-btn {
-  flex: 1;
+.inline-edit-form {
+  margin-top: 1rem;
+  text-align: left;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
   padding: 0.8rem;
-  font-size: 1rem;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s, box-shadow 0.3s;
 }
 
-.modal-cancel-btn {
-  background-color: #ddd;
-  color: #333;
-}
-
-.modal-cancel-btn:hover {
-  background-color: #bbb;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-.modal-save-btn {
-  background-color: #4CAF50;
-  color: #fff;
-}
-
-.modal-save-btn:hover {
-  background-color: #45a049;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-/* Edit Modal */
-.modal-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.modal-form-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.modal-label {
-  font-size: 1rem;
-  font-weight: bold;
-  color: #555;
+.inline-edit-form h3 {
+  margin-top: 0;
+  font-size: 1.2rem;
   margin-bottom: 0.5rem;
 }
 
-.modal-input {
-  width: 100%;
-  padding: 0.8rem;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 1rem;
-  outline: none;
-  transition: border-color 0.3s;
-}
-
-.modal-input:focus {
-  border-color: #4CAF50;
-  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
-}
-
-.modal-actions {
+.form-group {
+  margin-bottom: 0.5rem;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
 }
 
-.modal-save-btn {
-  background: #4CAF50;
+label {
+  font-size: 0.9rem;
+  margin-bottom: 0.2rem;
+  color: #555;
+}
+
+input[type="text"],
+input[type="number"],
+textarea {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.save-changes {
+  margin-top: 1rem;
+  background-color: #007bff;
+  border: none;
   color: #fff;
-  border: none;
-  padding: 0.8rem 1.5rem;
-  border-radius: 5px;
-  font-size: 1rem;
+  padding: 0.6rem 1rem;
+  border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.3s;
 }
 
-.modal-save-btn:hover {
-  background: #45a049;
+.save-changes:hover {
+  background-color: #0069d9;
 }
-
-.modal-cancel-btn {
-  background: #ddd;
-  border: none;
-  padding: 0.8rem 1.5rem;
-  border-radius: 5px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.modal-cancel-btn:hover {
-  background: #bbb;
-}
-
 </style>

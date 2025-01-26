@@ -12,8 +12,13 @@ class CollaborativeProject extends Model
         'owner_id',
         'title',
         'description',
-        'status', // 'active' or 'completed'
+        'required_roles',
+        'skills_required',
+        'deadline',
+        'budget',
+        'status'
     ];
+    
 
     public function owner()
     {
