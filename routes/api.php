@@ -9,6 +9,7 @@ use App\Http\Controllers\CustomRequestController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\ArtistProfileController;
+use App\Http\Controllers\AdminController;
 
 /*
 |----------------------------------------------------------------------
@@ -73,7 +74,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/projects', [ProjectController::class, 'index']);
         Route::post('/projects', [ProjectController::class, 'store']);
         Route::get('/projects/{id}', [ProjectController::class, 'show']);
+        Route::get('/projects/{id}/available-artists', [ProjectController::class, 'getAvailableArtists']);
         Route::post('/projects/{id}/complete', [ProjectController::class, 'completeProject']);
+        Route::post('/projects/{id}/feedback', [ProjectController::class, 'submitFeedback']);
+        Route::get('/projects/{id}/feedback', [ProjectController::class, 'getFeedback']);
+
     
         // INVITATIONS
         Route::post('/projects/{projectId}/invite', [InvitationController::class, 'invite']);
@@ -82,8 +87,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // JOIN REQUESTS
         Route::post('/projects/{projectId}/request-join', [InvitationController::class, 'requestJoin']);
         Route::post('/invitations/{id}/owner-respond', [InvitationController::class, 'ownerRespondToRequest']);
+    
+        // FEEDBACK AND RATING SYSTEM
+        Route::post('/projects/{id}/feedback', [ProjectController::class, 'submitFeedback']);
+        Route::get('/projects/{id}/feedback', [ProjectController::class, 'getFeedback']);
     });
-
+    
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/my-owned-projects', [ArtistProfileController::class, 'getOwnedProjects']);
@@ -105,7 +114,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/my-sent-invitations', [InvitationController::class, 'indexSentInvitations']);
 
     Route::delete('/invitations/{id}', [InvitationController::class, 'destroy']);
-
-
 });
-
+    // ADMIN product management
+    Route::get('/admin/feedback', [AdminController::class, 'getAllFeedback']);
+    Route::get('/admin/products', [AdminProductController::class, 'index']);
+    Route::put('/admin/products/{id}', [AdminProductController::class, 'update']);
+    Route::delete('/admin/products/{id}', [AdminProductController::class, 'destroy']);

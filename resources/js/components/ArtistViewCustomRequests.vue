@@ -1,9 +1,12 @@
 <template>
-  <div class="artist-view-custom-requests">
+  <div class="my-invitations">
+    <!-- Header -->
     <h1>All Custom Requests</h1>
 
     <!-- Loading Indicator -->
-    <div v-if="loading" class="loading">Loading...</div>
+    <div v-if="loading" class="loading">
+      <p>Loading...</p>
+    </div>
 
     <!-- Error Message -->
     <div v-if="error" class="error-message">
@@ -11,37 +14,53 @@
     </div>
 
     <!-- Requests List -->
-    <div v-else class="requests-list">
-      <div v-for="request in requests" :key="request.id" class="request-card" @click="goToRequestDetail(request.id)">
-        <div class="request-header">
-          <h3>{{ request.description }}</h3>
-        </div>
-        <div class="request-info">
-          <p><strong>Budget:</strong> {{ request.budget ? `${request.budget}  PKR` : 'N/A' }}</p>
-          <p><strong>Deadline:</strong> {{ formatDate(request.deadline) }}</p>
-        </div>
-        <div class="request-actions">
-          <!-- Only show Accept and Decline buttons for Pending requests -->
-          <button
-            v-if="request.status === 'Pending'"
-            @click.stop="acceptRequest(request.id)"
+    <div v-else class="invitations-list">
+      <div 
+        v-for="request in paginatedRequests" 
+        :key="request.id" 
+        class="invitation-item"
+      >
+        <!-- Title / Request Info -->
+        <h3>
+          {{ request.description || 'No description provided.' }}
+        </h3>
+
+        <!-- Request Details -->
+        <p>
+          <strong>Budget:</strong> {{ request.budget ? `${request.budget} PKR` : 'N/A' }}
+        </p>
+        <p>
+          <strong>Deadline:</strong> {{ formatDate(request.deadline) }}
+        </p>
+
+        <!-- Accept/Decline Buttons (if pending) -->
+        <div class="action-buttons" v-if="request.status === 'Pending'">
+          <button 
+            @click="acceptRequest(request.id)" 
             class="accept-btn"
           >
             Accept
           </button>
-          <button
-            v-if="request.status === 'Pending'"
-            @click.stop="declineRequest(request.id)"
-            class="decline-btn"
+          <button 
+            @click="declineRequest(request.id)" 
+            class="reject-btn"
           >
             Decline
           </button>
+        </div>
+
+        <!-- Status Labels -->
+        <div v-else-if="request.status === 'Declined'" class="status-label rejected">
+          <p>Declined</p>
+        </div>
+        <div v-else-if="request.status === 'Accepted'" class="status-label accepted">
+          <p>Accepted</p>
         </div>
       </div>
     </div>
 
     <!-- Pagination Controls -->
-    <div class="pagination-controls">
+    <div class="pagination-controls" v-if="totalPages > 1">
       <button @click="changePage('previous')" :disabled="currentPage === 1">Previous</button>
       <span>Page {{ currentPage }} of {{ totalPages }}</span>
       <button @click="changePage('next')" :disabled="currentPage === totalPages">Next</button>
@@ -53,6 +72,7 @@
 import axios from "axios";
 
 export default {
+  name: "ArtistViewCustomRequests",
   data() {
     return {
       requests: [],
@@ -73,7 +93,6 @@ export default {
     },
   },
   methods: {
-    // Removed Toast and replaced with simple alert
     async fetchRequests() {
       try {
         const response = await axios.get("/api/custom-requests", {
@@ -94,7 +113,6 @@ export default {
       return new Date(dateStr).toLocaleDateString();
     },
     goToRequestDetail(requestId) {
-      // Navigating to the request detail page
       this.$router.push({ name: "RequestDetailPage", params: { id: requestId } });
     },
     async acceptRequest(id) {
@@ -117,7 +135,6 @@ export default {
         alert("Request accepted successfully.");
       } catch (error) {
         console.error("Error accepting request:", error);
-        // Simple alert for error
         alert("Failed to accept request.");
       }
     },
@@ -141,7 +158,6 @@ export default {
         alert("Request declined successfully.");
       } catch (error) {
         console.error("Error declining request:", error);
-        // Simple alert for error
         alert("Failed to decline request.");
       }
     },
@@ -160,120 +176,151 @@ export default {
 </script>
 
 <style scoped>
-/* MAIN WRAPPER FOR ARTIST VIEW CUSTOM REQUESTS */
-.artist-view-custom-requests {
-  font-family: 'Poppins', sans-serif;
-  max-width: 1200px;
-  margin: 30px auto;
-  padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+/* 
+  CONTAINER FOR THE PAGE 
+  - Keeping it consistent with MyInvitations.
+*/
+.my-invitations {
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 0 16px;
 }
 
-/* HEADER STYLING */
-.artist-view-custom-requests h1 {
+/* 
+  PAGE HEADER 
+  - A simple, centered title with the same accent color.
+*/
+.my-invitations h1 {
   text-align: center;
+  font-size: 1.8rem;
+  color: #3B1E54;
   margin-bottom: 30px;
-  color: #3C552D;
-  font-size: 2rem;
-  font-weight: bold;
+  font-weight: 600;
 }
 
 /* LOADING AND ERROR MESSAGES */
-.loading,
-.error-message {
+.loading p,
+.error-message p {
   text-align: center;
-  font-size: 1.2em;
-  color: #e74c3c;
+  font-size: 1.1rem;
+  color: #666;
+  margin-top: 20px;
 }
 
-/* REQUESTS LIST */
-.requests-list {
+/* 
+  REQUESTS LIST 
+  - Similar to invitations-list with vertical stacking and gaps.
+*/
+.invitations-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
-/* REQUEST CARD STYLING */
-.request-card {
-  background-color: #ffffff;
-  border-radius: 12px;
-  padding: 20px;
-  border: 1px solid #ddd;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+/* 
+  INVITATION ITEM 
+  - Mirroring invitation-item styling.
+*/
+.invitation-item {
+  background-color: #fff;
+  padding: 16px;
+  border-left: 4px solid #3C552D;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   cursor: pointer;
   transition: transform 0.3s, box-shadow 0.3s;
 }
 
-.request-card:hover {
+.invitation-item:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* REQUEST HEADER */
-.request-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* REQUEST TITLE */
+.invitation-item h3 {
+  font-size: 1.2rem;
+  color: #333;
+  margin-bottom: 8px;
+  font-weight: 500;
 }
 
-.request-header h3 {
-  margin: 0;
-  font-size: 1.5em;
-  color: #34495e;
+.invitation-item strong {
+  color: #3C552D;
 }
 
-/* REQUEST INFO */
-.request-info p {
-  margin: 5px 0;
+/* REQUEST DETAILS */
+.invitation-item p {
   font-size: 1rem;
   color: #555;
+  margin: 4px 0;
 }
 
-.request-info strong {
-  color: #CA7373;
-}
-
-/* REQUEST ACTION BUTTONS */
-.request-actions {
-  margin-top: 15px;
+/* 
+  ACTION BUTTONS 
+  - Consistent with MyInvitations action-buttons.
+*/
+.action-buttons {
+  margin-top: 12px;
   display: flex;
   gap: 10px;
   justify-content: flex-end;
 }
 
 .accept-btn,
-.decline-btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: bold;
+.reject-btn {
+  padding: 8px 18px;
+  font-size: 0.95rem;
+  font-weight: 500;
   color: #ffffff;
-  transition: background-color 0.3s ease;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
 }
 
-/* ACCEPT BUTTON */
 .accept-btn {
   background-color: #27ae60;
 }
 
 .accept-btn:hover {
-  background-color: #218c53;
+  opacity: 0.9;
 }
 
-/* DECLINE BUTTON */
-.decline-btn {
+.reject-btn {
   background-color: #e74c3c;
 }
 
-.decline-btn:hover {
-  background-color: #c0392b;
+.reject-btn:hover {
+  opacity: 0.9;
 }
 
-/* PAGINATION CONTROLS */
+/* 
+  STATUS LABELS 
+  - Consistent styling with MyInvitations.
+*/
+.status-label {
+  margin-top: 12px;
+  text-align: center;
+  padding: 8px 0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.status-label.accepted {
+  background-color: #27ae60;
+  color: #fff;
+}
+
+.status-label.rejected {
+  background-color: #e74c3c;
+  color: #fff;
+}
+
+/* 
+  PAGINATION CONTROLS 
+  - Styled similarly for consistency.
+*/
 .pagination-controls {
   display: flex;
   justify-content: center;
@@ -283,13 +330,13 @@ export default {
 }
 
 .pagination-controls button {
-  padding: 10px 20px;
+  padding: 8px 16px;
   background-color: #3498db;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.95rem;
   transition: background-color 0.3s ease;
 }
 
@@ -307,20 +354,34 @@ export default {
   font-weight: bold;
 }
 
-/* RESPONSIVE DESIGN */
+/* 
+  RESPONSIVE DESIGN 
+  - Consistent with MyInvitations.
+*/
 @media (max-width: 768px) {
-  .request-card {
-    padding: 15px;
+  .my-invitations {
+    margin: 20px auto;
+    padding: 0 12px;
+  }
+
+  .my-invitations h1 {
+    font-size: 1.5rem;
+    margin-bottom: 24px;
+  }
+  
+  .invitation-item {
+    padding: 12px;
   }
 
   .accept-btn,
-  .decline-btn {
-    padding: 8px 16px;
-    font-size: 0.9rem;
+  .reject-btn {
+    padding: 6px 14px;
+    font-size: 0.85rem;
   }
 
   .pagination-controls button {
-    padding: 8px 16px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
   }
 }
 </style>

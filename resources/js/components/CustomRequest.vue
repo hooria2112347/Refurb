@@ -207,13 +207,12 @@ export default {
   background-color: #ffffff;
   border-radius: 15px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  font-family: 'Poppins', sans-serif;
 }
 
 /* HEADER STYLING */
 .custom-request-form h1 {
   text-align: center;
-  color: #3C552D;
+  color: #3B1E54;
   margin-bottom: 25px;
   font-size: 1.8em;
   font-weight: bold;
@@ -249,7 +248,7 @@ export default {
 .form-group label {
   margin-bottom: 8px;
   font-weight: 600;
-  color: #333;
+  color: #3B1E54;
 }
 
 .required {
@@ -326,8 +325,8 @@ export default {
 .submit-button {
   grid-column: span 2;
   padding: 14px 20px;
-  background-color: #5d9b8b;
-  color: #ffffff;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   border: none;
   border-radius: 12px;
   cursor: pointer;
@@ -337,7 +336,7 @@ export default {
 }
 
 .submit-button:hover {
-  background-color: #76b29d;
+  background-color: #EEEEEE;
 }
 
 /* RESPONSIVE DESIGN */

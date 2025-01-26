@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CollaborativeProject;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Feedback;
 
 class ProjectController extends Controller
 {
@@ -98,4 +99,43 @@ class ProjectController extends Controller
 
         return response()->json($artists);
     }
+
+
+    public function submitFeedback(Request $request, $id)
+{
+    // ... your validation ...
+    $project = CollaborativeProject::findOrFail($id);
+
+    // If you only allow feedback for completed projects:
+    if ($project->status !== 'completed') {
+        return response()->json(['error' => 'Project not completed yet.'], 403);
+    }
+
+    // Now insert user_id
+    $feedback = \App\Models\Feedback::create([
+        'project_id' => $project->id,
+        'rating'     => $request->rating,
+        'comment'    => $request->comment,
+        'user_id'    => Auth::id(),  // <<--- store the authenticated user's ID
+    ]);
+
+    return response()->json([
+        'message'  => 'Feedback submitted successfully!',
+        'feedback' => $feedback
+    ], 201);
+}
+
+
+
+public function getFeedback($id)
+{
+    // 1. Ensure the project exists (optional if you want a 404 if project doesn't exist)
+    $project = CollaborativeProject::findOrFail($id);
+
+    // 2. Retrieve associated feedback
+    $feedback = \App\Models\Feedback::where('project_id', $project->id)->get();
+
+    // 3. Return as JSON
+    return response()->json($feedback);
+}
 }

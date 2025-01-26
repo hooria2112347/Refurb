@@ -4,14 +4,24 @@
     <h1>My Invitations</h1>
 
     <!-- No Invitations Message -->
-    <div v-if="invitations.length === 0" class="no-invitations">
+    <div v-if="invitations.length === 0 && !loading && !error" class="no-invitations">
       <p>No pending invitations.</p>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div v-if="loading" class="loading">
+      <p>Loading...</p>
+    </div>
+
+    <!-- Error Message -->
+    <div v-if="error" class="error-message">
+      <p>{{ error }}</p>
     </div>
 
     <!-- Invitations List -->
     <div v-else class="invitations-list">
       <div 
-        v-for="invite in invitations" 
+        v-for="invite in paginatedInvitations" 
         :key="invite.id" 
         class="invitation-item"
       >
@@ -55,6 +65,13 @@
         </div>
       </div>
     </div>
+
+    <!-- Pagination Controls -->
+    <div class="pagination-controls" v-if="totalPages > 1">
+      <button @click="changePage('previous')" :disabled="currentPage === 1">Previous</button>
+      <span>Page {{ currentPage }} of {{ totalPages }}</span>
+      <button @click="changePage('next')" :disabled="currentPage === totalPages">Next</button>
+    </div>
   </div>
 </template>
 
@@ -66,18 +83,35 @@ export default {
   data() {
     return {
       invitations: [],
+      loading: true,
+      error: null,
+      currentPage: 1,
+      invitationsPerPage: 5, // Adjust as needed
     };
   },
-  async created() {
-    try {
-      // Fetch invitations from the backend
-      const response = await axios.get("/api/my-invitations");
-      this.invitations = response.data;
-    } catch (error) {
-      console.error("Failed to fetch invitations:", error);
-    }
+  computed: {
+    totalPages() {
+      return Math.ceil(this.invitations.length / this.invitationsPerPage);
+    },
+    paginatedInvitations() {
+      const startIndex = (this.currentPage - 1) * this.invitationsPerPage;
+      const endIndex = startIndex + this.invitationsPerPage;
+      return this.invitations.slice(startIndex, endIndex);
+    },
   },
   methods: {
+    async fetchInvitations() {
+      try {
+        // Fetch invitations from the backend
+        const response = await axios.get("/api/my-invitations");
+        this.invitations = response.data;
+      } catch (error) {
+        console.error("Failed to fetch invitations:", error);
+        this.error = "Failed to load invitations.";
+      } finally {
+        this.loading = false;
+      }
+    },
     async respondToInvitation(inviteId, newStatus) {
       try {
         // Post the response to the server
@@ -94,8 +128,19 @@ export default {
         );
       } catch (error) {
         console.error("Error responding to invitation:", error);
+        alert("Failed to respond to the invitation.");
       }
     },
+    changePage(direction) {
+      if (direction === 'previous' && this.currentPage > 1) {
+        this.currentPage--;
+      } else if (direction === 'next' && this.currentPage < this.totalPages) {
+        this.currentPage++;
+      }
+    },
+  },
+  async created() {
+    await this.fetchInvitations();
   },
 };
 </script>
@@ -103,24 +148,22 @@ export default {
 <style scoped>
 /* 
   CONTAINER FOR THE PAGE 
-  - Keeping it simple, no background color or heavy shadow. 
-  - Just some top margin and a max-width for nice centering.
+  - Consistent with ArtistViewCustomRequests.
 */
 .my-invitations {
   max-width: 700px;
   margin: 40px auto;
-  font-family: 'Poppins', sans-serif;
   padding: 0 16px;
 }
 
 /* 
   PAGE HEADER 
-  - A simple, centered title with a calm accent color.
+  - A simple, centered title with the same accent color.
 */
 .my-invitations h1 {
   text-align: center;
   font-size: 1.8rem;
-  color: #3C552D;
+  color: #3B1E54;
   margin-bottom: 30px;
   font-weight: 600;
 }
@@ -133,9 +176,18 @@ export default {
   margin-top: 20px;
 }
 
+/* LOADING AND ERROR MESSAGES */
+.loading p,
+.error-message p {
+  text-align: center;
+  font-size: 1.1rem;
+  color: #666;
+  margin-top: 20px;
+}
+
 /* 
   INVITATIONS LIST 
-  - We stack the invitation cards in a vertical list with small gaps. 
+  - Similar to invitations-list with vertical stacking and gaps.
 */
 .invitations-list {
   display: flex;
@@ -145,8 +197,7 @@ export default {
 
 /* 
   INVITATION ITEM 
-  - A simple "card" with a subtle border on the left for a visual accent. 
-  - Light box-shadow for depth. 
+  - Mirroring invitation-item styling.
 */
 .invitation-item {
   background-color: #fff;
@@ -154,33 +205,43 @@ export default {
   border-left: 4px solid #3C552D;
   border-radius: 6px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  cursor: default;
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
-/* Invitation Title */
+.invitation-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* INVITATION TITLE */
 .invitation-item h3 {
   font-size: 1.2rem;
   color: #333;
   margin-bottom: 8px;
   font-weight: 500;
 }
+
 .invitation-item strong {
   color: #3C552D;
 }
 
-/* Invitation Paragraphs */
+/* INVITATION PARAGRAPHS */
 .invitation-item p {
   font-size: 1rem;
   color: #555;
+  margin: 4px 0;
 }
 
 /* 
   ACTION BUTTONS 
-  - Buttons for Accept/Decline with color-coded backgrounds 
+  - Consistent with ArtistViewCustomRequests action-buttons.
 */
 .action-buttons {
   margin-top: 12px;
   display: flex;
   gap: 10px;
+  justify-content: flex-end;
 }
 
 .accept-btn,
@@ -198,6 +259,7 @@ export default {
 .accept-btn {
   background-color: #27ae60;
 }
+
 .accept-btn:hover {
   opacity: 0.9;
 }
@@ -205,14 +267,14 @@ export default {
 .reject-btn {
   background-color: #e74c3c;
 }
+
 .reject-btn:hover {
   opacity: 0.9;
 }
 
 /* 
   STATUS LABELS 
-  - Displayed when the invitation is accepted or rejected. 
-  - A small colored pill-like shape with text in white.
+  - Consistent styling with pill-shaped backgrounds and white text.
 */
 .status-label {
   margin-top: 12px;
@@ -222,18 +284,57 @@ export default {
   font-size: 0.95rem;
   font-weight: 500;
 }
+
 .status-label.accepted {
   background-color: #27ae60;
   color: #fff;
 }
+
 .status-label.rejected {
   background-color: #e74c3c;
   color: #fff;
 }
 
 /* 
-  RESPONSIVE 
-  - Slightly reduce padding on smaller screens for a more comfortable fit. 
+  PAGINATION CONTROLS 
+  - Styled similarly for consistency.
+*/
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  gap: 15px;
+}
+
+.pagination-controls button {
+  padding: 8px 16px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background-color 0.3s ease;
+}
+
+.pagination-controls button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+  background-color: #2980b9;
+}
+
+.pagination-controls span {
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+/* 
+  RESPONSIVE DESIGN 
+  - Consistent with ArtistViewCustomRequests.
 */
 @media (max-width: 768px) {
   .my-invitations {
@@ -248,6 +349,17 @@ export default {
   
   .invitation-item {
     padding: 12px;
+  }
+
+  .accept-btn,
+  .reject-btn {
+    padding: 6px 14px;
+    font-size: 0.85rem;
+  }
+
+  .pagination-controls button {
+    padding: 6px 14px;
+    font-size: 0.85rem;
   }
 }
 </style>

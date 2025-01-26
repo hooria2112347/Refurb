@@ -137,7 +137,7 @@ export default {
   margin-bottom: 1.8rem;
   font-size: 24px;
   font-weight: bold;
-  color: #3a3d40;
+  color: #3B1E54;
 }
 
 /* FORM GROUP STYLING */
@@ -192,8 +192,8 @@ button[type="submit"] {
   padding: 14px;
   font-size: 18px;
   font-weight: bold;
-  background-color: #5d9b8b;
-  color: #ffffff;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -202,7 +202,7 @@ button[type="submit"] {
 }
 
 button[type="submit"]:hover {
-  background-color: #76b29d;
+  background-color: #EEEEEE;
 }
 
 button[type="submit"]:active {
@@ -216,13 +216,13 @@ p {
 }
 
 a {
-  color: #5d9b8b;
+  color: #3B1E54;
   text-decoration: none;
   font-weight: bold;
 }
 
 a:hover {
-  color: #76b29d;
+  color: #9B7EBD;
 }
 
 /* RESPONSIVE DESIGN */

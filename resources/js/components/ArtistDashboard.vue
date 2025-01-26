@@ -106,7 +106,6 @@ export default {
   display: flex;
   background-color: #f7f9fc;
   min-height: 100vh;
-  font-family: 'Poppins', sans-serif;
 }
 
 /* SIDE NAVIGATION STYLING */
@@ -124,7 +123,7 @@ export default {
   display: block;
   margin-bottom: 0.8rem;
   padding: 10px;
-  color: #3C552D;
+  color: #3B1E54;
   text-decoration: none;
   border-radius: 8px;
   font-size: 16px;
@@ -133,12 +132,12 @@ export default {
 }
 
 .side-nav a:hover {
-  background-color: #e4f2ea;
-  color: #5d9b8b;
+  background-color: #D4BEE4;
+  color: #3B1E54;
 }
 
 .side-nav a.active {
-  background-color: #5d9b8b;
+  background-color: #9B7EBD;
   color: #ffffff;
 }
 
@@ -152,7 +151,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #3C552D;
+  color: #3B1E54;
   padding: 10px;
   cursor: pointer;
   font-size: 16px;
@@ -162,8 +161,8 @@ export default {
 }
 
 .collapsible-trigger:hover {
-  background-color: #e4f2ea;
-  color: #5d9b8b;
+  background-color: #D4BEE4;
+  color: #3B1E54;
 }
 
 /* Arrow icon */
@@ -211,13 +210,13 @@ export default {
 
 .dashboard-content h2 {
   font-size: 28px;
-  color: #3a3d40;
+  color: #3B1E54;
   margin-bottom: 1rem;
 }
 
 .dashboard-content p {
   font-size: 16px;
-  color: #6b6f74;
+  color: #3B1E54;
   margin-bottom: 2rem;
 }
 

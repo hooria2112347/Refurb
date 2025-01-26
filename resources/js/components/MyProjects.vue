@@ -64,7 +64,6 @@ export default {
   max-width: 800px;
   margin: 40px auto;
   padding: 0 16px;
-  font-family: 'Poppins', sans-serif;
 }
 
 /* Main title */

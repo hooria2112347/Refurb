@@ -5,12 +5,13 @@
       <div class="hero-content">
         <h1 class="hero-title">Welcome to Refurb</h1>
         <p class="hero-subtitle">
-          Your go-to marketplace for buying <br />
-          and refurbishing scrap items.
+          Your go-to marketplace for buying and refurbishing scrap items.
         </p>
         <button @click="exploreItems" class="hero-button">Explore Scrap Items</button>
       </div>
-      <img src="images/main.jpg" alt="Hero image" class="hero-image" />
+      <div class="hero-image-wrapper">
+        <img src="images/main.jpg" alt="Refurb Marketplace" class="hero-image" />
+      </div>
     </section>
 
     <!-- Scrap Products Section -->
@@ -23,18 +24,19 @@
           class="scrap-item"
         >
           <div class="item-image-wrapper">
-            <img :src="product.image" :alt="product.name" />
+            <img :src="product.image" :alt="product.name" class="item-image" loading="lazy" />
             <div class="overlay">
-              <!-- Example: on click we can view details or route to a product page -->
-              <button @click="viewScrapProduct(product.id)">View Details</button>
+              <button @click="viewScrapProduct(product.id)" class="overlay-button">View Details</button>
             </div>
           </div>
-          <h3>{{ product.name }}</h3>
-          <p>{{ product.description }}</p>
-          <p>Price: {{ product.price }}</p>
+          <div class="item-content">
+            <h3 class="item-title">{{ product.name }}</h3>
+            <p class="item-description">{{ product.description }}</p>
+            <p class="item-price">Price: {{ product.price }}</p>
+          </div>
         </div>
       </div>
-      <p v-else>No scrap products found.</p>
+      <p v-else class="no-products">No scrap products found.</p>
     </section>
 
     <!-- Artist Projects Section -->
@@ -46,12 +48,13 @@
           :key="project.id"
           class="project-item"
         >
-          <h3>{{ project.title }}</h3>
-          <p>{{ project.description }}</p>
-          <!-- You can show more info like owner, status, etc. -->
+          <div class="project-content">
+            <h3 class="project-title">{{ project.title }}</h3>
+            <p class="project-description">{{ project.description }}</p>
+          </div>
         </div>
       </div>
-      <p v-else>No artist projects found.</p>
+      <p v-else class="no-projects">No artist projects found.</p>
     </section>
   </div>
 </template>
@@ -69,14 +72,11 @@ export default {
   },
   methods: {
     exploreItems() {
-      // Example: navigate to a specific route
       this.$router.push('/scrap-items');
     },
     viewScrapProduct(productId) {
-      // For example, navigate to a product detail page
       this.$router.push(`/item/${productId}`);
     },
-    // Fetch scrap products from your Laravel API
     fetchScrapProducts() {
       axios
         .get('/api/products')
@@ -87,7 +87,6 @@ export default {
           console.error('Error fetching scrap products:', error);
         });
     },
-    // Fetch artist projects from your Laravel API
     fetchArtistProjects() {
       axios
         .get('/api/projects')
@@ -100,7 +99,6 @@ export default {
     }
   },
   created() {
-    // Automatically load data when component is created
     this.fetchScrapProducts();
     this.fetchArtistProjects();
   }
@@ -111,169 +109,335 @@ export default {
 .home-page {
   color: #3C552D;
   margin: 0 auto;
+  padding: 0 1rem;
 }
 
 /* Hero Section */
 .hero {
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding: 2rem;
-  background-color: #E7E7E7;
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+  border-radius: 12px;
+  margin-top: 2rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 .hero-content {
   max-width: 50%;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  margin-left: 2vw;
 }
 
 .hero-title {
   font-size: 3rem;
-  font-weight: bold;
-  color: #3C552D;
-  margin-bottom: 0.5rem;
+  font-weight: 700;
+  color: #3B1E54;
+  margin-bottom: 1rem;
 }
 
 .hero-subtitle {
   font-size: 1.25rem;
-  color: #3C552D;
-  margin-bottom: 1.5rem;
+  color: #3B1E54;
+  margin-bottom: 2rem;
+  line-height: 1.6;
 }
 
 .hero-button {
-  background-color: #CA7373;
-  color: white;
-  padding: 0.75rem 1.5rem;
+  background-color: #D4BEE4;
+  color: #3B1E54;
+  padding: 0.75rem 2rem;
   border: none;
-  border-radius: 5px;
+  border-radius: 30px;
   cursor: pointer;
   font-size: 1rem;
-  transition: background-color 0.3s ease;
+  font-weight: 500;
+  transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
 .hero-button:hover {
-  background-color: #D7B26D;
+  background-color: #EEEEEE;
+  transform: translateY(-2px);
+}
+
+.hero-image-wrapper {
+  max-width: 45%;
+  position: relative;
 }
 
 .hero-image {
-  height: 89vh;
-  width: 50%;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
   object-fit: cover;
-  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* Scrap Products & Artist Projects Sections */
 .scrap-products,
 .artist-projects {
-  padding: 2rem 0;
+  padding: 3rem 0;
   text-align: center;
-  background-color: #f4f4f4;
-  border-radius: 10px;
-  margin: 2rem 0;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  border-radius: 12px;
+  margin: 3rem 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
 }
 
 .section-title {
   font-size: 2.5rem;
   color: #CA7373;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
   text-transform: uppercase;
   letter-spacing: 1px;
+  position: relative;
+  display: inline-block;
 }
 
-.scrap-items,
-.projects-list {
+.section-title::after {
+  content: '';
+  width: 50px;
+  height: 3px;
+  background-color: #CA7373;
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  transform: translateX(-50%);
+  border-radius: 2px;
+}
+
+/* Scrap Products */
+.scrap-items {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
+  gap: 2rem;
   justify-items: center;
 }
 
-.scrap-item,
-.project-item {
+.scrap-item {
   background: #fff;
-  padding: 1rem;
+  padding: 1.5rem;
   border: 1px solid #ddd;
   border-radius: 12px;
-  max-width: 280px;
+  max-width: 300px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  height: 100%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s, box-shadow 0.3s;
   position: relative;
-  transition: transform 0.3s;
 }
 
-.scrap-item:hover,
-.project-item:hover {
-  transform: translateY(-5px);
+.scrap-item:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
 }
 
-/* Image Wrappers for Overlays */
 .item-image-wrapper {
   position: relative;
   width: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+  margin-bottom: 1rem;
 }
 
-.item-image-wrapper img {
+.item-image {
   width: 100%;
   height: 200px;
   object-fit: cover;
-  border-radius: 5px;
-  border: 2px solid #CA7373;
+  transition: transform 0.3s ease;
 }
 
-/* Overlay Styles */
+.scrap-item:hover .item-image {
+  transform: scale(1.05);
+}
+
 .overlay {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(44, 44, 44, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
   opacity: 0;
-  transition: opacity 0.3s;
+  transition: opacity 0.3s ease;
 }
 
-.item-image-wrapper:hover .overlay {
+.scrap-item:hover .overlay {
   opacity: 1;
 }
 
-.scrap-item h3,
-.project-item h3 {
-  margin: 0.5rem 0;
-  font-size: 1.2rem;
-  color: #CA7373;
-}
-
-.scrap-item p,
-.project-item p {
-  font-size: 0.9rem;
-  margin: 0.5rem 0 1rem;
-  color: #555;
-}
-
-.scrap-item button {
-  padding: 0.5rem 1rem;
-  background-color: #CA7373;
-  color: #fff;
+.overlay-button {
+  background-color: #fff;
+  color: #3C552D;
+  padding: 0.5rem 1.2rem;
   border: none;
-  border-radius: 5px;
+  border-radius: 25px;
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.3s;
+  font-weight: 500;
+  transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
-.scrap-item button:hover {
-  background-color: #D7B26D;
+.overlay-button:hover {
+  background-color: #f0f0f0;
   transform: scale(1.05);
+}
+
+.item-content {
+  flex-grow: 1;
+}
+
+.item-title {
+  font-size: 1.25rem;
+  color: #2E422A;
+  margin: 0.5rem 0;
+}
+
+.item-description {
+  font-size: 0.95rem;
+  color: #555;
+  margin-bottom: 1rem;
+}
+
+.item-price {
+  font-size: 1rem;
+  color: #CA7373;
+  font-weight: 600;
+}
+
+/* Artist Projects */
+.projects-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  justify-items: center;
+}
+
+.project-item {
+  background: #fff;
+  padding: 1.5rem;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.project-item:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+}
+
+.project-content {
+  flex-grow: 1;
+}
+
+.project-title {
+  font-size: 1.25rem;
+  color: #2E422A;
+  margin: 0.5rem 0;
+}
+
+.project-description {
+  font-size: 0.95rem;
+  color: #555;
+  margin-bottom: 1rem;
+}
+
+/* No Products / No Projects Message */
+.no-products,
+.no-projects {
+  font-size: 1rem;
+  color: #777;
+  margin-top: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .hero {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hero-content {
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .hero-image-wrapper {
+    max-width: 100%;
+    margin-top: 2rem;
+  }
+
+  .hero-image {
+    height: auto;
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .section-title {
+    font-size: 2rem;
+  }
+
+  .scrap-item,
+  .project-item {
+    max-width: 90%;
+  }
+
+  .hero-title {
+    font-size: 2.5rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.1rem;
+  }
+
+  .hero-button {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 2rem 1rem;
+  }
+
+  .section-title {
+    font-size: 1.8rem;
+  }
+
+  .scrap-item,
+  .project-item {
+    max-width: 100%;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+
+  .hero-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .item-description,
+  .project-description {
+    font-size: 0.85rem;
+  }
+
+  .item-price {
+    font-size: 0.95rem;
+  }
 }
 </style>

@@ -220,7 +220,7 @@ export default {
   font-weight: bold;
   text-align: center;
   margin-bottom: 1.5rem;
-  color: #333;
+  color: #3B1E54;
 }
 
 .products-grid {

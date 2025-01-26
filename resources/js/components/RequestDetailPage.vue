@@ -1,22 +1,51 @@
-<template>  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
-
+<template>
   <div class="request-detail-page" v-if="request">
-    <div class="container mt-4">
+    <div class="container mt-5">
       <div class="row">
-        <!-- Left Side: Image Section (Carousel for multiple images, smaller image size) -->
+        <!-- Left Side: Image Section (Enhanced Carousel) -->
         <div class="col-md-6 mb-4">
-          <div id="carouselExampleSlidesOnly" class="carousel slide" data-bs-ride="carousel">
+          <div id="requestCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-indicators">
+              <button
+                v-for="(image, index) in request.images"
+                :key="image.id"
+                type="button"
+                :data-bs-target="'#requestCarousel'"
+                :data-bs-slide-to="index"
+                :class="{ active: index === 0 }"
+                :aria-current="index === 0 ? 'true' : 'false'"
+                :aria-label="`Slide ${index + 1}`"
+              ></button>
+            </div>
             <div class="carousel-inner">
-              <!-- Loop through images and display them in the carousel -->
-              <div v-for="(image, index) in request.images" :key="image.id" class="carousel-item" :class="{'active': index === 0}">
-                <img :src="image.url" class="d-block w-100 request-image img-fluid rounded" alt="Request Image" />
+              <div
+                v-for="(image, index) in request.images"
+                :key="image.id"
+                class="carousel-item"
+                :class="{ active: index === 0 }"
+              >
+                <img
+                  :src="image.url"
+                  class="d-block w-100 request-image img-fluid rounded"
+                  alt="Request Image"
+                />
               </div>
             </div>
-            <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleSlidesOnly" data-bs-slide="prev">
+            <button
+              class="carousel-control-prev"
+              type="button"
+              data-bs-target="#requestCarousel"
+              data-bs-slide="prev"
+            >
               <span class="carousel-control-prev-icon" aria-hidden="true"></span>
               <span class="visually-hidden">Previous</span>
             </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleSlidesOnly" data-bs-slide="next">
+            <button
+              class="carousel-control-next"
+              type="button"
+              data-bs-target="#requestCarousel"
+              data-bs-slide="next"
+            >
               <span class="carousel-control-next-icon" aria-hidden="true"></span>
               <span class="visually-hidden">Next</span>
             </button>
@@ -26,73 +55,117 @@
         <!-- Right Side: Description, Request Details, and Comments Section -->
         <div class="col-md-6">
           <div class="request-info-section">
-            <h1>{{ request.description }}</h1>
+            <h1 class="request-title">{{ request.description }}</h1>
 
             <div class="request-info">
               <div class="info-item">
-                <p><strong>Materials:</strong> {{ request.materials || 'N/A' }}</p>
+                <i class="fas fa-tools me-2 text-muted"></i>
+                <strong>Materials:</strong> {{ request.materials || 'N/A' }}
               </div>
               <div class="info-item">
-                <p><strong>Dimensions:</strong> {{ request.dimensions || 'N/A' }}</p>
+                <i class="fas fa-ruler-combined me-2 text-muted"></i>
+                <strong>Dimensions:</strong> {{ request.dimensions || 'N/A' }}
               </div>
               <div class="info-item">
-                <p><strong>Budget:</strong> {{ request.budget ? `PKR ${request.budget}` : 'N/A' }}</p>
+                <i class="fas fa-wallet me-2 text-muted"></i>
+                <strong>Budget:</strong> {{ request.budget ? `PKR ${request.budget}` : 'N/A' }}
               </div>
               <div class="info-item">
-                <p><strong>Deadline:</strong> {{ request.deadline || 'N/A' }}</p>
+                <i class="fas fa-calendar-alt me-2 text-muted"></i>
+                <strong>Deadline:</strong> {{ formatDate(request.deadline) }}
               </div>
               <div class="info-item">
-                <p><strong>Status:</strong> {{ request.status || 'Pending' }}</p>
+                <i :class="statusIcon(request.status)" class="me-2"></i>
+                <strong>Status:</strong> {{ request.status || 'Pending' }}
               </div>
               <div class="info-item">
-                <p><strong>Submitted On:</strong> {{ formatDate(request.created_at) }}</p>
+                <i class="fas fa-clock me-2 text-muted"></i>
+                <strong>Submitted On:</strong> {{ formatDate(request.created_at) }}
               </div>
               <!-- User Name with hyperlink to profile -->
               <div class="info-item">
-                <p class="description-by">
-                  By <em>
-                    <router-link :to="'/user-profile/' + request.user.id">{{ request.user.name }}</router-link>
-                  </em>
-                </p>
+                <i class="fas fa-user me-2 text-muted"></i>
+                <strong>By:</strong>
+                <router-link :to="'/user-profile/' + request.user.id" class="user-link">
+                  {{ request.user.name }}
+                </router-link>
               </div>
 
               <!-- Display artist information if the logged-in user is the request creator -->
               <div v-if="request.user.id === currentUser.id && request.artist" class="info-item">
-                <p>Accepted by 
-                  <em>
-                    <router-link :to="'/user-profile/' + request.artist.id">{{ request.artist.name }}</router-link>
-                  </em>
-                </p>
+                <i class="fas fa-user-check me-2 text-muted"></i>
+                <strong>Accepted by:</strong>
+                <router-link :to="'/user-profile/' + request.artist.id" class="user-link">
+                  {{ request.artist.name }}
+                </router-link>
               </div>
             </div>
 
             <!-- Comments Section -->
             <div class="comments-section">
-              <h4>Comments:</h4>
+              <h4 class="comments-title">Comments</h4>
               <div class="comments-list">
-                <div v-for="comment in request.comments" :key="comment.id" class="comment-item">
-                  <p><strong>{{ comment.artist.name }}:</strong> {{ comment.comment }}</p>
-                  <p class="comment-date">{{ formatDate(comment.created_at) }}</p>
-
-                  <!-- Delete button (only visible if the comment was made by the logged-in user) -->
-                  <div v-if="comment.artist.id === currentUser.id" class="delete-btn-container">
-                    <button @click="deleteComment(comment.id)" class="delete-comment-btn btn btn-sm btn-danger">Delete</button>
+                <div v-for="comment in request.comments" :key="comment.id" class="comment-item d-flex">
+                  <img
+                    :src="comment.artist.avatar || defaultAvatar"
+                    alt="User Avatar"
+                    class="avatar me-3"
+                  />
+                  <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <strong>{{ comment.artist.name }}</strong>
+                      <small class="text-muted">{{ formatDate(comment.created_at) }}</small>
+                    </div>
+                    <p class="mb-1">{{ comment.comment }}</p>
+                    <!-- Delete button (only visible if the comment was made by the logged-in user) -->
+                    <div v-if="comment.artist.id === currentUser.id" class="text-end">
+                      <button @click="deleteComment(comment.id)" class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-trash-alt"></i> Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
 
               <!-- Add Comment Form -->
-              <div v-if="true" class="comment-form">
-                <textarea v-model="newComment" placeholder="Add a comment..." class="comment-input form-control"></textarea>
-                <button @click="addComment(request.id)" class="comment-btn btn">Add Comment</button>
+              <div class="comment-form mt-4">
+                <textarea
+                  v-model="newComment"
+                  placeholder="Add a comment..."
+                  class="form-control mb-2"
+                  rows="3"
+                ></textarea>
+                <button
+                  @click="addComment(request.id)"
+                  class="btn btn-primary"
+                  :disabled="isSubmitting"
+                >
+                  <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  Add Comment
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+    
+    <!-- Success and Error Alerts -->
+    <div v-if="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+      {{ successMessage }}
+      <button type="button" class="btn-close" @click="successMessage = ''" aria-label="Close"></button>
+    </div>
+    <div v-if="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+      {{ errorMessage }}
+      <button type="button" class="btn-close" @click="errorMessage = ''" aria-label="Close"></button>
+    </div>
   </div>
-  <div v-else>Loading request details...</div>
+  <div v-else class="loading-container">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading request details...</span>
+    </div>
+    <p>Loading request details...</p>
+  </div>
 </template>
 
 <script>
@@ -104,6 +177,10 @@ export default {
       request: null, // Store the selected request
       newComment: "",
       currentUser: JSON.parse(localStorage.getItem("userSession")), // Get the current logged-in user
+      isSubmitting: false, // To handle loading state for comment submission
+      successMessage: "",
+      errorMessage: "",
+      defaultAvatar: "https://via.placeholder.com/50", // Default avatar image
     };
   },
   methods: {
@@ -115,44 +192,64 @@ export default {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
         });
-        console.log(response.data); // Log the response to verify if artist info is present
         this.request = response.data; // Store the request details
       } catch (error) {
         console.error("Error fetching request details:", error);
-        alert("Failed to load request details.");
+        this.errorMessage = "Failed to load request details.";
       }
     },
     formatDate(dateStr) {
-      return new Date(dateStr).toLocaleDateString();
+      const options = { year: 'numeric', month: 'long', day: 'numeric' };
+      return new Date(dateStr).toLocaleDateString(undefined, options);
+    },
+    statusIcon(status) {
+      switch (status.toLowerCase()) {
+        case 'completed':
+          return 'fas fa-check-circle text-success';
+        case 'in progress':
+          return 'fas fa-spinner text-primary';
+        case 'cancelled':
+          return 'fas fa-times-circle text-danger';
+        default:
+          return 'fas fa-hourglass-half text-warning';
+      }
     },
     async addComment(requestId) {
       if (!this.newComment.trim()) return;
+      this.isSubmitting = true;
       try {
-        await axios.post(`/api/custom-requests/${requestId}/comments`, {
-          comment: this.newComment,
-        }, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          },
-        });
+        await axios.post(
+          `/api/custom-requests/${requestId}/comments`,
+          { comment: this.newComment },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+          }
+        );
         this.newComment = ""; // Clear the comment input after submission
+        this.successMessage = "Comment added successfully!";
         this.fetchRequestDetail(); // Refetch to show the new comment
       } catch (error) {
         console.error("Error adding comment:", error);
-        alert("Failed to add comment.");
+        this.errorMessage = "Failed to add comment.";
+      } finally {
+        this.isSubmitting = false;
       }
     },
     async deleteComment(commentId) {
+      if (!confirm("Are you sure you want to delete this comment?")) return;
       try {
         await axios.delete(`/api/custom-requests/comments/${commentId}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
         });
+        this.successMessage = "Comment deleted successfully!";
         this.fetchRequestDetail(); // Refetch to show the updated comments
       } catch (error) {
         console.error("Error deleting comment:", error);
-        alert("Failed to delete comment.");
+        this.errorMessage = "Failed to delete comment.";
       }
     },
   },
@@ -162,197 +259,192 @@ export default {
 };
 </script>
 
-
-
 <style scoped>
 /* MAIN WRAPPER FOR REQUEST DETAIL PAGE */
 .request-detail-page {
   max-width: 1200px;
   margin: 40px auto;
-  padding: 20px;
+  padding: 30px;
   background-color: #ffffff;
   border-radius: 15px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   font-family: 'Poppins', sans-serif;
 }
 
 /* HEADER STYLING */
-.request-detail-page h1 {
-  font-size: 2rem;
-  color: #3C552D;
-  margin-bottom: 20px;
-  font-weight: bold;
+.request-title {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  margin-bottom: 25px;
+  font-weight: 700;
 }
 
 /* IMAGE CAROUSEL STYLING */
 .carousel-inner .carousel-item img {
   max-width: 100%;
-  height: auto;
-  border-radius: 15px;
+  height: 450px;
   object-fit: cover;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 15px;
+  transition: transform 0.5s ease;
+}
+
+.carousel-inner .carousel-item img:hover {
+  transform: scale(1.05);
 }
 
 /* REQUEST INFO SECTION */
 .request-info-section {
-  padding: 20px;
-  background-color: #f9f9f9;
+  padding: 25px;
+  background-color: #fdfdfd;
   border-radius: 15px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
 }
 
-.request-info p {
-  margin: 8px 0;
-  font-size: 1rem;
-  color: #555;
+.request-info .info-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  color: #34495e;
 }
 
-.request-info p strong {
-  color: #CA7373;
+.request-info .info-item i {
+  font-size: 1.2rem;
 }
 
-.info-item {
-  font-size: 1rem;
-  color: #3A3D40;
-  margin-bottom: 10px;
+.user-link {
+  color: #3498db;
+  text-decoration: none;
+}
+
+.user-link:hover {
+  text-decoration: underline;
 }
 
 /* COMMENTS SECTION */
 .comments-section {
-  margin-top: 30px;
-  padding: 20px;
-  background-color: #ffffff;
-  border-radius: 15px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-top: 40px;
 }
 
-.comments-section h4 {
-  font-size: 1.5rem;
-  color: #3C552D;
-  margin-bottom: 15px;
+.comments-title {
+  font-size: 1.8rem;
+  color: #2c3e50;
+  margin-bottom: 20px;
 }
 
-/* COMMENTS LIST */
 .comments-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  max-height: 300px;
+  gap: 20px;
+  max-height: 400px;
   overflow-y: auto;
   padding-right: 10px;
 }
 
 .comment-item {
-  background-color: #fbfbfb;
+  background-color: #f8f9fa;
   padding: 15px;
   border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: background-color 0.3s ease;
 }
 
-.comment-item p {
-  margin: 0;
-  font-size: 1rem;
+.comment-item:hover {
+  background-color: #e9ecef;
 }
 
-.comment-date {
-  font-size: 0.85rem;
-  color: #888;
-  margin-top: 5px;
+.avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 /* DELETE BUTTON */
-.delete-btn-container {
-  position: relative;
+.btn-outline-danger {
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.delete-comment-btn {
-  position: absolute;
-  bottom: 5px;
-  right: 5px;
-  background-color: #ff4d4f;
-  color: #fff;
-  padding: 5px 10px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.3s ease;
-}
-
-.delete-comment-btn:hover {
-  background-color: #c0392b;
+.btn-outline-danger:hover {
+  background-color: #ffe6e6;
 }
 
 /* COMMENT FORM */
-.comment-form {
+.comment-form textarea {
+  resize: none;
+  border-radius: 10px;
+  border: 1px solid #ced4da;
+}
+
+.comment-form .btn {
+  align-self: flex-end;
+}
+
+/* ALERTS */
+.alert {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1050;
+  max-width: 300px;
+}
+
+/* LOADING CONTAINER */
+.loading-container {
   display: flex;
   flex-direction: column;
-  margin-top: 20px;
-}
-
-.comment-input {
-  width: 100%;
-  padding: 12px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  margin-bottom: 10px;
-  resize: vertical;
-}
-
-.comment-btn {
-  padding: 10px 20px;
-  background-color: #CA7373;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background-color 0.3s ease;
-}
-
-.comment-btn:hover {
-  background-color: #D7B26D;
-}
-
-/* LINKS STYLING */
-a {
+  align-items: center;
+  justify-content: center;
+  height: 80vh;
   color: #3498db;
-  text-decoration: none;
-  font-weight: bold;
 }
 
-a:hover {
-  text-decoration: underline;
+.loading-container p {
+  margin-top: 15px;
+  font-size: 1.2rem;
 }
 
 /* RESPONSIVE DESIGN */
-@media (max-width: 768px) {
-  .request-detail-page {
-    padding: 15px;
+@media (max-width: 992px) {
+  .carousel-inner .carousel-item img {
+    height: 350px;
   }
 
-  .request-info-section {
-    padding: 15px;
+  .request-title {
+    font-size: 2rem;
   }
 
-  .comment-btn {
-    font-size: 0.9rem;
-    padding: 8px 16px;
+  .comments-list {
+    max-height: 300px;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
+  .carousel-inner .carousel-item img {
+    height: 250px;
+  }
+
+  .request-info-section {
+    padding: 20px;
+  }
+
+  .comments-title {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
   .carousel-inner .carousel-item img {
     height: 200px;
   }
 
-  .comment-input {
-    font-size: 0.9rem;
+  .request-title {
+    font-size: 1.8rem;
   }
 
-  .comment-btn {
-    font-size: 0.85rem;
+  .comments-title {
+    font-size: 1.3rem;
   }
 }
 </style>

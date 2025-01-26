@@ -131,7 +131,7 @@ export default {
 </script>
 
 <style scoped>
-.custom-requests-page { font-family: Arial, sans-serif;
+.custom-requests-page {
   /* max-width: 800px; */
   margin: 40px ;
   padding: 5px;
@@ -140,7 +140,7 @@ export default {
  
 .custom-requests-page h1 { font-family: Arial, sans-serif;
   text-align: center;
-  color: #5d5b5b;
+  color: #3B1E54;
   margin-bottom: 30px;
   font-size: 1.5rem;
   font-weight: bold;

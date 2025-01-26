@@ -95,7 +95,7 @@ export default {
   margin-bottom: 1.8rem;
   font-size: 24px;
   font-weight: bold;
-  color: #3a3d40;
+  color: #3B1E54;
 }
 
 /* FORM GROUP STYLING */
@@ -125,8 +125,8 @@ button {
   padding: 14px;
   font-size: 18px;
   font-weight: bold;
-  background-color: #5d9b8b;
-  color: #ffffff;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -135,11 +135,11 @@ button {
 }
 
 button:hover {
-  background-color: #76b29d;
+  background-color: #EEEEEE;
 }
 
 button:active {
-  background-color: #426b5c;
+  background-color: #9B7EBD;
 }
 
 /* RESPONSIVE DESIGN */

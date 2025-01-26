@@ -1,26 +1,16 @@
 <template>
-  <div class="profile-container">
-    <div class="sidebar">
-      <ul class="menu">
-        <li><router-link to="/account" active-class="active">Account</router-link></li>
-        <li><router-link to="/password-change" active-class="active">Change Password</router-link></li>
-        <li><router-link to="/billing-address" active-class="active">Billing Address</router-link></li>
-        <li><router-link to="/shipping-address" active-class="active">Shipping Address</router-link></li>
-        <li><router-link to="/my-orders" active-class="active">My Orders</router-link></li>
-        
-        <!-- Show My Custom Requests for scrap sellers or general users -->
-        <li v-if="!isArtist">
-          <router-link to="/view-custom-requests" active-class="active">My Custom Requests</router-link>
-        </li>
+  <div class="artist-dashboard">
+    <!-- Side navigation for Account -->
+    <aside class="side-nav">
+      <router-link to="/artist-dashboard" exact-active-class="active">Overview</router-link>
+      <router-link to="/account" exact-active-class="active">Account</router-link>
+      <router-link to="/password-change" exact-active-class="active">Change Password</router-link>
+    </aside>
 
-        <!-- Show the View Accepted Requests link if the user is an artist -->
-        <li><router-link v-if="isArtist" to="/view-accepted-requests" active-class="active">View Accepted Requests</router-link></li>
-      </ul>
-    </div>
-    <div class="main-content">
-      <h1>Account Details</h1>
+    <section class="dashboard-content">
+      <h2>Account Details</h2>
       <div class="form-container">
-        <h2>My Information</h2>
+        <h3>My Information</h3>
         <div class="form-group">
           <label>Name:</label>
           <p>{{ user.name }}</p>
@@ -30,12 +20,13 @@
           <p>{{ user.email }}</p>
         </div>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
 <script>
 export default {
+  name: "Account",
   data() {
     return {
       user: {
@@ -80,132 +71,118 @@ export default {
     },
   },
   mounted() {
-    this.fetchUserDetails(); // Load user details on component mount
+    // Confirm user is Artist
+    if (this.isArtist) {
+      this.fetchUserDetails(); // Load user details on component mount
+    } else {
+      this.$router.push("/login"); // Redirect if not an artist
+    }
   },
 };
 </script>
 
-
-  
-  <style scoped>
-  .profile-container {
+<style scoped>
+/* MAIN WRAPPER FOR ACCOUNT DASHBOARD */
+.artist-dashboard {
   display: flex;
-  background-color: #f9f9f9;
-  font-family: Arial, sans-serif;
-  align-items: flex-start; /* Ensures items align at the top */
+  background-color: #f7f9fc;
+  min-height: 100vh;
 }
-  
-  /* Sidebar */
-  .sidebar {
-  width: 25%;
+
+/* SIDE NAVIGATION STYLING */
+.side-nav {
+  width: 220px;
   background-color: #ffffff;
-  border-right: 1px solid #ddd;
-  padding: 1.5rem;
-  height: 88vh;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+  border-right: 1px solid #e4e4e4;
+  display: flex;
+  flex-direction: column;
 }
-  
-  .menu {
-    list-style: none;
-    padding: 0;
+
+.side-nav a {
+  display: block;
+  margin-bottom: 0.8rem;
+  padding: 10px;
+  color: #3B1E54;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.side-nav a:hover {
+  background-color: #9B7EBD; /* Optional: Keep hover background if desired */
+  color: #3B1E54;
+}
+
+.side-nav a.active {
+  /* Remove background-color to eliminate highlight */
+  /* Optional: Change text color to indicate active link */
+  color: #EEEEEE;
+}
+
+/* DASHBOARD CONTENT STYLING */
+.dashboard-content {
+  flex: 0.8;
+  padding: 2rem;
+  background-color: #f7f9fc;
+}
+
+.dashboard-content h2 {
+  font-size: 28px;
+  color: #3B1E54;
+  margin-bottom: 1rem;
+}
+
+.form-container {
+  background-color: #ffffff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.form-container h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: #3B1E54;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+  color: #3B1E54;
+}
+
+.form-group p {
+  font-size: 16px;
+  color: #3B1E54;
+}
+
+/* RESPONSIVE DESIGN */
+@media screen and (max-width: 768px) {
+  .side-nav {
+    width: 180px;
   }
-  
-  .menu li {
-    margin: 0.8rem 0;
+
+  .dashboard-content {
+    padding: 1rem;
   }
-  
-  .menu li a {
-    text-decoration: none;
-    color: #333;
-    font-size: 1rem;
-    display: block;
-    padding: 0.5rem 0;
+}
+
+@media screen and (max-width: 480px) {
+  .side-nav {
+    display: none; /* Consider implementing a hamburger menu for mobile */
   }
-  
-  .menu li.active a {
-    font-weight: bold;
-    color: #CA7373;
+
+  .dashboard-content {
+    padding: 1rem;
   }
-  
-  /* Main Content */
-  .main-content {
-    flex: 1;
-    padding: 2rem;
-  }
-  
-  .main-content h1 {
-    font-size: 1.8rem;
-    margin-bottom: 1rem;
-    color: #333;
-  }
-  
-  .form-container {
-    background-color: #ffffff;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-  
-  .form-container h2 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    color: #333;
-  }
-  
-  .form-group {
-    margin-bottom: 1rem;
-  }
-  
-  .form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: bold;
-    color: #555;
-  }
-  
-  .form-group input {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-  
-  button {
-    display: inline-block;
-    width: 100%;
-    padding: 0.75rem;
-    background-color: #CA7373;
-    color: #fff;
-    font-size: 1rem;
-    font-weight: bold;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  
-  button:hover {
-    background-color: #D7B26D;
-  }
-  
-  /* Success Message */
-  .success-message {
-    background-color: #4caf50;
-    color: white;
-    padding: 0.75rem;
-    border-radius: 5px;
-    margin-bottom: 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  
-  .success-message .close {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 1.2rem;
-    cursor: pointer;
-  }
-  </style>
-  
+}
+</style>

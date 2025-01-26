@@ -9,7 +9,7 @@
       </p>
 
       <!-- Collaborators -->
-      <div class="section">
+      <div class="section collaborators-section">
         <h2>Collaborators</h2>
         <ul class="collaborators-list">
           <li v-for="collab in project.collaborators" :key="collab.id">
@@ -19,9 +19,9 @@
         </ul>
       </div>
 
-      <!-- Invite an Artist (Only if owner, project active, and artists available) -->
-      <div 
-        class="section invite-section" 
+      <!-- Invite an Artist -->
+      <div
+        class="section invite-section"
         v-if="isOwner && project.status === 'active' && availableArtists.length > 0"
       >
         <h2>Invite an Artist</h2>
@@ -29,17 +29,17 @@
           <label for="artistSelect">Select Artist:</label>
           <select id="artistSelect" v-model="selectedArtistId">
             <option value="">-- Choose an Artist --</option>
-            <option 
-              v-for="artist in availableArtists" 
-              :key="artist.id" 
+            <option
+              v-for="artist in availableArtists"
+              :key="artist.id"
               :value="artist.id"
             >
               {{ artist.name }} (ID: {{ artist.id }})
             </option>
           </select>
         </div>
-        <button 
-          class="primary-button" 
+        <button
+          class="primary-button"
           @click="sendInvite"
           :disabled="!selectedArtistId"
         >
@@ -47,10 +47,41 @@
         </button>
       </div>
 
-      <!-- Mark as Completed (Only if owner & active) -->
-      <div class="section" v-if="isOwner && project.status === 'active'">
+      <!-- Mark as Completed -->
+      <div class="section completion-section" v-if="isOwner && project.status === 'active'">
         <button class="complete-button" @click="markAsCompleted">
           Mark as Completed
+        </button>
+      </div>
+
+      <!-- Feedback Section -->
+      <div v-if="project.status === 'completed'" class="section feedback-section">
+        <h2>Submit Feedback</h2>
+        <div class="form-group">
+          <label for="rating">Rating:</label>
+          <select id="rating" v-model="feedback.rating">
+            <option value="">-- Select Rating --</option>
+            <option value="1">1 - Poor</option>
+            <option value="2">2 - Fair</option>
+            <option value="3">3 - Good</option>
+            <option value="4">4 - Very Good</option>
+            <option value="5">5 - Excellent</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="comment">Comment:</label>
+          <textarea
+            id="comment"
+            v-model="feedback.comment"
+            placeholder="Leave a comment..."
+          ></textarea>
+        </div>
+        <button
+          class="primary-button"
+          @click="submitFeedback"
+          :disabled="!feedback.rating || !feedback.comment"
+        >
+          Submit Feedback
         </button>
       </div>
     </div>
@@ -72,6 +103,11 @@ export default {
       currentUserId: null,
       availableArtists: [],
       selectedArtistId: "",
+      feedback: {
+        rating: "",
+        comment: ""
+      },
+      allFeedback: []
     };
   },
   computed: {
@@ -94,6 +130,11 @@ export default {
     if (this.isOwner && this.project.status === "active") {
       await this.fetchAvailableArtists();
     }
+
+    // Fetch feedback if project is completed
+    if (this.project.status === "completed") {
+      await this.fetchFeedback();
+    }
   },
   methods: {
     async fetchProject() {
@@ -101,7 +142,8 @@ export default {
         const res = await axios.get(`/api/projects/${this.$route.params.id}`);
         this.project = res.data;
       } catch (error) {
-        console.error(error);
+        console.error("Error fetching project details:", error);
+        alert("Failed to load project details.");
       }
     },
     async fetchAvailableArtists() {
@@ -111,7 +153,8 @@ export default {
         );
         this.availableArtists = res.data;
       } catch (error) {
-        console.error(error);
+        console.error("Error fetching available artists:", error);
+        alert("Failed to load available artists.");
       }
     },
     async sendInvite() {
@@ -125,24 +168,61 @@ export default {
         });
         alert("Invitation sent!");
 
-        // Remove invited artist from the list
+        // Remove the invited artist from the available list
         this.availableArtists = this.availableArtists.filter(
           (a) => a.id !== parseInt(this.selectedArtistId)
         );
         this.selectedArtistId = "";
       } catch (error) {
-        console.error(error);
+        console.error("Error sending invite:", error);
+        alert("Failed to send invitation.");
       }
     },
     async markAsCompleted() {
+      if (!confirm("Are you sure you want to mark this project as completed?")) {
+        return;
+      }
       try {
         await axios.post(`/api/projects/${this.project.id}/complete`);
         this.project.status = "completed";
         alert("Project marked as completed!");
+
+        // Optionally fetch feedback if needed
+        await this.fetchFeedback();
       } catch (error) {
-        console.error(error);
+        console.error("Error marking project as completed:", error);
+        alert("Failed to mark project as completed.");
       }
     },
+    async submitFeedback() {
+      if (!this.feedback.rating || !this.feedback.comment) {
+        alert("Please provide both a rating and a comment.");
+        return;
+      }
+      try {
+        await axios.post(`/api/projects/${this.project.id}/feedback`, this.feedback);
+        alert("Feedback submitted successfully!");
+
+        // Reset feedback form
+        this.feedback.rating = "";
+        this.feedback.comment = "";
+
+        // Optionally fetch all feedback again
+        await this.fetchFeedback();
+      } catch (error) {
+        console.error("Error submitting feedback:", error);
+        alert("Failed to submit feedback.");
+      }
+    },
+    async fetchFeedback() {
+      try {
+        const res = await axios.get(`/api/projects/${this.project.id}/feedback`);
+        this.allFeedback = res.data;
+      } catch (error) {
+        console.error("Error fetching feedback:", error);
+        alert("Failed to load feedback.");
+      }
+    }
   },
 };
 </script>
@@ -152,7 +232,6 @@ export default {
 .project-detail-page {
   max-width: 700px;
   margin: 40px auto;
-  font-family: "Poppins", sans-serif;
   padding: 0 16px;
 }
 
@@ -167,7 +246,7 @@ export default {
 /* Title, description, status */
 .project-title {
   font-size: 1.8rem;
-  color: #3c552d;
+  color: #3B1E54;
   margin-bottom: 8px;
   font-weight: 600;
 }
@@ -182,7 +261,7 @@ export default {
   color: #333;
 }
 .project-status strong {
-  color: #3c552d;
+  color: #3B1E54;
 }
 
 /* Section grouping (Collaborators, Invite, etc.) */
@@ -193,7 +272,7 @@ export default {
 }
 .section h2 {
   font-size: 1.2rem;
-  color: #3c552d;
+  color: #3B1E54;
   margin-bottom: 10px;
   font-weight: 600;
 }
@@ -223,14 +302,32 @@ export default {
   margin-bottom: 12px;
 }
 .form-group label {
-  margin-right: 8px;
+  display: block;
+  margin-bottom: 4px;
   font-weight: 500;
 }
-.form-group select {
+.form-group select,
+.form-group textarea {
+  width: 100%;
   padding: 8px;
   font-size: 1rem;
   border-radius: 4px;
   border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #5d9b8b;
+  outline: none;
+  box-shadow: 0 0 5px rgba(93, 155, 139, 0.5);
+}
+
+/* Textarea specific styling */
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+  max-height: 300px;
+  font-family: inherit;
 }
 
 /* Buttons */
@@ -242,18 +339,60 @@ export default {
   font-weight: 500;
   border: none;
   border-radius: 6px;
-  color: #fff;
-  background-color: #5d9b8b;
+  color: #3B1E54;
+  background-color: #D4BEE4;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 .primary-button:hover,
 .complete-button:hover {
   background-color: #537f73;
+  transform: translateY(-2px);
 }
-.primary-button:disabled {
+.primary-button:disabled,
+.complete-button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
+}
+
+/* Specific button adjustments */
+.complete-button {
+  background-color: #ff6b6b;
+}
+.complete-button:hover {
+  background-color: #e65c5c;
+}
+
+/* Feedback Section Specific Styling */
+.section.feedback-section {
+  background-color: #f9f9f9;
+  padding: 16px;
+  border-radius: 6px;
+}
+.section.feedback-section h2 {
+  margin-bottom: 14px;
+}
+.section.feedback-section .form-group {
+  margin-bottom: 16px;
+}
+.section.feedback-section .primary-button {
+  width: 100%;
+}
+
+/* Invite Section Specific Styling */
+.section.invite-section {
+  background-color: #fdfdfd;
+  padding: 16px;
+  border-radius: 6px;
+}
+.section.invite-section h2 {
+  margin-bottom: 14px;
+}
+
+/* Completion Section Specific Styling */
+.section.completion-section {
+  display: flex;
+  justify-content: flex-end;
 }
 
 /* Responsive tweaks */

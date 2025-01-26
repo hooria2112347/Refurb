@@ -32,6 +32,8 @@ import ProjectCreate from './components/ProjectCreate.vue';
 import ProjectDetail from './components/ProjectDetail.vue';
 import ProjectList from './components/ProjectList.vue';
 import MySentInvitations from './components/MySentInvitations.vue';
+import AdminFeedback from './components/AdminFeedback.vue';
+import AdminManageProducts from './components/AdminManageProducts.vue';
 
 const routes = [  {
   path: '/user-profile/:id',
@@ -65,7 +67,15 @@ const routes = [  {
   { path: '/custom-request', component: CustomRequest },
   { path: '/portfolio', component: Portfolio },
   { path: '/manage-products', component: ManageProducts, name: 'ManageProducts' },
+  { path: '/admin-feedback', component: AdminFeedback },
 
+
+  {
+    path: '/admin-products',
+    name: 'AdminManageProducts',
+    component: AdminManageProducts,
+    meta: { requiresAdmin: true },
+  },
   {
     path: '/my-invitations',
     name: 'MyInvitations',

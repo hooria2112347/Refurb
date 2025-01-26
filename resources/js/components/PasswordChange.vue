@@ -1,16 +1,14 @@
 <template>
-  <div class="profile-container">
-    <div class="sidebar">
-      <ul class="menu">
-        <li><router-link to="/account" active-class="active">Account</router-link></li>
-        <li><router-link to="/password-change" active-class="active">Change Password</router-link></li>
-        <li><router-link to="/billing-address" active-class="active">Billing Address</router-link></li>
-        <li><router-link to="/shipping-address" active-class="active">Shipping Address</router-link></li>
-        <li><router-link to="/my-orders" active-class="active">My Orders</router-link></li>
-      </ul>
-    </div>
-    <div class="main-content">
-      <h1>Change Password</h1>
+  <div class="artist-dashboard">
+    <!-- Side navigation for Change Password -->
+    <aside class="side-nav">
+      <router-link to="/artist-dashboard" exact-active-class="active">Overview</router-link>
+      <router-link to="/account" exact-active-class="active">Account</router-link>
+      <router-link to="/password-change" exact-active-class="active">Change Password</router-link>
+    </aside>
+
+    <section class="dashboard-content">
+      <h2>Change Password</h2>
 
       <!-- Success Message -->
       <div v-if="successMessage" class="success-message">
@@ -50,7 +48,7 @@
           <button type="submit">Update Password</button>
         </form>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
@@ -58,12 +56,9 @@
 import axios from "axios";
 
 export default {
+  name: "ChangePassword",
   data() {
     return {
-      user: {
-        name: "",
-        email: "",
-      },
       form: {
         currentPassword: "",
         newPassword: "",
@@ -72,109 +67,128 @@ export default {
       successMessage: "",
     };
   },
+  computed: {
+    isArtist() {
+      const session = localStorage.getItem("userSession");
+      if (session) {
+        try {
+          const userData = JSON.parse(session);
+          return userData.role === "artist";
+        } catch (e) {
+          console.error("Error parsing session data:", e);
+          return false;
+        }
+      }
+      return false;
+    },
+  },
   methods: {
-    fetchUserDetails() {
+    changePassword() {
+      // Basic front-end validation
+      if (this.form.newPassword !== this.form.confirmPassword) {
+        alert("New Password and Confirm Password do not match.");
+        return;
+      }
+
+      // Make API call to change password
       axios
-        .get("/api/user")
+        .post(
+          "/api/change-password",
+          {
+            currentPassword: this.form.currentPassword,
+            newPassword: this.form.newPassword,
+            confirmPassword: this.form.confirmPassword,
+          },
+          {
+            withCredentials: true,
+            headers: {
+              Authorization: `Bearer ${
+                localStorage.getItem("userSession")
+                  ? JSON.parse(localStorage.getItem("userSession")).token
+                  : ""
+              }`,
+            },
+          }
+        )
         .then((response) => {
-          this.user = response.data;
+          this.successMessage =
+            response.data.message || "Password updated successfully!";
+          // Clear form fields
+          this.form.currentPassword = "";
+          this.form.newPassword = "";
+          this.form.confirmPassword = "";
         })
         .catch((error) => {
-          console.error("Failed to fetch user details:", error);
-          alert("Could not fetch user details. Please log in again.");
+          console.error("Error changing password:", error);
+          alert(
+            error.response?.data?.message ||
+              "Failed to change password. Please try again."
+          );
         });
     },
-    changePassword() {
-  axios
-    .post(
-      "/api/change-password",
-      {
-        currentPassword: this.form.currentPassword,
-        newPassword: this.form.newPassword,
-        confirmPassword: this.form.confirmPassword,
-      },
-      {
-        withCredentials: true,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("userSession") 
-            ? JSON.parse(localStorage.getItem("userSession")).token 
-            : ""}`,
-        },
-      }
-    )
-    .then((response) => {
-      this.successMessage = response.data.message || "Password updated successfully!";
-      this.form.currentPassword = "";
-      this.form.newPassword = "";
-      this.form.confirmPassword = "";
-    })
-    .catch((error) => {
-      alert(
-        error.response?.data?.message || "Failed to change password. Please try again."
-      );
-    });
-},
   },
   mounted() {
-    this.fetchUserDetails();
+    // Confirm user is Artist
+    if (!this.isArtist) {
+      this.$router.push("/login"); // Redirect if not an artist
+    }
   },
 };
 </script>
 
 <style scoped>
-  /* Layout Styling */
-.profile-container {
+/* MAIN WRAPPER FOR CHANGE PASSWORD DASHBOARD */
+.artist-dashboard {
   display: flex;
-  background-color: #f9f9f9;
-  font-family: Arial, sans-serif;
-  align-items: flex-start; /* Ensures items align at the top */
+  background-color: #f7f9fc;
+  min-height: 100vh;
 }
 
-/* Sidebar */
-.sidebar {
-  width: 25%;
+/* SIDE NAVIGATION STYLING */
+.side-nav {
+  width: 220px;
   background-color: #ffffff;
-  border-right: 1px solid #ddd;
-  padding: 1.5rem;
-  height: 88vh;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+  border-right: 1px solid #e4e4e4;
+  display: flex;
+  flex-direction: column;
 }
 
-.menu {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.menu li {
-  margin: 0.8rem 0;
-}
-
-.menu li a {
-  text-decoration: none;
-  color: #333;
-  font-size: 1rem;
+.side-nav a {
   display: block;
-  padding: 0.5rem 0;
+  margin-bottom: 0.8rem;
+  padding: 10px;
+  color: #3B1E54;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  transition: color 0.3s;
 }
 
-.menu li.active a {
-  font-weight: bold;
-  color: #CA7373;
+.side-nav a:hover {
+  background-color: #9B7EBD; /* Optional: Keep hover background if desired */
+  color: #3B1E54;
 }
 
-/* Main Content */
-.main-content {
-  flex: 1;
+.side-nav a.active {
+  /* Removed background-color to eliminate highlight */
+  /* Optional: Change text color to indicate active link */
+  color: #EEEEEE;
+}
+
+/* DASHBOARD CONTENT STYLING */
+.dashboard-content {
+  flex: 0.8;
   padding: 2rem;
+  background-color: #f7f9fc;
 }
 
-.main-content h1 {
-  font-size: 1.8rem;
+.dashboard-content h2 {
+  font-size: 28px;
+  color: #3B1E54;
   margin-bottom: 1rem;
-  color: #333;
 }
 
 .form-container {
@@ -192,7 +206,7 @@ export default {
   display: block;
   margin-bottom: 0.5rem;
   font-weight: bold;
-  color: #555;
+  color: #3B1E54;
 }
 
 .form-group input {
@@ -206,8 +220,8 @@ button {
   display: inline-block;
   width: 100%;
   padding: 0.75rem;
-  background-color: #CA7373;
-  color: #fff;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   font-size: 1rem;
   font-weight: bold;
   border: none;
@@ -217,13 +231,13 @@ button {
 }
 
 button:hover {
-  background-color: #D7B26D;
+  background-color: #EEEEEE;
 }
 
 /* Success Message */
 .success-message {
-  background-color: #4caf50;
-  color: white;
+  background-color: #3B1E54;
+  color: D4BEE4;
   padding: 0.75rem;
   border-radius: 5px;
   margin-bottom: 1.5rem;
@@ -239,4 +253,25 @@ button:hover {
   font-size: 1.2rem;
   cursor: pointer;
 }
-  </style>
+
+/* RESPONSIVE DESIGN */
+@media screen and (max-width: 768px) {
+  .side-nav {
+    width: 180px;
+  }
+
+  .dashboard-content {
+    padding: 1rem;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .side-nav {
+    display: none; /* Consider implementing a hamburger menu for mobile */
+  }
+
+  .dashboard-content {
+    padding: 1rem;
+  }
+}
+</style>

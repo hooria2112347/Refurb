@@ -106,14 +106,13 @@ export default {
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  font-family: 'Poppins', sans-serif;
 }
 
 /* HEADING */
 .project-create-form > h1 {
   text-align: center;
   font-size: 1.8rem;
-  color: #3C552D;
+  color: #3B1E54;
   margin-bottom: 25px;
   font-weight: 600;
 }
@@ -129,7 +128,7 @@ export default {
   margin-bottom: 6px;
   font-size: 1rem;
   font-weight: 500;
-  color: #333;
+  color: #3B1E54;
 }
 
 /* INPUT AND TEXTAREA */
@@ -167,8 +166,8 @@ button[type="submit"] {
   padding: 12px;
   font-size: 1.1rem;
   font-weight: 600;
-  background-color: #5D9B8B;
-  color: #ffffff;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   border: none;
   border-radius: 8px;
   cursor: pointer;

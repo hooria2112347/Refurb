@@ -5,7 +5,6 @@
         <router-link to="/admin-dashboard">Admin Overview</router-link>
         <router-link to="/account">Account</router-link>
         <router-link to="/admin-feedback">Feedback Management</router-link>
-        <router-link to="/admin-orders">Orders</router-link>
         <router-link to="/admin-products">Manage Products</router-link>
         <!-- Add more admin-specific links as needed -->
       </aside>
@@ -42,7 +41,6 @@
   display: flex;
   background-color: #f7f9fc;
   min-height: 100vh;
-  font-family: 'Poppins', sans-serif;
 }
 
 /* SIDE NAVIGATION STYLING */
@@ -67,7 +65,7 @@
   display: block;
   margin-bottom: 0.8rem;
   padding: 10px;
-  color: #3C552D;
+  color: #3B1E54;
   text-decoration: none;
   border-radius: 8px;
   font-size: 16px;
@@ -76,13 +74,13 @@
 }
 
 .side-nav a:hover {
-  background-color: #e4f2ea;
-  color: #5d9b8b;
+  background-color: #D4BEE4;
+  color: #3B1E54;
 }
 
 .side-nav a.active {
-  background-color: #5d9b8b;
-  color: #ffffff;
+  background-color: #9B7EBD;
+  color: #3B1E54;
 }
 
 /* DASHBOARD CONTENT STYLING */

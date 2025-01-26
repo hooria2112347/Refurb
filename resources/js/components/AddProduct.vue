@@ -212,7 +212,6 @@ export default {
   border: 1px solid #ddd;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  font-family: Arial, sans-serif;
 }
 
 /* Title Styles */
@@ -221,7 +220,7 @@ export default {
   font-weight: bold;
   margin-bottom: 1rem;
   text-align: center;
-  color: #333;
+  color: #3B1E54;
 }
 
 /* Grid Layout */
@@ -247,7 +246,7 @@ export default {
 .label {
   font-weight: bold;
   margin-bottom: 0.25rem;
-  color: #555;
+  color: #3B1E54;
 }
 
 .input-field {
@@ -276,8 +275,8 @@ export default {
 
 .upload-btn {
   padding: 0.5rem 1rem;
-  background-color: #4CAF50;
-  color: white;
+  background-color: #D4BEE4;
+  color: 3B1E54;
   border: none;
   border-radius: 4px;
   font-size: 0.9rem;
@@ -286,7 +285,7 @@ export default {
 }
 
 .upload-btn:hover {
-  background-color: #45a049;
+  background-color: #EEEEEE;
 }
 
 .image-preview {
@@ -324,8 +323,8 @@ export default {
 }
 
 .submit-btn {
-  background-color: #4CAF50;
-  color: white;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;

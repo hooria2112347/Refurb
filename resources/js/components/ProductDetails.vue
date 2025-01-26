@@ -146,7 +146,6 @@ export default {
 
 <style scoped>
 .product-detail-page {
-  font-family: Arial, sans-serif;
   margin: 0 auto;
   padding: 20px;
 }
