@@ -4,7 +4,7 @@
     <h1>My Invitations</h1>
 
     <!-- No Invitations Message -->
-    <div v-if="invitations.length === 0 && !loading && !error" class="no-invitations">
+    <div v-if="filteredInvitations.length === 0 && !loading && !error" class="no-invitations">
       <p>No pending invitations.</p>
     </div>
 
@@ -26,13 +26,15 @@
         class="invitation-item"
       >
         <!-- Title / Project Info -->
-        <h3 v-if="invite.project">
-          You have been invited to collaborate on 
-          <strong>{{ invite.project.title }}</strong>
-        </h3>
-        <h3 v-else>
-          You have an invitation without project data.
-        </h3>
+        <router-link :to="`/projects/${invite.project_id}`" class="project-link">
+          <h3 v-if="invite.project">
+            You have been invited to collaborate on 
+            <strong>{{ invite.project.title }}</strong>
+          </h3>
+          <h3 v-else>
+            You have an invitation without project data.
+          </h3>
+        </router-link>
 
         <!-- Inviter Info -->
         <p>
@@ -90,13 +92,17 @@ export default {
     };
   },
   computed: {
+    // Filter invitations to exclude those related to completed projects
+    filteredInvitations() {
+      return this.invitations.filter(invite => invite.project && invite.project.status !== 'completed');
+    },
     totalPages() {
-      return Math.ceil(this.invitations.length / this.invitationsPerPage);
+      return Math.ceil(this.filteredInvitations.length / this.invitationsPerPage);
     },
     paginatedInvitations() {
       const startIndex = (this.currentPage - 1) * this.invitationsPerPage;
       const endIndex = startIndex + this.invitationsPerPage;
-      return this.invitations.slice(startIndex, endIndex);
+      return this.filteredInvitations.slice(startIndex, endIndex);
     },
   },
   methods: {
@@ -126,6 +132,8 @@ export default {
         this.invitations = this.invitations.map((invite) =>
           invite.id === inviteId ? { ...invite, status: updatedInvite.status } : invite
         );
+
+        // Optionally, you can refresh the invitations list or adjust the current view
       } catch (error) {
         console.error("Error responding to invitation:", error);
         alert("Failed to respond to the invitation.");
@@ -146,20 +154,14 @@ export default {
 </script>
 
 <style scoped>
-/* 
-  CONTAINER FOR THE PAGE 
-  - Consistent with ArtistViewCustomRequests.
-*/
+/* CONTAINER FOR THE PAGE */
 .my-invitations {
   max-width: 700px;
   margin: 40px auto;
   padding: 0 16px;
 }
 
-/* 
-  PAGE HEADER 
-  - A simple, centered title with the same accent color.
-*/
+/* PAGE HEADER */
 .my-invitations h1 {
   text-align: center;
   font-size: 1.8rem;
@@ -185,20 +187,14 @@ export default {
   margin-top: 20px;
 }
 
-/* 
-  INVITATIONS LIST 
-  - Similar to invitations-list with vertical stacking and gaps.
-*/
+/* INVITATIONS LIST */
 .invitations-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-/* 
-  INVITATION ITEM 
-  - Mirroring invitation-item styling.
-*/
+/* INVITATION ITEM */
 .invitation-item {
   background-color: #fff;
   padding: 16px;
@@ -207,6 +203,15 @@ export default {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   cursor: default;
   transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.project-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.project-link:hover h3 {
+  text-decoration: underline;
 }
 
 .invitation-item:hover {
@@ -233,10 +238,7 @@ export default {
   margin: 4px 0;
 }
 
-/* 
-  ACTION BUTTONS 
-  - Consistent with ArtistViewCustomRequests action-buttons.
-*/
+/* ACTION BUTTONS */
 .action-buttons {
   margin-top: 12px;
   display: flex;
@@ -272,10 +274,7 @@ export default {
   opacity: 0.9;
 }
 
-/* 
-  STATUS LABELS 
-  - Consistent styling with pill-shaped backgrounds and white text.
-*/
+/* STATUS LABELS */
 .status-label {
   margin-top: 12px;
   text-align: center;
@@ -295,10 +294,7 @@ export default {
   color: #fff;
 }
 
-/* 
-  PAGINATION CONTROLS 
-  - Styled similarly for consistency.
-*/
+/* PAGINATION CONTROLS */
 .pagination-controls {
   display: flex;
   justify-content: center;
@@ -332,10 +328,7 @@ export default {
   font-weight: bold;
 }
 
-/* 
-  RESPONSIVE DESIGN 
-  - Consistent with ArtistViewCustomRequests.
-*/
+/* RESPONSIVE DESIGN */
 @media (max-width: 768px) {
   .my-invitations {
     margin: 20px auto;

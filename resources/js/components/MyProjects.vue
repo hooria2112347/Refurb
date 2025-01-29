@@ -1,13 +1,6 @@
 <template>
   <div class="project-list-container">
     <h1>Collaborative Projects</h1>
-    <input 
-      v-model="searchTerm" 
-      class="search-input" 
-      placeholder="Search..." 
-      @input="fetchProjects" 
-    />
-
     <div v-if="projects.length === 0" class="no-projects">
       <p>No collaborative projects found.</p>
     </div>
@@ -74,23 +67,6 @@ export default {
   font-size: 2rem;
 }
 
-/* Search input styling */
-.search-input {
-  display: block;
-  width: 100%;
-  max-width: 400px;
-  margin: 0 auto 24px;
-  padding: 10px 14px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  transition: border-color 0.3s ease;
-}
-.search-input:focus {
-  border-color: #3C552D;
-  outline: none;
-}
-
 /* No projects text */
 .no-projects {
   text-align: center;
@@ -141,8 +117,8 @@ export default {
 .details-link {
   display: inline-block;
   padding: 8px 12px;
-  background-color: #5D9B8B;
-  color: #ffffff;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   border-radius: 4px;
   text-decoration: none;
   font-size: 0.95rem;

@@ -1,12 +1,9 @@
 <template>
-  <div class="my-invitations">
-    <!-- Header -->
+  <div class="artist-view-custom-requests">
     <h1>All Custom Requests</h1>
 
     <!-- Loading Indicator -->
-    <div v-if="loading" class="loading">
-      <p>Loading...</p>
-    </div>
+    <div v-if="loading" class="loading">Loading...</div>
 
     <!-- Error Message -->
     <div v-if="error" class="error-message">
@@ -14,56 +11,93 @@
     </div>
 
     <!-- Requests List -->
-    <div v-else class="invitations-list">
-      <div 
-        v-for="request in paginatedRequests" 
-        :key="request.id" 
-        class="invitation-item"
+    <div v-else class="requests-list">
+      <div
+        v-for="request in requests"
+        :key="request.id"
+        class="request-card"
+        @click="goToRequestDetail(request.id)"
       >
-        <!-- Title / Request Info -->
-        <h3>
-          {{ request.description || 'No description provided.' }}
-        </h3>
-
-        <!-- Request Details -->
-        <p>
-          <strong>Budget:</strong> {{ request.budget ? `${request.budget} PKR` : 'N/A' }}
-        </p>
-        <p>
-          <strong>Deadline:</strong> {{ formatDate(request.deadline) }}
-        </p>
-
-        <!-- Accept/Decline Buttons (if pending) -->
-        <div class="action-buttons" v-if="request.status === 'Pending'">
-          <button 
-            @click="acceptRequest(request.id)" 
+        <div class="request-header">
+          <h3>{{ request.description }}</h3>
+        </div>
+        <div class="request-info">
+          <p><strong>Budget:</strong> {{ request.budget ? `${request.budget}  PKR` : 'N/A' }}</p>
+          <p><strong>Deadline:</strong> {{ formatDate(request.deadline) }}</p>
+        </div>
+        <div class="request-actions">
+          <!-- Only show Accept and Decline buttons for Pending requests -->
+          <button
+            v-if="request.status === 'Pending'"
+            @click.stop="acceptRequest(request.id)"
             class="accept-btn"
           >
             Accept
           </button>
-          <button 
-            @click="declineRequest(request.id)" 
-            class="reject-btn"
+          <button
+            v-if="request.status === 'Pending'"
+            @click.stop="declineRequest(request.id)"
+            class="decline-btn"
           >
             Decline
           </button>
-        </div>
-
-        <!-- Status Labels -->
-        <div v-else-if="request.status === 'Declined'" class="status-label rejected">
-          <p>Declined</p>
-        </div>
-        <div v-else-if="request.status === 'Accepted'" class="status-label accepted">
-          <p>Accepted</p>
         </div>
       </div>
     </div>
 
     <!-- Pagination Controls -->
-    <div class="pagination-controls" v-if="totalPages > 1">
+    <div class="pagination-controls">
       <button @click="changePage('previous')" :disabled="currentPage === 1">Previous</button>
       <span>Page {{ currentPage }} of {{ totalPages }}</span>
       <button @click="changePage('next')" :disabled="currentPage === totalPages">Next</button>
+    </div>
+
+    <!-- =========================== MODALS =========================== -->
+
+    <!-- 1) Confirm Accept Modal -->
+    <div v-if="showConfirmAcceptModal" class="modal-overlay" @click.self="closeConfirmAcceptModal">
+      <div class="modal-content">
+        <h2>Confirm</h2>
+        <p>Are you sure you want to accept this request?</p>
+        <div class="modal-buttons">
+          <button class="ok-btn" @click="doAcceptRequest">Yes</button>
+          <button class="cancel-btn" @click="closeConfirmAcceptModal">No</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2) Accept Success Modal -->
+    <div v-if="showAcceptSuccessModal" class="modal-overlay" @click.self="closeAcceptSuccessModal">
+      <div class="modal-content">
+        <h2>Notification</h2>
+        <p>Request accepted successfully.</p>
+        <div class="modal-buttons">
+          <button class="ok-btn" @click="closeAcceptSuccessModal">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3) Confirm Decline Modal -->
+    <div v-if="showConfirmDeclineModal" class="modal-overlay" @click.self="closeConfirmDeclineModal">
+      <div class="modal-content">
+        <h2>Confirm</h2>
+        <p>Are you sure you want to decline this request?</p>
+        <div class="modal-buttons">
+          <button class="ok-btn" @click="doDeclineRequest">Yes</button>
+          <button class="cancel-btn" @click="closeConfirmDeclineModal">No</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4) Decline Success Modal -->
+    <div v-if="showDeclineSuccessModal" class="modal-overlay" @click.self="closeDeclineSuccessModal">
+      <div class="modal-content">
+        <h2>Notification</h2>
+        <p>Request declined successfully.</p>
+        <div class="modal-buttons">
+          <button class="ok-btn" @click="closeDeclineSuccessModal">OK</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -72,7 +106,6 @@
 import axios from "axios";
 
 export default {
-  name: "ArtistViewCustomRequests",
   data() {
     return {
       requests: [],
@@ -80,6 +113,15 @@ export default {
       error: null,
       currentPage: 1,
       requestsPerPage: 5,
+
+      // ======== NEW MODAL STATES ========
+      showConfirmAcceptModal: false,
+      showAcceptSuccessModal: false,
+      showConfirmDeclineModal: false,
+      showDeclineSuccessModal: false,
+
+      // We'll store the ID of the request we're acting upon
+      currentRequestId: null,
     };
   },
   computed: {
@@ -115,56 +157,112 @@ export default {
     goToRequestDetail(requestId) {
       this.$router.push({ name: "RequestDetailPage", params: { id: requestId } });
     },
+
+    // ===================================================
+    // ================ ACCEPT LOGIC ======================
+    // ===================================================
     async acceptRequest(id) {
-      if (!confirm("Are you sure you want to accept this request?")) return;
+      // Original:
+      // if (!confirm("Are you sure you want to accept this request?")) return;
+      // We'll open a confirm accept modal instead:
+      this.currentRequestId = id;
+      this.showConfirmAcceptModal = true;
+    },
+    // Called when user clicks "Yes" in the confirm accept modal
+    async doAcceptRequest() {
+      this.showConfirmAcceptModal = false; // close the confirm modal
       try {
         const token = localStorage.getItem("access_token");
-        const response = await axios.post(`/api/custom-requests/${id}/accept`, {}, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        // Original: the entire block inside acceptRequest
+        //   if (!confirm("Are you sure you want to accept this request?")) return;
+        //   ...
+        //   alert("Request accepted successfully.");
+        // Now we do that logic here:
+        await axios.post(
+          `/api/custom-requests/${this.currentRequestId}/accept`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-        // Update the request's status after accepting
-        const request = this.requests.find(req => req.id === id);
-        if (request) {
-          request.status = "Accepted";
-        }
+        const request = this.requests.find((req) => req.id === this.currentRequestId);
+        if (request) request.status = "Accepted";
 
-        // Simple alert for success
-        alert("Request accepted successfully.");
+        // alert("Request accepted successfully.");
+        // => Replaced by a success modal:
+        this.showAcceptSuccessModal = true;
       } catch (error) {
         console.error("Error accepting request:", error);
-        alert("Failed to accept request.");
+        alert("Failed to accept request."); // Keep original alert
       }
     },
+    closeConfirmAcceptModal() {
+      this.showConfirmAcceptModal = false;
+      this.currentRequestId = null;
+    },
+    closeAcceptSuccessModal() {
+      this.showAcceptSuccessModal = false;
+    },
+
+    // ===================================================
+    // ================ DECLINE LOGIC =====================
+    // ===================================================
     async declineRequest(id) {
-      if (!confirm("Are you sure you want to decline this request?")) return;
+      // Original:
+      // if (!confirm("Are you sure you want to decline this request?")) return;
+      // We'll open a confirm decline modal instead:
+      this.currentRequestId = id;
+      this.showConfirmDeclineModal = true;
+    },
+    // Called when user clicks "Yes" in the confirm decline modal
+    async doDeclineRequest() {
+      this.showConfirmDeclineModal = false; // close the confirm modal
       try {
         const token = localStorage.getItem("access_token");
-        const response = await axios.post(`/api/custom-requests/${id}/decline`, {}, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        // Original logic from declineRequest:
+        // if (!confirm("Are you sure you want to decline this request?")) return;
+        // ...
+        // alert("Request declined successfully.");
+        // Moved here:
+        await axios.post(
+          `/api/custom-requests/${this.currentRequestId}/decline`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-        // Update the request's status after declining
-        const request = this.requests.find(req => req.id === id);
-        if (request) {
-          request.status = "Declined";
-        }
+        const request = this.requests.find((req) => req.id === this.currentRequestId);
+        if (request) request.status = "Declined";
 
-        // Simple alert for success
-        alert("Request declined successfully.");
+        // alert("Request declined successfully.");
+        // => Replaced by a success modal:
+        this.showDeclineSuccessModal = true;
       } catch (error) {
         console.error("Error declining request:", error);
-        alert("Failed to decline request.");
+        alert("Failed to decline request."); // Keep original alert
       }
     },
+    closeConfirmDeclineModal() {
+      this.showConfirmDeclineModal = false;
+      this.currentRequestId = null;
+    },
+    closeDeclineSuccessModal() {
+      this.showDeclineSuccessModal = false;
+    },
+
+    // ===================================================
+    // ================ PAGINATION LOGIC ==================
+    // ===================================================
     changePage(direction) {
-      if (direction === 'previous' && this.currentPage > 1) {
+      if (direction === "previous" && this.currentPage > 1) {
         this.currentPage--;
-      } else if (direction === 'next' && this.currentPage < this.totalPages) {
+      } else if (direction === "next" && this.currentPage < this.totalPages) {
         this.currentPage++;
       }
     },
@@ -176,21 +274,15 @@ export default {
 </script>
 
 <style scoped>
-/* 
-  CONTAINER FOR THE PAGE 
-  - Keeping it consistent with MyInvitations.
-*/
-.my-invitations {
+/* Container (mirroring .my-invitations styling) */
+.artist-view-custom-requests {
   max-width: 700px;
   margin: 40px auto;
   padding: 0 16px;
 }
 
-/* 
-  PAGE HEADER 
-  - A simple, centered title with the same accent color.
-*/
-.my-invitations h1 {
+/* Header */
+.artist-view-custom-requests h1 {
   text-align: center;
   font-size: 1.8rem;
   color: #3B1E54;
@@ -198,76 +290,70 @@ export default {
   font-weight: 600;
 }
 
-/* LOADING AND ERROR MESSAGES */
-.loading p,
-.error-message p {
+/* Loading and Error Messages (mirroring .loading and .error-message) */
+.loading {
   text-align: center;
   font-size: 1.1rem;
   color: #666;
   margin-top: 20px;
 }
 
-/* 
-  REQUESTS LIST 
-  - Similar to invitations-list with vertical stacking and gaps.
-*/
-.invitations-list {
+.error-message {
+  text-align: center;
+  font-size: 1.1rem;
+  color: #666;
+  margin-top: 20px;
+}
+
+/* Requests List (mirroring .invitations-list) */
+.requests-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-/* 
-  INVITATION ITEM 
-  - Mirroring invitation-item styling.
-*/
-.invitation-item {
+/* Request Card (mirroring .invitation-item) */
+.request-card {
   background-color: #fff;
   padding: 16px;
   border-left: 4px solid #3C552D;
   border-radius: 6px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  cursor: pointer;
+  cursor: default;
   transition: transform 0.3s, box-shadow 0.3s;
 }
 
-.invitation-item:hover {
-  transform: translateY(-5px);
+.request-card:hover {
+  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* REQUEST TITLE */
-.invitation-item h3 {
+/* Request Header & Title */
+.request-header h3 {
   font-size: 1.2rem;
   color: #333;
   margin-bottom: 8px;
   font-weight: 500;
 }
 
-.invitation-item strong {
-  color: #3C552D;
-}
-
-/* REQUEST DETAILS */
-.invitation-item p {
+/* Request Info (mirroring invitation-item p) */
+.request-info p {
   font-size: 1rem;
   color: #555;
   margin: 4px 0;
 }
 
-/* 
-  ACTION BUTTONS 
-  - Consistent with MyInvitations action-buttons.
-*/
-.action-buttons {
+/* Request Actions (mirroring .action-buttons) */
+.request-actions {
   margin-top: 12px;
   display: flex;
   gap: 10px;
   justify-content: flex-end;
 }
 
+/* Accept & Decline Buttons (mirroring .accept-btn, .reject-btn) */
 .accept-btn,
-.reject-btn {
+.decline-btn {
   padding: 8px 18px;
   font-size: 0.95rem;
   font-weight: 500;
@@ -286,41 +372,15 @@ export default {
   opacity: 0.9;
 }
 
-.reject-btn {
+.decline-btn {
   background-color: #e74c3c;
 }
 
-.reject-btn:hover {
+.decline-btn:hover {
   opacity: 0.9;
 }
 
-/* 
-  STATUS LABELS 
-  - Consistent styling with MyInvitations.
-*/
-.status-label {
-  margin-top: 12px;
-  text-align: center;
-  padding: 8px 0;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  font-weight: 500;
-}
-
-.status-label.accepted {
-  background-color: #27ae60;
-  color: #fff;
-}
-
-.status-label.rejected {
-  background-color: #e74c3c;
-  color: #fff;
-}
-
-/* 
-  PAGINATION CONTROLS 
-  - Styled similarly for consistency.
-*/
+/* Pagination Controls (mirroring the same style from .pagination-controls) */
 .pagination-controls {
   display: flex;
   justify-content: center;
@@ -354,27 +414,24 @@ export default {
   font-weight: bold;
 }
 
-/* 
-  RESPONSIVE DESIGN 
-  - Consistent with MyInvitations.
-*/
+/* RESPONSIVE STYLING */
 @media (max-width: 768px) {
-  .my-invitations {
+  .artist-view-custom-requests {
     margin: 20px auto;
     padding: 0 12px;
   }
 
-  .my-invitations h1 {
+  .artist-view-custom-requests h1 {
     font-size: 1.5rem;
     margin-bottom: 24px;
   }
-  
-  .invitation-item {
+
+  .request-card {
     padding: 12px;
   }
 
   .accept-btn,
-  .reject-btn {
+  .decline-btn {
     padding: 6px 14px;
     font-size: 0.85rem;
   }
@@ -383,5 +440,62 @@ export default {
     padding: 6px 14px;
     font-size: 0.85rem;
   }
+}
+
+/* ======= MODAL STYLES ======= */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background-color: #fff;
+  padding: 2rem;
+  width: 90%;
+  max-width: 400px;
+  border-radius: 8px;
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+/* Shared button styles for modals */
+.ok-btn,
+.cancel-btn {
+  padding: 0.6rem 1rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+}
+
+.ok-btn {
+  background-color: #27ae60; /* or #d9534f if you want red for "delete" */
+}
+
+.ok-btn:hover {
+  opacity: 0.9;
+}
+
+.cancel-btn {
+  background-color: #6c757d;
+}
+
+.cancel-btn:hover {
+  opacity: 0.9;
 }
 </style>

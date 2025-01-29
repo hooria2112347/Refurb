@@ -90,103 +90,120 @@ export default {
 </script>
 
 <style scoped>
-/* MAIN WRAPPER */
+/* Container - mirroring MyInvitations styling */
 .my-sent-invitations {
-  max-width: 800px;
+  max-width: 700px;
   margin: 40px auto;
-  padding: 20px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 0 16px;
 }
 
-/* HEADER STYLING */
+/* Header */
 .my-sent-invitations h1 {
   text-align: center;
-  font-size: 2rem;
-  color: #3C552D;
+  font-size: 1.8rem;
+  color: #3B1E54;
   margin-bottom: 30px;
-  font-weight: bold;
+  font-weight: 600;
 }
 
-/* NO INVITATIONS MESSAGE */
+/* No Invitations Message */
 .no-invitations p {
   text-align: center;
-  font-size: 1.2rem;
-  color: #888;
+  font-size: 1.1rem;
+  color: #666;
   margin-top: 20px;
 }
 
-/* INVITATIONS LIST */
+/* Invitations List */
 .invitations-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
-/* INVITATION ITEM */
+/* Invitation Item */
 .invitation-item {
+  background-color: #fff;
+  padding: 16px;
+  border-left: 4px solid #3C552D;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  cursor: default;
+  transition: transform 0.3s, box-shadow 0.3s;
   display: flex;
   align-items: flex-start;
   gap: 15px;
-  padding: 15px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
+.invitation-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Checkbox */
 .invitation-item input[type="checkbox"] {
   width: 20px;
   height: 20px;
   accent-color: #CA7373;
   cursor: pointer;
+  margin-top: 3px; /* Slight alignment tweak */
 }
 
-/* INVITATION DETAILS */
+/* Invitation Details */
 .invitation-details h3 {
   font-size: 1.2rem;
   color: #333;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.invitation-details strong {
+  color: #3C552D;
 }
 
 .invitation-details p {
   font-size: 1rem;
   color: #555;
-  margin-bottom: 5px;
+  margin: 4px 0;
 }
 
-/* DELETE BUTTON */
+/* Delete Button (mirroring a 'reject' style) */
 .delete-button {
-  padding: 10px 20px;
-  font-size: 1rem;
-  font-weight: bold;
-  color: #ffffff;
-  background-color: #CA7373;
+  padding: 8px 18px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #3B1E54;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: opacity 0.3s ease;
+  background-color: #D4BEE4;
   align-self: flex-start;
 }
 
 .delete-button:hover {
-  background-color: #D7B26D;
+  opacity: 0.9;
 }
 
-/* RESPONSIVE DESIGN */
+/* Responsive Adjustments */
 @media (max-width: 768px) {
   .my-sent-invitations {
-    padding: 15px;
+    margin: 20px auto;
+    padding: 0 12px;
   }
 
   .my-sent-invitations h1 {
-    font-size: 1.8rem;
+    font-size: 1.5rem;
+    margin-bottom: 24px;
+  }
+
+  .invitation-item {
+    padding: 12px;
   }
 
   .delete-button {
-    font-size: 0.9rem;
-    padding: 8px 16px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
   }
 }
 </style>

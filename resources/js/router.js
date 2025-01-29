@@ -9,9 +9,7 @@ import ArtistDetail from './components/ArtistDetail.vue';
 import Login from './components/Login.vue';
 import Signup from './components/Signup.vue';
 import CustomRequest from './components/CustomRequest.vue';
-import Portfolio from './components/Portfolio.vue';
 import AddProduct from './components/AddProduct.vue';
-import Feedback from './components/Feedback.vue';
 import Account from './components/Account.vue';
 import PasswordChange from './components/PasswordChange.vue';
 import ManageProducts from './components/ManageProducts.vue';
@@ -33,7 +31,6 @@ import ProjectDetail from './components/ProjectDetail.vue';
 import ProjectList from './components/ProjectList.vue';
 import MySentInvitations from './components/MySentInvitations.vue';
 import AdminFeedback from './components/AdminFeedback.vue';
-import AdminManageProducts from './components/AdminManageProducts.vue';
 
 const routes = [  {
   path: '/user-profile/:id',
@@ -45,12 +42,22 @@ const routes = [  {
   name: 'MySentInvitations',
   component: MySentInvitations
 },
-   {
-      path: '/products/:id',  // Path for product details with dynamic ID
-      name: 'product-details',
-      component: ProductDetails,
-      props: true, // Pass the `id` as a prop to the ProductDetails component
-    }, {
+{
+  path: '/manage-products',
+  name: 'ManageProducts',
+  component: ManageProducts,
+},
+{
+  path: '/products/:id', // Path for product details with dynamic ID
+  name: 'product-details',
+  component: ProductDetails,
+  props: true, // Pass the `id` as a prop to the ProductDetails component
+},
+// ... other routes
+{
+  path: '/:pathMatch(.*)*',
+  redirect: '/manage-products', // Redirect unknown routes to Manage Products
+}, {
   path: '/scrap-items',   // Route for browsing all scrap products
   name: 'browse-scrap',
   component: BrowseScrap,
@@ -65,17 +72,8 @@ const routes = [  {
   { path: '/artist-dashboard', name: 'ArtistDashboard', component: ArtistDashboard },
   { path: '/scrap-seller-dashboard', name: 'ScrapSellerDashboard', component: ScrapSellerDashboard },
   { path: '/custom-request', component: CustomRequest },
-  { path: '/portfolio', component: Portfolio },
   { path: '/manage-products', component: ManageProducts, name: 'ManageProducts' },
   { path: '/admin-feedback', component: AdminFeedback },
-
-
-  {
-    path: '/admin-products',
-    name: 'AdminManageProducts',
-    component: AdminManageProducts,
-    meta: { requiresAdmin: true },
-  },
   {
     path: '/my-invitations',
     name: 'MyInvitations',
@@ -123,7 +121,6 @@ const routes = [  {
     name: "PasswordChange",
     component: PasswordChange,
   },
-  { path: '/feedback', component: Feedback },
   { path: '/forget-password', component: ForgetPassword }, // New route for Forget Password
 //for general/scrap user
   { path: '/view-custom-requests', component: ViewCustomRequests, name: 'ViewCustomRequests' },

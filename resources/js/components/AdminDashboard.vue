@@ -2,10 +2,9 @@
     <div class="admin-dashboard">
       <!-- Side navigation for Admin -->
       <aside class="side-nav">
-        <router-link to="/admin-dashboard">Admin Overview</router-link>
+        <router-link to="/admin-dashboard">Overview</router-link>
         <router-link to="/account">Account</router-link>
         <router-link to="/admin-feedback">Feedback Management</router-link>
-        <router-link to="/admin-products">Manage Products</router-link>
         <!-- Add more admin-specific links as needed -->
       </aside>
   

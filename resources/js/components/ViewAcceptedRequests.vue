@@ -1,5 +1,8 @@
 <template>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    rel="stylesheet"
+  />
   <div class="custom-requests-page">
     <h1>Accepted Requests</h1>
 
@@ -13,15 +16,23 @@
 
     <!-- Requests List -->
     <div v-else class="requests-list">
-      <div v-for="request in paginatedRequests" :key="request.id" class="request-card" @click="goToRequestDetail(request.id)" :class="{ 'completed-card': request.status === 'Completed' }">
+      <div
+        v-for="request in paginatedRequests"
+        :key="request.id"
+        class="request-card"
+        @click="goToRequestDetail(request.id)"
+      >
         <div class="request-header">
           <h3 class="request-description">{{ request.description }}</h3>
           <div class="request-status-container">
-            <p class="request-status" :class="{ 'accepted': request.status === 'Accepted', 'completed': request.status === 'Completed' }">
-              {{ request.status === 'Completed' ? 'Completed' : request.status === 'Accepted' ? 'Accepted' : 'Pending' }} <!-- Show Accepted or Completed -->
+            <p
+              class="request-status"
+              :class="{
+                accepted: request.status === 'Accepted'
+              }"
+            >
+              {{ request.status === 'Accepted' ? 'Accepted' : 'Pending' }}
             </p>
-            <!-- Complete Button -->
-            <button v-if="request.status === 'Accepted'" @click.stop="completeRequest(request.id)" class="complete-button">Completed</button>
           </div>
         </div>
       </div>
@@ -29,9 +40,16 @@
 
     <!-- Pagination Controls -->
     <div class="pagination-controls">
-      <button @click="changePage('previous')" :disabled="currentPage === 1">Previous</button>
+      <button @click="changePage('previous')" :disabled="currentPage === 1">
+        Previous
+      </button>
       <span>Page {{ currentPage }} of {{ totalPages }}</span>
-      <button @click="changePage('next')" :disabled="currentPage === totalPages">Next</button>
+      <button
+        @click="changePage('next')"
+        :disabled="currentPage === totalPages"
+      >
+        Next
+      </button>
     </div>
   </div>
 </template>
@@ -89,33 +107,6 @@ export default {
       this.$router.push({ name: 'RequestDetailPage', params: { id: requestId } });
     },
 
-    async completeRequest(requestId) {
-      if (!confirm("Are you sure you want to mark this request as completed?")) return;
-
-      try {
-        const token = localStorage.getItem('access_token');
-        const response = await axios.post(`/api/custom-requests/${requestId}/complete`, {}, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.data && response.data.message) {
-          this.$toast.success(response.data.message); // Show success message
-        }
-
-        // Update the status locally
-        const request = this.requests.find(req => req.id === requestId);
-        if (request) {
-          request.status = "Completed"; // Update the request's status to completed
-        }
-
-      } catch (error) {
-        console.error("Error completing request:", error);
-        this.$toast.error(error.response?.data?.error || "Failed to complete request.");
-      }
-    },
-
     changePage(direction) {
       if (direction === 'previous' && this.currentPage > 1) {
         this.currentPage--;
@@ -131,74 +122,60 @@ export default {
 </script>
 
 <style scoped>
+/* Container - mirroring MyInvitations styling */
 .custom-requests-page {
-  /* max-width: 800px; */
-  margin: 40px ;
-  padding: 5px;
-  background-color: #ffffff;
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 0 16px;
 }
- 
-.custom-requests-page h1 { font-family: Arial, sans-serif;
+
+/* Page Header - similar to MyInvitations h1 */
+.custom-requests-page h1 {
   text-align: center;
+  font-size: 1.8rem;
   color: #3B1E54;
   margin-bottom: 30px;
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-weight: 600;
 }
 
 /* Loading and Error Messages */
 .loading,
 .error-message {
   text-align: center;
-  font-size: 1.2em;
-  color: #e74c3c;
+  font-size: 1.1rem;
+  color: #666;
+  margin-top: 20px;
 }
 
-/* Requests List */
+/* Requests List - mirroring .invitations-list */
 .requests-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 16px;
 }
 
-/* Request Card */ 
+/* Request Card - mirroring .invitation-item */
 .request-card {
-  /* border: 1px solid #ddd; */
-  border-radius: 15px;
-  padding: 15px;
-  background-color: #f9fff8;
-  width: 100%;
-  cursor: pointer;
+  background-color: #fff;
+  padding: 16px;
+  border-left: 4px solid #3C552D;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  cursor: default;
   transition: transform 0.3s, box-shadow 0.3s;
-  font-size: 0.5rem; font-family: Arial, sans-serif;
 }
 
 .request-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-}
-/* .request-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-} */
-
-/* When the request status is Completed */
-.completed-card {
-  background-color: #e1ffe0; /* Light green background */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* Request Header */
-.request-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center; font-family: Arial, sans-serif;
-}
-
-.request-description {
+/* Header and Description - matching MyInvitations text styling */
+.request-header h3.request-description {
   font-size: 1.2rem;
-  /* font-weight: bold; */
-  color: #6e7277; font-family: Arial, sans-serif;
-  margin: 0;
+  color: #333;
+  margin-bottom: 8px;
+  font-weight: 500;
 }
 
 .request-status-container {
@@ -207,41 +184,24 @@ export default {
   gap: 15px;
 }
 
+/* Status text styling */
 .request-status {
   font-size: 1rem;
+  color: #555;
   margin: 0;
-  color: #3498db;
 }
 
 .request-status.accepted {
-  color: green;
+  color: #27ae60;
 }
 
-.request-status.completed {
-  color: #2ecc71; /* Green for completed status */
-}
-
-/* Complete Button */
-.complete-button {
-  padding: 5px 10px;
-  background-color: #2ecc71;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.complete-button:hover {
-  background-color: #27ae60;
-}
-
-/* Pagination Controls */
+/* Pagination Controls - mirroring MyInvitations .pagination-controls */
 .pagination-controls {
   display: flex;
   justify-content: center;
+  align-items: center;
   margin-top: 20px;
-  gap: 10px;
+  gap: 15px;
 }
 
 .pagination-controls button {
@@ -249,9 +209,9 @@ export default {
   background-color: #3498db;
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.95rem;
   transition: background-color 0.3s ease;
 }
 
@@ -266,6 +226,28 @@ export default {
 
 .pagination-controls span {
   font-size: 1.1rem;
-  align-self: center;
+  font-weight: bold;
+}
+
+/* Responsive styling - same approach as MyInvitations */
+@media (max-width: 768px) {
+  .custom-requests-page {
+    margin: 20px auto;
+    padding: 0 12px;
+  }
+
+  .custom-requests-page h1 {
+    font-size: 1.5rem;
+    margin-bottom: 24px;
+  }
+
+  .request-card {
+    padding: 12px;
+  }
+
+  .pagination-controls button {
+    padding: 6px 14px;
+    font-size: 0.85rem;
+  }
 }
 </style>

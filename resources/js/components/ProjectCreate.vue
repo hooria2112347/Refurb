@@ -1,64 +1,102 @@
 <template>
   <div class="project-create-form">
     <h1>Create a New Collaborative Project</h1>
+
+    <!-- Server-side errors displayed if any -->
+    <div v-if="serverErrors.length" class="error-messages">
+      <p v-for="(error, index) in serverErrors" :key="index" class="error">{{ error }}</p>
+    </div>
+
     <form @submit.prevent="createProject">
       <div class="form-group">
-        <label for="title">Project Title</label>
+        <label for="title">
+          Project Title<span class="required">*</span>
+        </label>
         <input 
           id="title" 
           v-model="form.title" 
-          required 
+          :class="{ 'input-error': clientErrors.title }"
           placeholder="Enter a descriptive title..."
         />
+        <span v-if="clientErrors.title" class="inline-error">
+          {{ clientErrors.title }}
+        </span>
       </div>
 
       <div class="form-group">
-        <label for="description">Project Description</label>
+        <label for="description">
+          Project Description<span class="required">*</span>
+        </label>
         <textarea
           id="description"
           v-model="form.description"
+          :class="{ 'input-error': clientErrors.description }"
           placeholder="Brief overview or objectives..."
         ></textarea>
+        <span v-if="clientErrors.description" class="inline-error">
+          {{ clientErrors.description }}
+        </span>
       </div>
 
       <div class="form-group">
-        <label for="required_roles">Required Roles</label>
+        <label for="required_roles">
+          Required Roles<span class="required">*</span>
+        </label>
         <input 
           id="required_roles" 
           v-model="form.required_roles"
-          required
+          :class="{ 'input-error': clientErrors.required_roles }"
           placeholder="Example: Designer, Copywriter..."
         />
+        <span v-if="clientErrors.required_roles" class="inline-error">
+          {{ clientErrors.required_roles }}
+        </span>
       </div>
 
       <div class="form-group">
-        <label for="skills_required">Skills Required</label>
+        <label for="skills_required">
+          Skills Required<span class="required">*</span>
+        </label>
         <input 
           id="skills_required" 
-          v-model="form.skills_required" 
-          required
+          v-model="form.skills_required"
+          :class="{ 'input-error': clientErrors.skills_required }"
           placeholder="e.g. UX Design, Photoshop..."
         />
+        <span v-if="clientErrors.skills_required" class="inline-error">
+          {{ clientErrors.skills_required }}
+        </span>
       </div>
 
       <div class="form-group">
-        <label for="deadline">Deadline</label>
+        <label for="deadline">
+          Deadline<span class="required">*</span>
+        </label>
         <input 
           id="deadline"
           type="date"
           v-model="form.deadline"
-          required
+          :class="{ 'input-error': clientErrors.deadline }"
         />
+        <span v-if="clientErrors.deadline" class="inline-error">
+          {{ clientErrors.deadline }}
+        </span>
       </div>
 
       <div class="form-group">
-        <label for="budget">Budget (Optional)</label>
+        <label for="budget">
+          Budget<span class="required">*</span>
+        </label>
         <input 
           id="budget"
           type="number"
           v-model="form.budget"
+          :class="{ 'input-error': clientErrors.budget }"
           placeholder="e.g. 500"
         />
+        <span v-if="clientErrors.budget" class="inline-error">
+          {{ clientErrors.budget }}
+        </span>
       </div>
 
       <button type="submit">Create Project</button>
@@ -79,18 +117,58 @@ export default {
         required_roles: '',
         skills_required: '',
         deadline: '',
-        budget: null
-      }
+        budget: '',
+      },
+      clientErrors: {},
+      serverErrors: [],
     };
   },
   methods: {
+    validateForm() {
+      this.clientErrors = {};
+
+      if (!this.form.title.trim()) {
+        this.clientErrors.title = 'Project title is required.';
+      }
+      if (!this.form.description.trim()) {
+        this.clientErrors.description = 'Project description is required.';
+      }
+      if (!this.form.required_roles.trim()) {
+        this.clientErrors.required_roles = 'Required roles field is required.';
+      }
+      if (!this.form.skills_required.trim()) {
+        this.clientErrors.skills_required = 'Skills required field is required.';
+      }
+      if (!this.form.deadline) {
+        this.clientErrors.deadline = 'Deadline is required.';
+      }
+      if (this.form.budget === '') {
+        this.clientErrors.budget = 'Budget is required.';
+      }
+    },
     async createProject() {
+      // Clear out old errors
+      this.serverErrors = [];
+      this.clientErrors = {};
+
+      // Client-side validation
+      this.validateForm();
+      if (Object.keys(this.clientErrors).length > 0) {
+        return;
+      }
+
       try {
         const res = await axios.post('/api/projects', this.form);
-        // Redirect to the new project's detail page
+        // On success, redirect to the new project's detail page
         this.$router.push(`/projects/${res.data.project.id}`);
       } catch (error) {
         console.error(error);
+        // Server-side validation or error response
+        if (error.response && error.response.data.errors) {
+          this.serverErrors = Object.values(error.response.data.errors).flat();
+        } else {
+          this.serverErrors = [error.message || 'An error occurred'];
+        }
       }
     }
   }
@@ -117,18 +195,38 @@ export default {
   font-weight: 600;
 }
 
+/* SERVER ERRORS BLOCK */
+.error-messages {
+  margin-bottom: 1rem;
+  color: red;
+  background-color: #fdecec;
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 0.95em;
+}
+
+.error {
+  margin: 5px 0;
+}
+
 /* FORM GROUP */
 .form-group {
   margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* LABEL */
 .form-group label {
-  display: block;
   margin-bottom: 6px;
   font-size: 1rem;
   font-weight: 500;
   color: #3B1E54;
+}
+
+.required {
+  color: #ff4d4f;
+  margin-left: 5px;
 }
 
 /* INPUT AND TEXTAREA */
@@ -155,9 +253,15 @@ export default {
   background-color: #fff;
 }
 
-.form-group textarea {
-  resize: vertical;
-  min-height: 100px;
+.input-error {
+  border-color: red !important;
+}
+
+/* INLINE ERROR */
+.inline-error {
+  color: red;
+  font-size: 0.85rem;
+  margin-top: 4px;
 }
 
 /* BUTTON */
@@ -172,6 +276,7 @@ button[type="submit"] {
   border-radius: 8px;
   cursor: pointer;
   transition: opacity 0.3s ease;
+  margin-top: 10px;
 }
 
 button[type="submit"]:hover {

@@ -5,64 +5,47 @@
     <!-- Display Products -->
     <div v-if="products.length" class="products-grid">
       <div v-for="product in products" :key="product.id" class="product-card">
-        <!-- Product Image -->
-        <img
-          :src="product.image"
-          alt="Product Image"
-          class="product-image"
-        />
+        
+        <!-- Make Image Clickable -->
+        <router-link 
+          :to="{ name: 'product-details', params: { id: product.id } }" 
+          class="product-link"
+        >
+          <img
+            :src="product.image"
+            alt="Product Image"
+            class="product-image"
+          />
+        </router-link>
 
         <!-- Product Info -->
         <div class="product-info">
-          <h2 class="product-name">{{ product.name }}</h2>
+          <!-- Make Product Name Clickable -->
+          <router-link 
+            :to="{ name: 'product-details', params: { id: product.id } }" 
+            class="product-name-link"
+          >
+            <h2 class="product-name">{{ product.name }}</h2>
+          </router-link>
           <p class="product-description">{{ product.description }}</p>
-          <p class="product-price">Price: ${{ product.price }}</p>
+          <p class="product-price">Price: PKR{{ product.price }}</p>
         </div>
 
         <!-- Actions: Edit & Delete -->
         <div class="product-actions">
-          <!-- If we're editing this product, show "Close" instead of "Edit" -->
           <button
-            v-if="editingProduct && editingProduct.id === product.id"
             class="edit-btn"
-            @click="cancelEdit"
-          >
-            Close
-          </button>
-          <button
-            v-else
-            class="edit-btn"
-            @click="startEdit(product)"
+            @click.stop="startEdit(product)"
           >
             Edit
           </button>
 
-          <button class="delete-btn" @click="deleteProduct(product)">
+          <button 
+            class="delete-btn"
+            @click.stop="confirmDelete(product)"
+          >
             Delete
           </button>
-        </div>
-
-        <!-- Inline Edit Form for this product -->
-        <div
-          v-if="editingProduct && editingProduct.id === product.id"
-          class="inline-edit-form"
-        >
-          <h3>Edit Product</h3>
-          <form @submit.prevent="updateProduct">
-            <div class="form-group">
-              <label>Name:</label>
-              <input type="text" v-model="editingProduct.name" />
-            </div>
-            <div class="form-group">
-              <label>Description:</label>
-              <textarea v-model="editingProduct.description"></textarea>
-            </div>
-            <div class="form-group">
-              <label>Price:</label>
-              <input type="number" v-model="editingProduct.price" />
-            </div>
-            <button type="submit" class="save-changes">Save Changes</button>
-          </form>
         </div>
       </div>
     </div>
@@ -70,6 +53,74 @@
     <!-- No Products Message -->
     <div v-else class="no-products">
       <p>No products found. Add some products to display here.</p>
+    </div>
+
+    <!-- EDIT MODAL -->
+    <div v-if="showEditModal" class="modal-overlay" @click.self="closeEditModal">
+      <div class="modal-content">
+        <h2>Edit Product</h2>
+        
+        <form @submit.prevent="updateProduct">
+          <div class="form-group">
+            <label>Name:</label>
+            <input
+              type="text"
+              v-model="editingProduct.name"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Description:</label>
+            <textarea v-model="editingProduct.description"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Price:</label>
+            <input
+              type="number"
+              v-model="editingProduct.price"
+            />
+          </div>
+
+          <div class="modal-buttons">
+            <button type="submit" class="save-changes">Save Changes</button>
+            <button type="button" class="cancel-btn" @click="closeEditModal">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div v-if="showDeleteModal" class="modal-overlay" @click.self="closeDeleteModal">
+      <div class="modal-content">
+        <h2>Delete Product</h2>
+        <p>
+          Are you sure you want to delete 
+          <strong>{{ productToDelete?.name }}</strong>?
+        </p>
+
+        <div class="modal-buttons">
+          <button class="delete-confirm-btn" @click="deleteProduct">
+            Yes, Delete
+          </button>
+          <button class="cancel-btn" @click="closeDeleteModal">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MESSAGE MODAL (for showing success messages) -->
+    <div v-if="showMessageModal" class="modal-overlay" @click.self="closeMessageModal">
+      <div class="modal-content">
+        <h2>Notification</h2>
+        <p>{{ messageText }}</p>
+        <div class="modal-buttons">
+          <button class="ok-btn" @click="closeMessageModal">OK</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -80,21 +131,28 @@ export default {
   data() {
     return {
       products: [],
-      editingProduct: null, // The product we are currently editing (inline)
+      editingProduct: null,
+      productToDelete: null,
+
+      // Modal controls
+      showEditModal: false,
+      showDeleteModal: false,
+      showMessageModal: false,
+
+      // Text for the success message modal
+      messageText: "",
     };
   },
   methods: {
     // Fetch all products for the authenticated user
     async fetchProducts() {
       try {
-        // 1) Retrieve the token
         const token = localStorage.getItem("access_token");
         if (!token) {
           console.error("No token found. Please log in first.");
           return;
         }
 
-        // 2) Send GET request with Authorization header
         const response = await fetch("http://localhost:8000/api/products", {
           method: "GET",
           headers: {
@@ -112,18 +170,17 @@ export default {
       }
     },
 
-    // Show the inline form for this product
+    // Edit action
     startEdit(product) {
-      // Clone the product so we don't mutate the original
-      this.editingProduct = { ...product };
+      this.editingProduct = { ...product }; // clone the object
+      this.showEditModal = true;
     },
-
-    // Cancel editing and hide the form
-    cancelEdit() {
+    closeEditModal() {
+      this.showEditModal = false;
       this.editingProduct = null;
     },
 
-    // Send updated data to the server
+    // Update product on server
     async updateProduct() {
       try {
         const token = localStorage.getItem("access_token");
@@ -149,9 +206,14 @@ export default {
         );
 
         if (response.ok) {
-          alert("Product updated successfully!");
-          this.editingProduct = null;
-          this.fetchProducts(); // Refresh list
+          // Close modal, clear data
+          this.closeEditModal();
+
+          // Refresh product list
+          this.fetchProducts();
+
+          // Show success message
+          this.showMessage("Product updated successfully!");
         } else {
           console.error("Failed to update product");
           const errorData = await response.json();
@@ -162,11 +224,22 @@ export default {
       }
     },
 
-    // Delete product with a simple JS confirm
-    async deleteProduct(product) {
-      if (!confirm(`Are you sure you want to delete "${product.name}"?`)) {
-        return;
-      }
+    // Delete action
+    confirmDelete(product) {
+      this.productToDelete = product;
+      this.showDeleteModal = true;
+    },
+    closeDeleteModal() {
+      this.showDeleteModal = false;
+      this.productToDelete = null;
+    },
+
+    // Delete product on server
+    async deleteProduct() {
+      if (!this.productToDelete) return;
+
+      // Capture the product name before closing the modal
+      const deletedProductName = this.productToDelete.name;
 
       try {
         const token = localStorage.getItem("access_token");
@@ -176,7 +249,7 @@ export default {
         }
 
         const response = await fetch(
-          `http://localhost:8000/api/products/${product.id}`,
+          `http://localhost:8000/api/products/${this.productToDelete.id}`,
           {
             method: "DELETE",
             headers: {
@@ -186,8 +259,14 @@ export default {
         );
 
         if (response.ok) {
-          alert(`Product "${product.name}" deleted successfully!`);
+          // Refresh the list
           this.fetchProducts();
+
+          // Close the delete modal
+          this.closeDeleteModal();
+
+          // Show success message in a pop-up
+          this.showMessage(`Product "${deletedProductName}" deleted successfully!`);
         } else {
           const error = await response.json();
           alert(`Failed to delete the product: ${error.message}`);
@@ -195,6 +274,18 @@ export default {
       } catch (error) {
         console.error("Error deleting product:", error);
       }
+    },
+
+    // Show success message in a pop-up modal
+    showMessage(message) {
+      this.messageText = message;
+      this.showMessageModal = true;
+    },
+
+    // Close the success message modal
+    closeMessageModal() {
+      this.showMessageModal = false;
+      this.messageText = "";
     },
   },
   mounted() {
@@ -204,7 +295,6 @@ export default {
 </script>
 
 <style scoped>
-/* Same CSS as before */
 .manage-products-container {
   max-width: 1200px;
   margin: 2rem auto;
@@ -236,6 +326,22 @@ export default {
   padding: 1rem;
   background-color: #f9f9f9;
   text-align: center;
+  position: relative;
+}
+
+.product-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.product-name-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.product-name-link:hover .product-name {
+  text-decoration: underline;
 }
 
 .product-image {
@@ -244,6 +350,7 @@ export default {
   object-fit: cover;
   border-radius: 8px;
   margin-bottom: 1rem;
+  cursor: pointer;
 }
 
 .product-info {
@@ -254,6 +361,7 @@ export default {
   font-size: 1.2rem;
   font-weight: bold;
   margin-bottom: 0.5rem;
+  cursor: pointer;
 }
 
 .product-description {
@@ -275,8 +383,8 @@ export default {
 }
 
 .edit-btn {
-  background-color: #4caf50;
-  color: white;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -285,12 +393,12 @@ export default {
 }
 
 .edit-btn:hover {
-  background-color: #45a049;
+  background-color: #EEEEEE;
 }
 
 .delete-btn {
-  background-color: #ca3e3e;
-  color: white;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 4px;
@@ -299,7 +407,7 @@ export default {
 }
 
 .delete-btn:hover {
-  background-color: #b83232;
+  background-color: #EEEEEE;
 }
 
 .no-products {
@@ -308,23 +416,39 @@ export default {
   color: #666;
 }
 
-.inline-edit-form {
-  margin-top: 1rem;
-  text-align: left;
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 0.8rem;
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
 }
 
-.inline-edit-form h3 {
+.modal-content {
+  background-color: #fff;
+  padding: 2rem;
+  width: 90%;
+  max-width: 500px;
+  border-radius: 8px;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  text-align: left;
+}
+
+.modal-content h2 {
   margin-top: 0;
-  font-size: 1.2rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
+  color: #3B1E54;
 }
 
 .form-group {
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
   display: flex;
   flex-direction: column;
 }
@@ -343,17 +467,54 @@ textarea {
   border-radius: 4px;
 }
 
-.save-changes {
+/* Buttons inside modal footer */
+.modal-buttons {
+  display: flex;
+  gap: 0.5rem;
   margin-top: 1rem;
-  background-color: #007bff;
-  border: none;
-  color: #fff;
+}
+
+/* Shared styles for modal buttons */
+.save-changes,
+.delete-confirm-btn,
+.cancel-btn,
+.ok-btn {
   padding: 0.6rem 1rem;
   border-radius: 4px;
   cursor: pointer;
+  border: none;
+  color: #3B1E54;
+}
+
+.save-changes {
+  background-color: #D4BEE4;
 }
 
 .save-changes:hover {
-  background-color: #0069d9;
+  background-color: #EEEEEE;
+}
+
+.delete-confirm-btn {
+  background-color: #D4BEE4;
+}
+
+.delete-confirm-btn:hover {
+  background-color: #EEEEEE;
+}
+
+.cancel-btn {
+  background-color: #e9f4fd;
+}
+
+.cancel-btn:hover {
+  background-color: #d5bdbd;
+}
+
+.ok-btn {
+  background-color: #D4BEE4;
+}
+
+.ok-btn:hover {
+  background-color: #EEEEEE;
 }
 </style>

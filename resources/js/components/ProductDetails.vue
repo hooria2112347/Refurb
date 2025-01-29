@@ -1,92 +1,170 @@
 <template>
-  <div v-if="product" class="product-detail-page">
-    <div class="container mt-4">
-      <div class="row">
-        <!-- Left Side: Image Section (Image display) -->
-        <div class="col-md-6 mb-4">
-          <img :src="product.images.length ? product.images[0] : 'default-image.jpg'" class="d-block w-100 product-image img-fluid rounded" alt="Product Image" />
-        </div>
-
-        <!-- Right Side: Product Details Section -->
-        <div class="col-md-6">
-          <div class="product-info-section">
-            <h1>{{ product.name }}</h1>
-            <span class="price">PKR {{ product.price }}</span>
-
-            <div class="product-details">
-              <div class="details-item">
-                <p><strong>Material:</strong> {{ product.material || 'N/A' }}</p>
-              </div>
-              <div class="details-item">
-                <p><strong>Dimensions:</strong> {{ product.dimensions || 'N/A' }}</p>
-              </div>
-              <div class="details-item">
-                <p><strong>Description:</strong> {{ product.description || 'No description available' }}</p>
+  <div>
+    <!-- Product Detail Page -->
+    <div v-if="product" class="product-detail-page">
+      <div class="container mt-5">
+        <div class="row">
+          <!-- Left Side: Image Section -->
+          <div class="col-lg-6 mb-4">
+            <div class="image-gallery">
+              <img 
+                :src="mainImage" 
+                class="product-main-image img-fluid rounded shadow-sm" 
+                alt="Product Image" 
+                loading="lazy"
+              />
+              <!-- Thumbnail Images (if multiple images are available) -->
+              <div class="thumbnail-images mt-3 d-flex flex-wrap">
+                <img 
+                  v-for="(image, index) in product.images" 
+                  :key="index" 
+                  :src="image" 
+                  class="thumbnail img-fluid rounded mr-2 mb-2" 
+                  alt="Product Thumbnail" 
+                  @click="changeMainImage(image)"
+                />
               </div>
             </div>
+          </div>
 
-            <!-- Display user who uploaded the product -->
-            <div class="info-item">
-              <p class="description-by">
-                By <em>
-                  <router-link :to="'/user-profile/' + product.user.id">{{ product.user.name }}</router-link>
-                </em>
-              </p>
+          <!-- Right Side: Product Details Section -->
+          <div class="col-lg-6">
+            <div class="product-info-section">
+              <h1 class="product-name">{{ product.name }}</h1>
+              <span class="price">PKR {{ product.price }}</span>
+
+              <div class="product-details mt-4">
+                <div class="details-item">
+                  <p><strong>Material:</strong> {{ product.material || 'N/A' }}</p>
+                </div>
+                <div class="details-item">
+                  <p><strong>Dimensions:</strong> {{ product.dimensions || 'N/A' }}</p>
+                </div>
+                <div class="details-item">
+                  <p><strong>Description:</strong> {{ product.description || 'No description available' }}</p>
+                </div>
+              </div>
+
+              <!-- Display user who uploaded the product -->
+              <div class="info-item mt-4">
+                <p class="description-by">
+                  By <em>
+                    <router-link :to="'/user-profile/' + product.user.id" class="seller-link">
+                      {{ product.user.name }}
+                    </router-link>
+                  </em>
+                </p>
+              </div>
+
+              <!-- Add to Cart Button (Does Nothing for Now) -->
+              <button class="add-to-cart-btn btn btn-primary btn-lg mt-3">
+                <i class="fas fa-shopping-cart mr-2"></i> Add to Cart
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comment and Review Form -->
+        <div class="comment-form-section mt-5">
+          <h4>Leave a Review</h4>
+          <div class="comment-form p-4 bg-light rounded shadow">
+            <textarea 
+              v-model="newReview.comment" 
+              placeholder="Leave your feedback or question here..." 
+              rows="4" 
+              class="form-control mb-3"
+            ></textarea>
+
+            <!-- Inline Error Message for Review Comment -->
+            <div v-if="reviewError.comment" class="error-message mb-3">
+              {{ reviewError.comment }}
             </div>
 
-            <!-- Display artist information if the logged-in user is the creator -->
-            <div v-if="product.artist" class="info-item">
-              <p>Accepted by
-                <em>
-                  <router-link :to="'/user-profile/' + product.artist.id">{{ product.artist.name }}</router-link>
-                </em>
-              </p>
+            <div class="form-group">
+              <label for="ratingSelect">Rating:</label>
+              <select v-model="newReview.rating" id="ratingSelect" class="form-control w-25">
+                <option disabled value="">Select Rating</option>
+                <option v-for="n in 5" :key="n" :value="n">{{ n }}</option>
+              </select>
             </div>
 
-            <!-- Add to Cart Button -->
-            <button @click="addToCart" class="add-to-cart-btn">Add to Cart</button>
-          </div>
-        </div>
-      </div>
+            <!-- Inline Error Message for Review Rating -->
+            <div v-if="reviewError.rating" class="error-message mb-3">
+              {{ reviewError.rating }}
+            </div>
 
-      <!-- Comment Section -->
-      <div class="comments-section mt-4">
-        <h4>Customer Reviews & Feedback</h4>
-
-        <!-- Display existing comments -->
-        <div v-if="product.comments && product.comments.length">
-          <div v-for="comment in product.comments" :key="comment.id" class="review">
-            <p><strong>{{ comment.user.name }}:</strong> {{ comment.comment }}</p>
-            <p class="review-rating">Rating: {{ comment.rating }} / 5</p>
+            <button @click="submitReview" class="submit-review-btn btn btn-success mt-3">
+              <i class="fas fa-paper-plane mr-2"></i> Submit Review
+            </button>
           </div>
         </div>
 
-        <!-- Display no reviews message if no comments -->
-        <div v-else>
-          <p>No reviews yet. Be the first to review!</p>
-        </div>
+        <!-- Comment Section with Pagination -->
+        <div class="comments-section mt-4">
+          <h4>Customer Reviews & Feedback</h4>
 
-        <!-- Add Review Form -->
-        <div class="comment-form">
-          <textarea v-model="newReview.comment" placeholder="Leave your feedback or question here..." rows="4" class="form-control"></textarea>
-          <div>
-            <label>Rating: </label>
-            <select v-model="newReview.rating" class="form-control">
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-            </select>
+          <!-- Display existing comments -->
+          <div v-if="product.comments && product.comments.length" class="reviews mt-3">
+            <div v-for="comment in paginatedComments" :key="comment.id" class="review p-3 mb-3 shadow-sm rounded">
+              <div class="d-flex justify-content-between align-items-center">
+                <strong>{{ comment.user.name }}</strong>
+                <span class="badge badge-warning">
+                  <i class="fas fa-star"></i> {{ comment.rating }} / 5
+                </span>
+              </div>
+              <p class="mt-2">{{ comment.comment }}</p>
+              <small class="text-muted">{{ formatDate(comment.created_at) }}</small>
+            </div>
+
+            <!-- Pagination Controls -->
+            <nav v-if="totalPages > 1" aria-label="Comments Pagination">
+              <ul class="pagination justify-content-center">
+                <li :class="['page-item', { disabled: currentPage === 1 }]">
+                  <a class="page-link" href="#" @click.prevent="changePage(currentPage - 1)">Previous</a>
+                </li>
+                <li 
+                  v-for="page in totalPages" 
+                  :key="page" 
+                  :class="['page-item', { active: currentPage === page }]"
+                >
+                  <a class="page-link" href="#" @click.prevent="changePage(page)">{{ page }}</a>
+                </li>
+                <li :class="['page-item', { disabled: currentPage === totalPages }]">
+                  <a class="page-link" href="#" @click.prevent="changePage(currentPage + 1)">Next</a>
+                </li>
+              </ul>
+            </nav>
           </div>
-          <button @click="submitReview" class="submit-review-btn">Submit Review</button>
+
+          <!-- Display no reviews message if no comments -->
+          <div v-else class="no-reviews mt-3">
+            <p>No reviews yet. Be the first to review!</p>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+    
+    <!-- Error Message -->
+    <div v-else-if="error" class="error-message text-center mt-5">
+      <p>{{ error }}</p>
+    </div>
 
-  <div v-else>
-    <p>Loading product details...</p>
+    <!-- Loading Message -->
+    <div v-else class="loading-message text-center mt-5">
+      <p>Loading product details...</p>
+    </div>
+
+    <!-- Login Modal -->
+    <div v-if="loginModalVisible" class="modal-overlay">
+      <div class="modal-content">
+        <h2>Please Log In</h2>
+        <p>You need to be logged in to perform this action.</p>
+        <div class="modal-actions">
+          <router-link to="/login" class="primary-button">Log In</router-link>
+          <button @click="closeLoginModal" class="secondary-button">Cancel</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -97,11 +175,34 @@ export default {
   data() {
     return {
       product: null,  // Store product details
+      error: null,    // Store error messages
       newReview: {
         comment: '',
-        rating: 5,
+        rating: '',
       }, // Store the new review
+      reviewError: {
+        comment: '',
+        rating: '',
+      }, // Store review form errors
+      mainImage: '',  // To handle the main image display
+      currentPage: 1, // Current page for comments
+      commentsPerPage: 5, // Number of comments per page
+      loginModalVisible: false, // Controls visibility of login modal
     };
+  },
+  computed: {
+    // Compute the comments to display on the current page
+    paginatedComments() {
+      if (!this.product?.comments) return [];
+      const start = (this.currentPage - 1) * this.commentsPerPage;
+      const end = start + this.commentsPerPage;
+      return this.product.comments.slice(start, end);
+    },
+    // Compute total pages based on comments
+    totalPages() {
+      if (!this.product?.comments) return 1;
+      return Math.ceil(this.product.comments.length / this.commentsPerPage);
+    }
   },
   methods: {
     // Fetch product details based on ID
@@ -110,32 +211,95 @@ export default {
       try {
         const response = await axios.get(`http://127.0.0.1:8000/api/products/${productId}`);
         this.product = response.data; // Store product details
+        this.mainImage = this.product.images.length
+          ? this.product.images[0]
+          : 'default-image.jpg';
       } catch (error) {
         console.error("Error fetching product details:", error);
-        alert("Failed to load product details.");
+        this.error = error.response?.data?.message || "Failed to load product details.";
       }
     },
 
-    // Add to cart logic
-    addToCart() {
-      // Your add to cart logic here
+    // Format date string
+    formatDate(dateStr) {
+      const options = { year: 'numeric', month: 'long', day: 'numeric' };
+      return new Date(dateStr).toLocaleDateString(undefined, options);
     },
 
     // Submit new review
     async submitReview() {
-      if (!this.newReview.comment.trim()) return; // Do not submit empty comment
+      // Reset previous errors
+      this.reviewError.comment = '';
+      this.reviewError.rating = '';
+
+      if (!this.newReview.comment.trim()) {
+        this.reviewError.comment = "Please enter a comment.";
+      }
+      if (!this.newReview.rating) {
+        this.reviewError.rating = "Please select a rating.";
+      }
+
+      // If there are any errors, do not proceed
+      if (this.reviewError.comment || this.reviewError.rating) {
+        return;
+      }
+
       try {
-        await axios.post(`/api/products/${this.product.id}/reviews`, {
-          comment: this.newReview.comment,
-          rating: this.newReview.rating,
-        });
+        // Ensure the user is authenticated before submitting a review
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          this.showLoginModal();
+          return;
+        }
+
+        await axios.post(
+          `http://127.0.0.1:8000/api/products/${this.product.id}/reviews`, 
+          {
+            comment: this.newReview.comment,
+            rating: this.newReview.rating,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         this.newReview.comment = ''; // Clear the form after submission
-        this.newReview.rating = 5; // Reset rating to 5
-        this.fetchProductDetails(); // Reload product details to show new review
+        this.newReview.rating = '';  // Reset rating
+        this.fetchProductDetails();  // Reload product details to show new review
       } catch (error) {
         console.error("Error submitting review:", error);
-        alert("Failed to submit review.");
+        // Display error messages inline
+        this.reviewError.comment = error.response?.data?.message || "Failed to submit review.";
       }
+    },
+
+    // Change main image when thumbnail is clicked
+    changeMainImage(image) {
+      this.mainImage = image;
+    },
+
+    // Change the current page in comments
+    changePage(page) {
+      if (page < 1 || page > this.totalPages) return;
+      this.currentPage = page;
+      // Scroll to comments section when page changes
+      this.$nextTick(() => {
+        const commentsSection = this.$el.querySelector('.comments-section');
+        if (commentsSection) {
+          commentsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    },
+
+    // Show login modal
+    showLoginModal() {
+      this.loginModalVisible = true;
+    },
+
+    // Close login modal
+    closeLoginModal() {
+      this.loginModalVisible = false;
     },
   },
   mounted() {
@@ -150,6 +314,36 @@ export default {
   padding: 20px;
 }
 
+.image-gallery {
+  position: relative;
+}
+
+.product-main-image {
+  width: 100%;
+  height: auto;
+}
+
+.thumbnail-images {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.thumbnail {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  margin-right: 10px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: transform 0.3s ease, border 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.thumbnail:hover {
+  transform: scale(1.05);
+  border: 2px solid #CA7373;
+}
+
 .product-info-section {
   padding: 20px;
 }
@@ -157,11 +351,22 @@ export default {
 .product-name {
   font-size: 2rem;
   font-weight: bold;
+  color: #333;
 }
 
 .price {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   color: #CA7373;
+}
+
+.product-details {
+  margin-top: 1.5rem;
+}
+
+.details-item p {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 0.5rem;
 }
 
 .info-item {
@@ -173,62 +378,202 @@ export default {
   color: #333;
 }
 
-.add-to-cart-btn {
-  background-color: #4CAF50;
-  color: white;
-  padding: 10px;
-  font-size: 1.2rem;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.comments-section {
-  margin-top: 20px;
-}
-
-.review {
-  background-color: #f9f9f9;
-  padding: 15px;
-  margin-bottom: 15px;
-  border-radius: 5px;
-}
-
-.review-rating {
+.seller-link {
   color: #CA7373;
+  text-decoration: none;
+  transition: color 0.3s ease;
 }
 
-.comment-form {
+.seller-link:hover {
+  color: #ff6f61;
+}
+
+.add-to-cart-btn {
   display: flex;
-  flex-direction: column;
-  padding: 10px;
+  align-items: center;
+  background-color: #D4BEE4;
+  color: #3B1E54;
+  border: none;
+  padding: 10px 15px;
+  font-size: 1rem;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
-.comment-form textarea {
-  width: 100%;
-  padding: 10px;
-  font-size: 1rem;
-  margin-bottom: 10px;
+.add-to-cart-btn:hover {
+  background-color: #EEEEEE;
+  transform: translateY(-3px);
 }
 
-.comment-form select {
-  width: 100%;
-  padding: 10px;
+.comments-section h4 {
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.reviews .review {
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+}
+
+.no-reviews p {
   font-size: 1rem;
-  margin-bottom: 10px;
+  color: #777;
+}
+
+.comment-form-section {
+  position: relative;
 }
 
 .submit-review-btn {
-  background-color: #CA7373;
-  color: white;
-  padding: 10px;
-  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   border: none;
-  border-radius: 5px;
+  padding: 10px 15px;
+  font-size: 1rem;
+  border-radius: 15px;
   cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
 .submit-review-btn:hover {
-  background-color: #D7B26D;
+  background-color: #EEEEEE;
+  transform: translateY(-2px);
+}
+
+.error-message {
+  font-size: 1rem;
+  color: #ff4c3b;
+  padding: 5px;
+}
+
+.loading-message {
+  font-size: 1rem;
+  color: #555;
+  background-color: transparent;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #fff;
+  padding: 24px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.modal-content h2 {
+  margin-bottom: 16px;
+  color: #333;
+}
+
+.modal-content p {
+  margin-bottom: 24px;
+  color: #555;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-around;
+}
+
+.primary-button {
+  background-color: #D4BEE4;
+  color: #3B1E54;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  text-decoration: none;
+}
+
+.primary-button:hover {
+  background-color: #EEEEEE;
+}
+
+.secondary-button {
+  background-color: #ccc;
+  color: #333;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.secondary-button:hover {
+  background-color: #b3b3b3;
+}
+
+/* Pagination Styles */
+.pagination {
+  margin-top: 20px;
+}
+
+.page-link {
+  cursor: pointer;
+}
+
+.page-item.disabled .page-link {
+  cursor: not-allowed;
+}
+
+.page-item.active .page-link {
+  background-color: #CA7373;
+  border-color: #CA7373;
+  color: #fff;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .product-main-image {
+    height: auto;
+  }
+
+  .thumbnail {
+    width: 50px;
+    height: 50px;
+  }
+
+  .price {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .product-info-section {
+    padding: 10px;
+  }
+
+  .add-to-cart-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .submit-review-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .thumbnail-images {
+    justify-content: center;
+  }
 }
 </style>

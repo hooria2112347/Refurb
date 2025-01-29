@@ -22,6 +22,24 @@
           <router-link to="/my-projects">My Projects</router-link>
         </div>
       </div>
+      
+      <!-- Selling Collapsible -->
+      <div 
+        class="collapsible" 
+        :class="{ open: openSection === 'selling' }"
+      >
+        <div 
+          class="collapsible-trigger" 
+          @click="toggleAccordion('selling')"
+        >
+          Products
+          <span class="arrow"></span>
+        </div>
+        <div class="collapsible-content">
+          <router-link to="/add-product">Add Product</router-link>
+          <router-link to="/manage-products">Manage Products</router-link>
+        </div>
+      </div>
 
       <!-- Collaboration Invites Collapsible -->
       <div 
@@ -138,7 +156,7 @@ export default {
 
 .side-nav a.active {
   background-color: #9B7EBD;
-  color: #ffffff;
+  color: #3B1E54;
 }
 
 /* COLLAPSIBLE MENU SECTIONS */

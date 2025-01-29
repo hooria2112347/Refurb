@@ -1,7 +1,8 @@
 <template>
   <div class="login">
     <h2>Login</h2>
-    <form @submit.prevent="handleLogin">
+    <!-- Add 'novalidate' to prevent default browser validation popups -->
+    <form @submit.prevent="handleLogin" novalidate>
       <!-- Email -->
       <div class="form-group">
         <input
@@ -11,29 +12,35 @@
           placeholder="Email"
           required
         />
+        <!-- Inline error for email -->
+        <p v-if="fieldErrors.email" class="error-message">{{ fieldErrors.email }}</p>
       </div>
 
       <!-- Password with toggle -->
       <div class="form-group password-wrapper">
-        <input
-          :type="passwordFieldType"
-          id="password"
-          v-model="form.password"
-          placeholder="Password"
-          required
-        />
-        <button
-          type="button"
-          class="toggle-button"
-          @click="togglePasswordVisibility"
-        >
-          <!-- Show appropriate icon or text depending on current type -->
-          <span v-if="passwordFieldType === 'password'">👁️</span>
-          <span v-else>🙈</span>
-        </button>
+        <!-- 1) Sub-container to keep the icon in place -->
+        <div class="input-and-toggle">
+          <input
+            :type="passwordFieldType"
+            id="password"
+            v-model="form.password"
+            placeholder="Password"
+            required
+          />
+          <button
+            type="button"
+            class="toggle-button"
+            @click="togglePasswordVisibility"
+          >
+            <span v-if="passwordFieldType === 'password'">👁️</span>
+            <span v-else>🙈</span>
+          </button>
+        </div>
+        <!-- Inline error for password below the input container -->
+        <p v-if="fieldErrors.password" class="error-message">{{ fieldErrors.password }}</p>
       </div>
 
-      <!-- Error message -->
+      <!-- General error message (e.g. from server) -->
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
       <!-- Submit -->
@@ -58,6 +65,11 @@ export default {
         password: ""
       },
       errorMessage: "",
+      // For displaying per-field errors inline
+      fieldErrors: {
+        email: "",
+        password: ""
+      },
       // Controls whether password is visible or hidden
       passwordFieldType: "password"
     };
@@ -69,8 +81,42 @@ export default {
         this.passwordFieldType === "password" ? "text" : "password";
     },
 
+    // Simple email validation
+    validateEmail(email) {
+      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return re.test(email);
+    },
+
+    // Clear all inline errors
+    clearFieldErrors() {
+      this.fieldErrors.email = "";
+      this.fieldErrors.password = "";
+    },
+
     async handleLogin() {
       console.log("handleLogin triggered");
+      // Manually handle inline validation
+      this.clearFieldErrors();
+      this.errorMessage = "";
+
+      // Validate email
+      if (!this.form.email) {
+        this.fieldErrors.email = "Email is required.";
+      } else if (!this.validateEmail(this.form.email)) {
+        this.fieldErrors.email = "Please enter a valid email address.";
+      }
+
+      // Validate password
+      if (!this.form.password) {
+        this.fieldErrors.password = "Password is required.";
+      }
+
+      // If any inline errors exist, abort the login flow
+      if (this.fieldErrors.email || this.fieldErrors.password) {
+        return;
+      }
+
+      // Proceed with actual login request if no inline errors
       try {
         const response = await axios.post("/api/login", this.form);
         console.log("Server response:", response.data);
@@ -161,11 +207,17 @@ export default {
   background-color: #ffffff;
 }
 
-/* PASSWORD TOGGLE BUTTON */
+/* PASSWORD TOGGLE WRAPPER */
 .password-wrapper {
   position: relative;
 }
 
+/* 2) Sub-container for input + toggle button */
+.input-and-toggle {
+  position: relative;
+}
+
+/* PASSWORD TOGGLE BUTTON */
 .toggle-button {
   position: absolute;
   right: 1rem;

@@ -1,25 +1,63 @@
 <template>
   <div class="add-product-container">
     <h1 class="form-title">Add Product</h1>
+
+    <!-- Server-side errors displayed in a block if any -->
+    <div v-if="serverErrors.length" class="error-messages">
+      <p v-for="(error, index) in serverErrors" :key="index" class="error">{{ error }}</p>
+    </div>
+
     <form @submit.prevent="submitProduct" class="form-grid">
       <!-- Left Column -->
       <div class="form-column">
-        <!-- Product Name -->
+
+        <!-- Product Name (Required) -->
         <div class="form-group">
-          <label for="name" class="label">Name:</label>
-          <input type="text" id="name" v-model="product.name" class="input-field" required />
+          <label for="name" class="label">
+            Name:<span class="required">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="name" 
+            v-model="product.name" 
+            class="input-field"
+            :class="{ 'input-error': clientErrors.name }"
+          />
+          <!-- Inline error message -->
+          <span v-if="clientErrors.name" class="inline-error">
+            {{ clientErrors.name }}
+          </span>
         </div>
 
-        <!-- Product Price -->
+        <!-- Product Price (Required) -->
         <div class="form-group">
-          <label for="price" class="label">Price:</label>
-          <input type="number" id="price" v-model="product.price" class="input-field" required />
+          <label for="price" class="label">
+            Price:<span class="required">*</span>
+          </label>
+          <input 
+            type="number" 
+            id="price" 
+            v-model="product.price" 
+            class="input-field"
+            :class="{ 'input-error': clientErrors.price }"
+          />
+          <!-- Inline error message -->
+          <span v-if="clientErrors.price" class="inline-error">
+            {{ clientErrors.price }}
+          </span>
         </div>
 
-        <!-- Category -->
+        <!-- Category (Required) -->
         <div class="form-group">
-          <label for="category" class="label">Category:</label>
-          <select id="category" v-model="product.category_id" class="input-field" required>
+          <label for="category" class="label">
+            Category:<span class="required">*</span>
+          </label>
+          <select 
+            id="category" 
+            v-model="product.category_id" 
+            class="input-field"
+            :class="{ 'input-error': clientErrors.category_id }"
+          >
             <option value="" disabled>Select a category</option>
             <option
               v-for="category in categories"
@@ -29,9 +67,13 @@
               {{ category.name }}
             </option>
           </select>
+          <!-- Inline error message -->
+          <span v-if="clientErrors.category_id" class="inline-error">
+            {{ clientErrors.category_id }}
+          </span>
         </div>
 
-        <!-- Additional Info -->
+        <!-- Additional Info (Optional) -->
         <div class="form-group">
           <label for="additional-info" class="label">Additional Info:</label>
           <input
@@ -46,21 +88,29 @@
 
       <!-- Right Column -->
       <div class="form-column">
-        <!-- Product Description -->
+        <!-- Product Description (Required) -->
         <div class="form-group">
-          <label for="description" class="label">Description:</label>
+          <label for="description" class="label">
+            Description:<span class="required">*</span>
+          </label>
           <textarea
             id="description"
             v-model="product.description"
             rows="5"
             class="input-field"
-            required
+            :class="{ 'input-error': clientErrors.description }"
           ></textarea>
+          <!-- Inline error message -->
+          <span v-if="clientErrors.description" class="inline-error">
+            {{ clientErrors.description }}
+          </span>
         </div>
 
-        <!-- Image Upload -->
+        <!-- Image Upload (Required) -->
         <div class="form-group">
-          <label for="image" class="label">Upload Images:</label>
+          <label for="image" class="label">
+            Upload Images:<span class="required">*</span>
+          </label>
           <div class="image-upload-button">
             <input
               type="file"
@@ -71,16 +121,24 @@
               class="hidden-input"
               multiple
             />
-            <button type="button" class="upload-btn" @click="triggerFileInput">Choose Files</button>
+            <button type="button" class="upload-btn" @click="triggerFileInput">
+              Choose Files
+            </button>
             <div class="image-preview">
               <span v-if="product.image && product.image.length">
                 {{ product.image.length }} Images Selected
               </span>
               <span v-else>No Files Chosen</span>
             </div>
-            <div v-if="imageSizeError" class="error-message">
-              One or more files exceed the 20 MB size limit.
-            </div>
+          </div>
+          <!-- Inline error message -->
+          <span v-if="clientErrors.image" class="inline-error">
+            {{ clientErrors.image }}
+          </span>
+
+          <!-- Oversize error message -->
+          <div v-if="imageSizeError" class="error-message">
+            One or more files exceed the 20 MB size limit.
           </div>
         </div>
       </div>
@@ -96,7 +154,7 @@
     <div v-if="showPopup" class="popup-overlay">
       <div class="popup-content">
         <h2>Product Added Successfully!</h2>
-        <p>Your product has been added to the database.</p>
+        <p>Your product has been added.</p>
         <button class="close-popup-btn" @click="closePopup">Close</button>
       </div>
     </div>
@@ -125,6 +183,10 @@ export default {
       ],
       imageSizeError: false,
       showPopup: false,
+
+      // Separate client-side vs. server-side errors
+      clientErrors: {},
+      serverErrors: [],
     };
   },
   methods: {
@@ -133,7 +195,7 @@ export default {
     },
     onFileChange(event) {
       const files = Array.from(event.target.files);
-      const maxSize = 20 * 1024 * 1024;
+      const maxSize = 20 * 1024 * 1024; // 20MB
 
       this.imageSizeError = false;
 
@@ -152,9 +214,46 @@ export default {
     cancel() {
       this.$router.push('/');
     },
+
+    validateForm() {
+      this.clientErrors = {};
+
+      // Name
+      if (!this.product.name.trim()) {
+        this.clientErrors.name = "Name is required.";
+      }
+      // Price
+      if (this.product.price === null || this.product.price === '') {
+        this.clientErrors.price = "Price is required.";
+      }
+      // Category
+      if (!this.product.category_id) {
+        this.clientErrors.category_id = "Category is required.";
+      }
+      // Description
+      if (!this.product.description.trim()) {
+        this.clientErrors.description = "Description is required.";
+      }
+      // Image
+      if (!this.product.image || !this.product.image.length) {
+        this.clientErrors.image = "At least one image is required.";
+      }
+    },
+
     async submitProduct() {
+      // Clear old errors
+      this.serverErrors = [];
+      this.clientErrors = {};
+
+      // Client-side validation
+      this.validateForm();
+      if (Object.keys(this.clientErrors).length > 0) {
+        // If there are validation errors, don't submit
+        return;
+      }
+
       try {
-        // 1) Create the FormData
+        // Create the FormData
         const formData = new FormData();
         formData.append('name', this.product.name);
         formData.append('description', this.product.description);
@@ -168,20 +267,18 @@ export default {
           }
         }
 
-        // 2) Retrieve the token from localStorage (or wherever you stored it after login)
+        // Retrieve token
         const token = localStorage.getItem('access_token');
         if (!token) {
           alert('No token found. Please log in first.');
           return;
         }
 
-        // 3) Make the request with 'Authorization: Bearer <token>'
+        // Make the request
         const response = await fetch('http://127.0.0.1:8000/api/products', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
-            // Note: Don't set 'Content-Type' because fetch/axios will set the boundary for FormData
-            // 'Content-Type': 'multipart/form-data', <-- usually omit this to let the browser handle it
           },
           body: formData,
         });
@@ -190,7 +287,13 @@ export default {
           this.showPopup = true;
         } else {
           const errorData = await response.json();
-          alert(`Error: ${errorData.error || errorData.message || 'Unknown error'}`);
+          // Show server errors
+          if (errorData.errors) {
+            // If it's a Laravel validation error structure
+            this.serverErrors = Object.values(errorData.errors).flat();
+          } else {
+            this.serverErrors = [errorData.error || errorData.message || 'Unknown error'];
+          }
         }
       } catch (error) {
         console.error('Error submitting product:', error);
@@ -198,10 +301,27 @@ export default {
     },
     closePopup() {
       this.showPopup = false;
+      this.resetForm();
+    },
+    resetForm() {
+      this.product = {
+        name: '',
+        description: '',
+        price: null,
+        image: [],
+        category_id: '',
+        additionalInfo: '',
+      };
+      // Reset file input
+      if (this.$refs.fileInput) {
+        this.$refs.fileInput.value = '';
+      }
+      this.imageSizeError = false;
     },
   },
 };
 </script>
+
 <style scoped>
 /* Container Styles */
 .add-product-container {
@@ -221,6 +341,20 @@ export default {
   margin-bottom: 1rem;
   text-align: center;
   color: #3B1E54;
+}
+
+/* SERVER ERRORS BLOCK */
+.error-messages {
+  margin-bottom: 1rem;
+  color: red;
+  background-color: #fdecec;
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 0.95em;
+}
+
+.error {
+  margin: 5px 0;
 }
 
 /* Grid Layout */
@@ -249,6 +383,11 @@ export default {
   color: #3B1E54;
 }
 
+.required {
+  color: #ff4d4f;
+  margin-left: 5px;
+}
+
 .input-field {
   padding: 0.5rem;
   border: 1px solid #ccc;
@@ -260,6 +399,17 @@ export default {
   outline: none;
   border-color: #4CAF50;
   box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+/* Inline error styling */
+.inline-error {
+  color: red;
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+.input-error {
+  border-color: red !important;
 }
 
 /* Image Upload Styles */
@@ -276,7 +426,7 @@ export default {
 .upload-btn {
   padding: 0.5rem 1rem;
   background-color: #D4BEE4;
-  color: 3B1E54;
+  color: #3B1E54;
   border: none;
   border-radius: 4px;
   font-size: 0.9rem;
@@ -334,7 +484,7 @@ export default {
 }
 
 .submit-btn:hover {
-  background-color: #45a049;
+  background-color: #EEEEEE;
 }
 
 /* Popup Styles */
@@ -374,8 +524,8 @@ export default {
 
 .close-popup-btn {
   padding: 0.5rem 1rem;
-  background-color: #4CAF50;
-  color: #fff;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -383,6 +533,6 @@ export default {
 }
 
 .close-popup-btn:hover {
-  background-color: #45a049;
+  background-color: #EEEEEE;
 }
 </style>

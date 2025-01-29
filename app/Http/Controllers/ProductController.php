@@ -121,6 +121,80 @@ class ProductController extends Controller
         }
     }
 
+    public function show($id)
+    {
+        try {
+            // Fetch the product with related data
+            $product = Product::with(['images', 'category', 'user', 'comments.user'])
+                ->find($id);
+
+            // Check if the product exists
+            if (!$product) {
+                return response()->json(['message' => 'Product not found.'], 404);
+            }
+
+            // Prepare the response data
+            $response = [
+                'id' => $product->product_id,
+                'name' => $product->name,
+                'description' => $product->description,
+                'price' => $product->price,
+                'images' => $product->images->map(function($image) {
+                    return asset('storage/' . $image->image_path);
+                }),
+                'user' => [
+                    'id' => $product->user->id,
+                    'name' => $product->user->name,
+                ],
+                'comments' => $product->comments->map(function($comment) {
+                    return [
+                        'id' => $comment->id,
+                        'user' => [
+                            'id' => $comment->user->id,
+                            'name' => $comment->user->name,
+                        ],
+                        'comment' => $comment->comment,
+                        'rating' => $comment->rating,
+                        'created_at' => $comment->created_at->toDateTimeString(),
+                    ];
+                }),
+            ];
+
+            return response()->json($response, 200);
+        } catch (\Exception $e) {
+            Log::error('Error fetching product details:', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Error fetching product details', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+
+
+    public function getAllProducts(Request $request)
+    {
+        try {
+            // Fetch all products, eager load category and images
+            $products = Product::with(['category', 'images'])->get();
+    
+            // Map the products into the desired response format
+            $response = $products->map(function ($product) {
+                return [
+                    'id' => $product->product_id,
+                    'name' => $product->name,
+                    'description' => $product->description,
+                    'price' => $product->price,
+                    'category' => $product->category ? $product->category->name : null,
+                    'images' => $product->images->map(function ($image) {
+                        // Assuming your images are stored in the public storage folder
+                        return asset('storage/' . $image->image_path);
+                    }),
+                ];
+            });
+    
+            return response()->json($response, 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error fetching products', 'error' => $e->getMessage()], 500);
+        }}
+
 
     public function destroy($id)
     {

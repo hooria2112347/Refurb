@@ -1,26 +1,35 @@
 <template>
   <div class="browse-scrap">
-    <h1>Browse Scrap</h1>
-    <div v-if="loading">Loading products...</div>
-    <div v-if="error" class="error">{{ error }}</div>
+    <!-- Loading and Error States -->
+    <div v-if="loading" class="loading">Loading products...</div>
+    <div v-else-if="error" class="error">{{ error }}</div>
 
     <!-- Grid of Products -->
-    <div v-if="!loading && products.length" class="products-grid">
+    <div v-else-if="products.length" class="products-grid">
       <div 
         v-for="product in products" 
         :key="product.id" 
         class="product-card" 
-        @click="viewProductDetails(product)"
       >
-        <!-- Display Image if it's available -->
-        <img :src="product.images.length ? product.images[0] : 'default-image.jpg'" alt="Product Image" class="product-image" />
+        <!-- Cart Icon (No Click Handler) -->
+        <div class="add-to-cart" title="Add to Cart">
+          🛒
+        </div>
 
-        <!-- Product Name and Price below the image -->
+        <!-- Display Image if Available -->
+        <img 
+          :src="product.images.length ? product.images[0] : 'default-image.jpg'" 
+          alt="Product Image" 
+          class="product-image" 
+          @click="viewProductDetails(product)"
+        />
+
+        <!-- Product Name and Price -->
         <div class="product-info">
-          <h2 class="product-name">{{ product.name }}</h2>
+          <h2 class="product-name" @click="viewProductDetails(product)">
+            {{ product.name }}
+          </h2>
           <span class="price">{{ product.price }} PKR</span>
-          <!-- Display user name (scrap seller) -->
-          <p class="product-user">Product by: {{ product.user }}</p> <!-- Added this line -->
         </div>
       </div>
     </div>
@@ -45,12 +54,18 @@ export default {
     // Fetch all products from the API
     async fetchProducts() {
       this.loading = true;
+      this.error = null; // Reset error state before fetching
       try {
         const response = await fetch('http://127.0.0.1:8000/api/products/all');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
+        console.log(data);  // Log the fetched data to check structure
         this.products = data;
       } catch (err) {
         this.error = 'Failed to fetch products.';
+        console.error(err); // Log the actual error for debugging
       } finally {
         this.loading = false;
       }
@@ -72,33 +87,69 @@ export default {
   max-width: 1200px;
   margin: 0 auto;
   padding: 1rem;
+  /* Removed background color */
+}
+
+.loading,
+.error,
+.no-products {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #555;
+  margin-top: 2rem;
 }
 
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* 4 products per row */
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Responsive columns */
+  gap: 1.5rem;
+  margin-top: 1rem;
 }
 
 .product-card {
-  border: 1px solid #ddd;
+  position: relative; /* For positioning the add-to-cart icon */
+  /* Removed background-color */
+  border: 1px solid #e0e0e0;
   padding: 1rem;
-  border-radius: 8px;
+  border-radius: 12px;
   text-align: center;
   cursor: pointer;
-  transition: transform 0.3s ease;
-  background-color: #f9f9f9;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 
 .product-card:hover {
-  transform: scale(1.05);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15); /* Enhanced shadow */
+  transform: translateY(-5px);
+}
+
+.add-to-cart {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #9B7EBD ;
+  color: #fff;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.add-to-cart:hover {
+  background-color: #ff4c3b;
+  transform: scale(1.1);
 }
 
 .product-image {
   max-width: 100%;
-  height: auto;
-  margin-bottom: 1rem;
+  height: 180px;
+  object-fit: cover;
   border-radius: 8px;
+  margin-bottom: 1rem;
 }
 
 .product-info {
@@ -107,25 +158,23 @@ export default {
 
 .product-name {
   font-size: 1.1rem;
-  font-weight: bold;
+  font-weight: 600;
   color: #333;
   margin-bottom: 0.5rem;
+  transition: color 0.3s ease;
+}
+
+.product-name:hover {
+  color: #ff6f61;
 }
 
 .price {
   font-size: 1rem;
-  color: #444;
+  color: #555;
+  font-weight: bold;
 }
 
-.product-user {
-  font-size: 0.9rem;
-  color: #888;
-  margin-top: 0.5rem;
-}
-
-.no-products {
-  text-align: center;
-  font-size: 1.2rem;
-  color: #888;
+.no-products p {
+  color: #999;
 }
 </style>

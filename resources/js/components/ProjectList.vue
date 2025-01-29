@@ -1,7 +1,6 @@
 <template>
     <div>
       <h1>Collaborative Projects</h1>
-      <input v-model="searchTerm" placeholder="Search..." @input="fetchProjects" />
       <div v-if="projects.length === 0">
         <p>No collaborative projects found.</p>
       </div>

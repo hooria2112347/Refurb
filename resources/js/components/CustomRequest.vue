@@ -1,4 +1,4 @@
-<template> 
+<template>
   <div class="custom-request-form">
     <h1>Create Custom Request</h1>
     <form @submit.prevent="submitForm">
@@ -34,11 +34,12 @@
         <!-- Budget (Required) -->
         <div class="form-group">
           <label for="budget">Budget (In PKR):<span class="required">*</span></label>
-          <input 
-            id="budget" 
-            v-model.number="form.budget" 
-            type="number" 
-            min="0"  step="100"
+          <input
+            id="budget"
+            v-model.number="form.budget"
+            type="number"
+            min="0"
+            step="100"
             placeholder="Enter your budget"
           >
         </div>
@@ -55,15 +56,15 @@
           <input id="artist_expertise" v-model="form.artist_expertise" type="text">
         </div>
 
-        <!-- Upload Images -->
+        <!-- Upload Images (Required) -->
         <div class="form-group">
-          <label for="images">Upload Images:</label>
-          <input 
-            id="images" 
-            type="file" 
-            multiple 
-            @change="handleFiles" 
-            ref="fileInput" 
+          <label for="images">Upload Images:<span class="required">*</span></label>
+          <input
+            id="images"
+            type="file"
+            multiple
+            @change="handleFiles"
+            ref="fileInput"
             accept="image/*"
           />
           <div class="image-previews">
@@ -77,8 +78,20 @@
 
       <button type="submit" class="submit-button">Submit Request</button>
     </form>
+
+    <!-- SUCCESS MODAL (replacing alert) -->
+    <div v-if="showSuccessModal" class="modal-overlay" @click.self="closeSuccessModal">
+      <div class="modal-content">
+        <h2>Notification</h2>
+        <p>{{ successMessage }}</p>
+        <div class="modal-buttons">
+          <button class="ok-btn" @click="closeSuccessModal">OK</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
+
 <script>
 import axios from "axios";
 
@@ -97,34 +110,37 @@ export default {
       },
       errors: [], // To store validation errors
       imagePreviews: [], // To store image preview URLs
+
+      // ========== NEW MODAL DATA PROPERTIES ==========
+      showSuccessModal: false,
+      successMessage: "",
     };
   },
   methods: {
     handleFiles(event) {
-  const files = event.target.files;
-  if (files.length > 5) {
-    alert("You can only upload a maximum of 5 images.");
-    return; // Exit if there are more than 5 files
-  }
+      const files = event.target.files;
+      if (files.length > 5) {
+        alert("You can only upload a maximum of 5 images.");
+        return; // Exit if there are more than 5 files
+      }
 
-  if (files.length > 0) {
-    this.form.images = Array.from(files);
-    this.imagePreviews = [];
+      if (files.length > 0) {
+        this.form.images = Array.from(files);
+        this.imagePreviews = [];
 
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.imagePreviews.push(e.target.result);
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-}
-,
+        Array.from(files).forEach((file) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            this.imagePreviews.push(e.target.result);
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+    },
     removeImage(index) {
       this.form.images.splice(index, 1);
       this.imagePreviews.splice(index, 1);
-      
+
       // Update the file input value to reflect the removed files
       const dt = new DataTransfer();
       this.form.images.forEach((file) => {
@@ -133,52 +149,62 @@ export default {
       this.$refs.fileInput.files = dt.files;
     },
     async submitForm() {
-  // Clear previous errors
-  this.errors = [];
+      // Clear previous errors
+      this.errors = [];
 
-  // Validate required fields
-  if (!this.form.description.trim()) {
-    this.errors.push("Description is required.");
-  }
-  if (this.form.budget === null || this.form.budget === "") {
-    this.errors.push("Budget is required.");
-  } else if (this.form.budget < 0) {
-    this.errors.push("Budget cannot be negative.");
-  }
+      // Validate required fields
+      if (!this.form.description.trim()) {
+        this.errors.push("Description is required.");
+      }
 
-  if (this.errors.length) {
-    return; // Exit if there are validation errors
-  }
+      if (this.form.budget === null || this.form.budget === "") {
+        this.errors.push("Budget is required.");
+      } else if (this.form.budget < 0) {
+        this.errors.push("Budget cannot be negative.");
+      }
 
-  const formData = new FormData();
-  for (const key in this.form) {
-    if (key === "images") {
-      this.form.images.forEach((file) => {
-        formData.append("images[]", file); // This sends each image file in the array
-      });
-    } else {
-      formData.append(key, this.form[key]);
-    }
-  }
+      // Require at least one image
+      if (this.form.images.length === 0) {
+        this.errors.push("At least one image is required.");
+      }
 
-  try {
-    const response = await axios.post("/api/custom-requests", formData, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-      },
-    });
-    alert(response.data.message); // Display success message
-    this.resetForm(); // Reset form on success
-  } catch (error) {
-    if (error.response && error.response.data.errors) {
-      this.errors = Object.values(error.response.data.errors).flat();
-    } else {
-      console.error("Unexpected error:", error);
-      alert("An unexpected error occurred.");
-    }
-  }
-}
-,
+      if (this.errors.length) {
+        return; // Exit if there are validation errors
+      }
+
+      const formData = new FormData();
+      for (const key in this.form) {
+        if (key === "images") {
+          this.form.images.forEach((file) => {
+            formData.append("images[]", file); // This sends each image file in the array
+          });
+        } else {
+          formData.append(key, this.form[key]);
+        }
+      }
+
+      try {
+        const response = await axios.post("/api/custom-requests", formData, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        });
+        // Original line:
+        // alert(response.data.message); // Display success message
+        // Replaced with a modal:
+        this.successMessage = response.data.message;
+        this.showSuccessModal = true;
+
+        this.resetForm(); // Reset form on success
+      } catch (error) {
+        if (error.response && error.response.data.errors) {
+          this.errors = Object.values(error.response.data.errors).flat();
+        } else {
+          console.error("Unexpected error:", error);
+          alert("An unexpected error occurred.");
+        }
+      }
+    },
     resetForm() {
       this.form = {
         description: "",
@@ -195,59 +221,52 @@ export default {
         this.$refs.fileInput.value = "";
       }
     },
+
+    // ========== NEW MODAL CLOSE METHOD ==========
+    closeSuccessModal() {
+      this.showSuccessModal = false;
+    },
   },
 };
 </script>
+
 <style scoped>
-/* MAIN FORM WRAPPER */
+/* Container Styles */
 .custom-request-form {
-  max-width: 720px;
-  margin: 40px auto;
-  padding: 25px;
+  max-width: 900px;
+  margin: 1rem auto;
+  padding: 1.5rem;
   background-color: #ffffff;
-  border-radius: 15px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* HEADER STYLING */
+/* Title Styles */
 .custom-request-form h1 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
   text-align: center;
   color: #3B1E54;
-  margin-bottom: 25px;
-  font-size: 1.8em;
-  font-weight: bold;
 }
 
-/* ERROR MESSAGE BOX */
-.error-messages {
-  margin-bottom: 20px;
-  color: #b00020;
-  background-color: #fdecec;
-  padding: 15px;
-  border-radius: 10px;
-  font-size: 0.95em;
-}
-
-.error {
-  margin: 5px 0;
-}
-
-/* FORM GRID LAYOUT */
+/* Grid Layout */
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 1rem;
 }
 
-/* FORM GROUP STYLING */
+/* Form Group Styles */
 .form-group {
   display: flex;
   flex-direction: column;
 }
 
 .form-group label {
-  margin-bottom: 8px;
-  font-weight: 600;
+  font-weight: bold;
+  margin-bottom: 0.25rem;
   color: #3B1E54;
 }
 
@@ -258,23 +277,31 @@ export default {
 
 .form-group input,
 .form-group textarea {
-  padding: 12px 15px;
+  padding: 0.5rem;
   border: 1px solid #ccc;
-  border-radius: 10px;
-  font-size: 0.95em;
-  transition: border-color 0.3s;
+  border-radius: 4px;
+  font-size: 0.9rem;
 }
 
 .form-group input:focus,
 .form-group textarea:focus {
-  border-color: #5d9b8b;
   outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
 }
 
-/* TEXTAREA STYLING */
-.form-group textarea {
-  resize: vertical;
-  min-height: 100px;
+/* ERROR MESSAGE BOX */
+.error-messages {
+  margin-bottom: 1rem;
+  color: red;
+  background-color: #fdecec;
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 0.95em;
+}
+
+.error {
+  margin: 5px 0;
 }
 
 /* IMAGE PREVIEWS SECTION */
@@ -321,32 +348,77 @@ export default {
   background-color: rgba(255, 255, 255, 1);
 }
 
-/* SUBMIT BUTTON STYLING */
+/* Submit Button */
 .submit-button {
   grid-column: span 2;
-  padding: 14px 20px;
   background-color: #D4BEE4;
   color: #3B1E54;
   border: none;
-  border-radius: 12px;
+  border-radius: 4px;
+  font-size: 0.9rem;
   cursor: pointer;
-  font-size: 1em;
-  font-weight: bold;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s ease;
+  padding: 0.5rem 1rem;
 }
 
 .submit-button:hover {
   background-color: #EEEEEE;
 }
 
-/* RESPONSIVE DESIGN */
+/* ================== MODAL STYLES ================== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal-content {
+  background-color: #fff;
+  padding: 2rem;
+  width: 90%;
+  max-width: 500px;
+  border-radius: 8px;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  text-align: left;
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #3B1E54;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.ok-btn {
+  padding: 0.6rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+  color: #3B1E54;
+  background-color: #D4BEE4;
+}
+
+.ok-btn:hover {
+  opacity: 0.9;
+}
+
+/* Responsive Tweaks */
 @media (max-width: 768px) {
   .form-grid {
     grid-template-columns: 1fr;
-  }
-
-  .submit-button {
-    grid-column: span 1;
   }
 }
 </style>

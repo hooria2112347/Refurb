@@ -105,12 +105,11 @@
             <div class="comments-section">
               <h4 class="comments-title">Comments</h4>
               <div class="comments-list">
-                <div v-for="comment in request.comments" :key="comment.id" class="comment-item d-flex">
-                  <img
-                    :src="comment.artist.avatar || defaultAvatar"
-                    alt="User Avatar"
-                    class="avatar me-3"
-                  />
+                <div
+                  v-for="comment in request.comments"
+                  :key="comment.id"
+                  class="comment-item d-flex"
+                >
                   <div class="flex-grow-1">
                     <div class="d-flex justify-content-between align-items-center">
                       <strong>{{ comment.artist.name }}</strong>
@@ -119,7 +118,8 @@
                     <p class="mb-1">{{ comment.comment }}</p>
                     <!-- Delete button (only visible if the comment was made by the logged-in user) -->
                     <div v-if="comment.artist.id === currentUser.id" class="text-end">
-                      <button @click="deleteComment(comment.id)" class="btn btn-sm btn-outline-danger">
+                      <!-- Instead of directly calling deleteComment, we open the delete modal -->
+                      <button @click="openDeleteModal(comment.id)" class="btn btn-sm btn-outline-danger">
                         <i class="fas fa-trash-alt"></i> Delete
                       </button>
                     </div>
@@ -159,7 +159,20 @@
       {{ errorMessage }}
       <button type="button" class="btn-close" @click="errorMessage = ''" aria-label="Close"></button>
     </div>
+
+    <!-- DELETE COMMENT CONFIRMATION POP-UP MODAL -->
+    <div v-if="showDeleteModal" class="modal-overlay" @click.self="closeDeleteModal">
+      <div class="modal-content">
+        <h2>Confirm Deletion</h2>
+        <p>Are you sure you want to delete this comment?</p>
+        <div class="modal-buttons">
+          <button class="ok-btn" @click="deleteCommentInternal">Yes</button>
+          <button class="cancel-btn" @click="closeDeleteModal">No</button>
+        </div>
+      </div>
+    </div>
   </div>
+
   <div v-else class="loading-container">
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading request details...</span>
@@ -180,7 +193,10 @@ export default {
       isSubmitting: false, // To handle loading state for comment submission
       successMessage: "",
       errorMessage: "",
-      defaultAvatar: "https://via.placeholder.com/50", // Default avatar image
+      
+      // ======= NEW PROPERTIES FOR DELETE CONFIRMATION MODAL =======
+      showDeleteModal: false,
+      commentToDeleteId: null,
     };
   },
   methods: {
@@ -203,7 +219,7 @@ export default {
       return new Date(dateStr).toLocaleDateString(undefined, options);
     },
     statusIcon(status) {
-      switch (status.toLowerCase()) {
+      switch ((status || '').toLowerCase()) {
         case 'completed':
           return 'fas fa-check-circle text-success';
         case 'in progress':
@@ -237,19 +253,37 @@ export default {
         this.isSubmitting = false;
       }
     },
-    async deleteComment(commentId) {
-      if (!confirm("Are you sure you want to delete this comment?")) return;
+
+    // ====== MODAL TRIGGERS FOR DELETING COMMENTS ======
+    // Instead of direct confirm(), open a custom modal
+    openDeleteModal(commentId) {
+      // Original: if (!confirm("Are you sure you want to delete this comment?")) return;
+      // We simply store the ID and show the modal:
+      this.commentToDeleteId = commentId;
+      this.showDeleteModal = true;
+    },
+    closeDeleteModal() {
+      this.showDeleteModal = false;
+      this.commentToDeleteId = null;
+    },
+
+    // The actual delete logic, called once user confirms
+    async deleteCommentInternal() {
+      if (!this.commentToDeleteId) return;
       try {
-        await axios.delete(`/api/custom-requests/comments/${commentId}`, {
+        await axios.delete(`/api/custom-requests/comments/${this.commentToDeleteId}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
         });
         this.successMessage = "Comment deleted successfully!";
-        this.fetchRequestDetail(); // Refetch to show the updated comments
+        this.fetchRequestDetail(); // Refetch to update comments
       } catch (error) {
         console.error("Error deleting comment:", error);
         this.errorMessage = "Failed to delete comment.";
+      } finally {
+        // Close the modal either way
+        this.closeDeleteModal();
       }
     },
   },
@@ -352,13 +386,6 @@ export default {
   background-color: #e9ecef;
 }
 
-.avatar {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
 /* DELETE BUTTON */
 .btn-outline-danger {
   display: flex;
@@ -377,8 +404,10 @@ export default {
   border: 1px solid #ced4da;
 }
 
-.comment-form .btn {
-  align-self: flex-end;
+.comment-form .btn.btn-primary {
+  background-color: #D4BEE4; /* Your desired background color */
+  color: #3B1E54;            /* Text color */
+  border: none;
 }
 
 /* ALERTS */
@@ -403,6 +432,62 @@ export default {
 .loading-container p {
   margin-top: 15px;
   font-size: 1.2rem;
+}
+
+/* ====== MODAL STYLES ====== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; /* Ensure it's above the alerts */
+}
+
+.modal-content {
+  background-color: #fff;
+  padding: 2rem;
+  width: 90%;
+  max-width: 400px;
+  border-radius: 8px;
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.ok-btn,
+.cancel-btn {
+  padding: 0.6rem 1rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+}
+
+.ok-btn {
+  background-color: #d9534f; /* Red-ish for "delete" */
+}
+
+.ok-btn:hover {
+  opacity: 0.9;
+}
+
+.cancel-btn {
+  background-color: #6c757d;
+}
+
+.cancel-btn:hover {
+  opacity: 0.9;
 }
 
 /* RESPONSIVE DESIGN */

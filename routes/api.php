@@ -10,113 +10,117 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\ArtistProfileController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\AdminProductController;
 
 /*
-|----------------------------------------------------------------------
-| API Routes
-|----------------------------------------------------------------------
+|--------------------------------------------------------------------------
+| Public Routes (No Authentication Required)
+|--------------------------------------------------------------------------
 */
 
-// Public routes (no auth needed)
+// User registration & login
 Route::post('/signup', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-// Other public routes
+// Password reset (forgot/verify code/reset)
 Route::post('/password/forgot', [PasswordResetController::class, 'sendResetCode']);
 Route::post('/password/verify-code', [PasswordResetController::class, 'verifyResetCode']);
 Route::post('/password/reset', [PasswordResetController::class, 'resetPassword']);
 
-// Fetch all products (for browsing)
+// Public product browsing
 Route::get('/products/all', [ProductController::class, 'getAllProducts']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
-// Protected routes (require a valid Bearer token)
+
+/*
+|--------------------------------------------------------------------------
+| Protected Routes (Require Sanctum Authentication)
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth:sanctum'])->group(function () {
+
+    // -------------------------
+    // Authentication & Profile
+    // -------------------------
     Route::get('/users/{id}', [AuthController::class, 'showProfile']);
-       // Change password
-       Route::post('/change-password', [AuthController::class, 'changePassword']);
-
-       // Custom request routes
-       Route::post('/custom-requests', [CustomRequestController::class, 'store']);
-       Route::get('/custom-requests', [CustomRequestController::class, 'index']);
-       Route::get('/custom-requests/accepted', [CustomRequestController::class, 'getAcceptedRequests']);
-   
-   
-       // Fetch the details of a specific custom request
-       Route::get('/custom-requests/{id}', [CustomRequestController::class, 'show']); // New route added
-
-    Route::delete('/custom-requests/comments/{commentId}', [CustomRequestController::class, 'deleteComment']);
-
-    // Route to accept a custom request
-    Route::post('custom-requests/{id}/accept', [CustomRequestController::class, 'accept']);
-
-    // Route to decline a custom request
-    Route::post('custom-requests/{id}/decline', [CustomRequestController::class, 'decline']);
-
-    // Route for adding a comment
-    Route::post('custom-requests/{id}/comments', [CustomRequestController::class, 'addComment']);
-
-    // Logout (requires user to be authenticated, so the token can be revoked)
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Product routes
-    Route::group(['middleware' => ['auth:sanctum']], function () {
-        Route::post('/products', [ProductController::class, 'store']); 
+    // Show the currently authenticated user
+    Route::get('/user', function (Request $request) {
+        return response()->json($request->user());
+    });
+
+    // ---------------------
+    // Custom Request Routes
+    // ---------------------
+    Route::post('/custom-requests', [CustomRequestController::class, 'store']);
+    Route::get('/custom-requests', [CustomRequestController::class, 'index']);
+    Route::get('/custom-requests/accepted', [CustomRequestController::class, 'getAcceptedRequests']);
+    Route::get('/custom-requests/{id}', [CustomRequestController::class, 'show']);
+    Route::delete('/custom-requests/comments/{commentId}', [CustomRequestController::class, 'deleteComment']);
+
+    // Accept/Decline requests
+    Route::post('/custom-requests/{id}/accept', [CustomRequestController::class, 'accept']);
+    Route::post('/custom-requests/{id}/decline', [CustomRequestController::class, 'decline']);
+
+    // Comments on custom requests
+    Route::post('/custom-requests/{id}/comments', [CustomRequestController::class, 'addComment']);
+
+    // --------------
+    // Product Routes
+    // --------------
+    Route::post('/products', [ProductController::class, 'store']);
     Route::get('/products', [ProductController::class, 'index']);
     Route::put('/products/{id}', [ProductController::class, 'update']);
     Route::delete('/products/{id}', [ProductController::class, 'destroy']);
-}); 
-    // Shows the currently authenticated user
-    Route::get('/user', function (Request $request) {
-        return response()->json($request->user());
-    });        
-    Route::middleware('auth:sanctum')->group(function () {
-        // PROJECTS
-        Route::get('/projects', [ProjectController::class, 'index']);
-        Route::post('/projects', [ProjectController::class, 'store']);
-        Route::get('/projects/{id}', [ProjectController::class, 'show']);
-        Route::get('/projects/{id}/available-artists', [ProjectController::class, 'getAvailableArtists']);
-        Route::post('/projects/{id}/complete', [ProjectController::class, 'completeProject']);
-        Route::post('/projects/{id}/feedback', [ProjectController::class, 'submitFeedback']);
-        Route::get('/projects/{id}/feedback', [ProjectController::class, 'getFeedback']);
 
-    
-        // INVITATIONS
-        Route::post('/projects/{projectId}/invite', [InvitationController::class, 'invite']);
-        Route::post('/invitations/{id}/respond', [InvitationController::class, 'respond']);
-    
-        // JOIN REQUESTS
-        Route::post('/projects/{projectId}/request-join', [InvitationController::class, 'requestJoin']);
-        Route::post('/invitations/{id}/owner-respond', [InvitationController::class, 'ownerRespondToRequest']);
-    
-        // FEEDBACK AND RATING SYSTEM
-        Route::post('/projects/{id}/feedback', [ProjectController::class, 'submitFeedback']);
-        Route::get('/projects/{id}/feedback', [ProjectController::class, 'getFeedback']);
-    });
-    
-
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::get('/my-owned-projects', [ArtistProfileController::class, 'getOwnedProjects']);
-        Route::get('/my-collaborations', [ArtistProfileController::class, 'getCollaborationProjects']);
-      });
-
-
-      Route::middleware(['auth:sanctum'])->group(function () {
-        // Retrieve pending invitations for the logged-in user
-        Route::get('/my-invitations', [InvitationController::class, 'indexPendingInvitations']);
-    
-        // Respond to an invitation
-        Route::post('/invitations/{id}/respond', [InvitationController::class, 'respond']);
-    });
-
-
+    // -----------
+    // Projects
+    // -----------
+    Route::get('/projects', [ProjectController::class, 'index']);
+    Route::post('/projects', [ProjectController::class, 'store']);
+    Route::get('/projects/{id}', [ProjectController::class, 'show']);
     Route::get('/projects/{id}/available-artists', [ProjectController::class, 'getAvailableArtists']);
 
-    Route::get('/my-sent-invitations', [InvitationController::class, 'indexSentInvitations']);
+    // Complete project, feedback
+    Route::post('/projects/{id}/complete', [ProjectController::class, 'completeProject']);
+    Route::post('/projects/{id}/feedback', [ProjectController::class, 'submitFeedback']);
+    Route::get('/projects/{id}/feedback', [ProjectController::class, 'getFeedback']);
 
+    // -----------
+    // Invitations
+    // -----------
+    // Invite artists to a project
+    Route::post('/projects/{projectId}/invite', [InvitationController::class, 'invite']);
+
+    // Respond to an invitation (invitee)
+    Route::post('/invitations/{id}/respond', [InvitationController::class, 'respond']);
+
+    // Join requests (artist requesting to join a project)
+    Route::post('/projects/{projectId}/request-join', [InvitationController::class, 'requestJoin']);
+    // Project owner responds to a join request
+    Route::post('/invitations/{id}/owner-respond', [InvitationController::class, 'ownerRespondToRequest']);
+
+    // Artist profile & collaboration
+    Route::get('/my-owned-projects', [ArtistProfileController::class, 'getOwnedProjects']);
+    Route::get('/my-collaborations', [ArtistProfileController::class, 'getCollaborationProjects']);
+
+    // Invitation management
+    Route::get('/my-invitations', [InvitationController::class, 'indexPendingInvitations']);
+    Route::get('/my-sent-invitations', [InvitationController::class, 'indexSentInvitations']);
     Route::delete('/invitations/{id}', [InvitationController::class, 'destroy']);
-});
-    // ADMIN product management
+
+    // ---------------
+    // Review Routes
+    // ---------------
+    Route::post('/products/{id}/reviews', [ReviewController::class, 'store']);
+
+    // -------------------------
+    // Admin Product Management
+    // -------------------------
     Route::get('/admin/feedback', [AdminController::class, 'getAllFeedback']);
     Route::get('/admin/products', [AdminProductController::class, 'index']);
     Route::put('/admin/products/{id}', [AdminProductController::class, 'update']);
     Route::delete('/admin/products/{id}', [AdminProductController::class, 'destroy']);
+});

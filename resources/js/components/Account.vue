@@ -1,8 +1,9 @@
 <template>
-  <div class="artist-dashboard">
+  <div class="user-account-dashboard">
     <!-- Side navigation for Account -->
     <aside class="side-nav">
-      <router-link to="/artist-dashboard" exact-active-class="active">Overview</router-link>
+      <!-- Dynamic Overview route based on user.role -->
+      <router-link :to="overviewRoute" exact-active-class="active">Overview</router-link>
       <router-link to="/account" exact-active-class="active">Account</router-link>
       <router-link to="/password-change" exact-active-class="active">Change Password</router-link>
     </aside>
@@ -19,6 +20,15 @@
           <label>Email:</label>
           <p>{{ user.email }}</p>
         </div>
+        <!-- Optional: Display role-specific information -->
+        <div class="form-group" v-if="user.role === 'admin'">
+          <label>Role:</label>
+          <p>{{ user.role }}</p>
+        </div>
+        <div class="form-group" v-if="user.role === 'artist'">
+          <label>Portfolio:</label>
+          <p>{{ user.portfolio }}</p>
+        </div>
       </div>
     </section>
   </div>
@@ -32,33 +42,59 @@ export default {
       user: {
         name: "",
         email: "",
+        role: "",
+        // Additional fields based on role
+        shopName: "",      // For scrapSeller
+        portfolio: "",     // For artist
       },
     };
   },
   computed: {
-    isArtist() {
+    isAuthenticated() {
       const session = localStorage.getItem("userSession");
       if (session) {
         try {
           const userData = JSON.parse(session);
-          return userData.role === 'artist';
+          return userData;
         } catch (e) {
           console.error("Error parsing session data:", e);
-          return false;
+          return null;
         }
       }
-      return false;
+      return null;
+    },
+    overviewRoute() {
+      // Dynamically return the appropriate Overview route based on user role
+      switch (this.user.role) {
+        case "artist":
+          return "/artist-dashboard";
+        case "scrapSeller":
+          return "/scrap-seller-dashboard";
+        case "admin":
+          return "/admin-dashboard";
+        default:
+          return "/"; // or a default route if none of the above
+      }
     },
   },
   methods: {
     fetchUserDetails() {
-      // Retrieve session data from localStorage
       const session = localStorage.getItem("userSession");
       if (session) {
         try {
           const userData = JSON.parse(session);
           this.user.name = userData.name;
           this.user.email = userData.email;
+          this.user.role = userData.role;
+
+          // Populate additional fields based on role
+          if (userData.role === "scrapSeller") {
+            this.user.shopName = userData.shopName || "N/A";
+          }
+          if (userData.role === "artist") {
+            this.user.portfolio = userData.portfolio || "N/A";
+          }
+          // Add more role-specific fields as needed
         } catch (e) {
           console.error("Error parsing session data:", e);
           alert("Failed to load user details. Please log in again.");
@@ -71,11 +107,11 @@ export default {
     },
   },
   mounted() {
-    // Confirm user is Artist
-    if (this.isArtist) {
+    const sessionData = this.isAuthenticated;
+    if (sessionData) {
       this.fetchUserDetails(); // Load user details on component mount
     } else {
-      this.$router.push("/login"); // Redirect if not an artist
+      this.$router.push("/login"); // Redirect if not authenticated
     }
   },
 };
@@ -83,7 +119,7 @@ export default {
 
 <style scoped>
 /* MAIN WRAPPER FOR ACCOUNT DASHBOARD */
-.artist-dashboard {
+.user-account-dashboard {
   display: flex;
   background-color: #f7f9fc;
   min-height: 100vh;
@@ -109,23 +145,22 @@ export default {
   border-radius: 8px;
   font-size: 16px;
   font-weight: 500;
-  transition: color 0.3s;
+  transition: background-color 0.3s, color 0.3s;
 }
 
 .side-nav a:hover {
-  background-color: #9B7EBD; /* Optional: Keep hover background if desired */
+  background-color: #D4BEE4; /* Optional: Highlight on hover */
   color: #3B1E54;
 }
 
 .side-nav a.active {
-  /* Remove background-color to eliminate highlight */
-  /* Optional: Change text color to indicate active link */
-  color: #EEEEEE;
+  background-color: #9B7EBD;
+  color: #3B1E54;
 }
 
 /* DASHBOARD CONTENT STYLING */
 .dashboard-content {
-  flex: 0.8;
+  flex: 0.7;
   padding: 2rem;
   background-color: #f7f9fc;
 }

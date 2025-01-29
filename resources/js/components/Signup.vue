@@ -3,7 +3,9 @@
     <h2>Create Your Account</h2>
 
     <!-- MAIN FORM -->
-    <form @submit.prevent="handleSignup">
+    <!-- note 'novalidate' to disable default HTML popup validations -->
+    <form @submit.prevent="handleSignup" novalidate>
+      <!-- NAME -->
       <div class="form-group">
         <input
           type="text"
@@ -12,8 +14,11 @@
           placeholder="Name"
           required
         />
+        <!-- Inline error for name -->
+        <p v-if="fieldErrors.name" class="error-message">{{ fieldErrors.name }}</p>
       </div>
 
+      <!-- EMAIL -->
       <div class="form-group">
         <input
           type="email"
@@ -22,8 +27,11 @@
           placeholder="Email"
           required
         />
+        <!-- Inline error for email -->
+        <p v-if="fieldErrors.email" class="error-message">{{ fieldErrors.email }}</p>
       </div>
 
+      <!-- PHONE -->
       <div class="form-group">
         <input
           type="tel"
@@ -33,8 +41,11 @@
           required
           @input="handlePhoneInput"
         />
+        <!-- Inline error for phone -->
+        <p v-if="fieldErrors.phone" class="error-message">{{ fieldErrors.phone }}</p>
       </div>
 
+      <!-- PASSWORD -->
       <div class="form-group">
         <input
           type="password"
@@ -43,8 +54,11 @@
           placeholder="Password"
           required
         />
+        <!-- Inline error for password -->
+        <p v-if="fieldErrors.password" class="error-message">{{ fieldErrors.password }}</p>
       </div>
 
+      <!-- PASSWORD CONFIRMATION -->
       <div class="form-group">
         <input
           type="password"
@@ -53,34 +67,29 @@
           placeholder="Confirm Password"
           required
         />
+        <!-- Inline error for password confirmation -->
+        <p v-if="fieldErrors.password_confirmation" class="error-message">
+          {{ fieldErrors.password_confirmation }}
+        </p>
       </div>
 
+      <!-- ROLE -->
       <div class="form-group">
         <select id="role" v-model="form.role" required>
           <option value="" disabled>Select your role</option>
           <option value="artist">Artist</option>
           <option value="scrapSeller">Scrap Seller</option>
         </select>
+        <!-- Inline error for role -->
+        <p v-if="fieldErrors.role" class="error-message">{{ fieldErrors.role }}</p>
       </div>
 
+      <!-- A general error message (if any non-field-specific error arises) -->
+      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+
+      <!-- SUBMIT BUTTON -->
       <button type="submit">Sign Up</button>
     </form>
-
-    <!-- ERROR POPUP (displayed if hasErrors is true) -->
-    <transition name="fade">
-      <div v-if="hasErrors" class="error-popup-overlay">
-        <div class="error-popup-content">
-          <h3>Registration Errors</h3>
-          <ul>
-            <!-- Loop over each field's array of messages -->
-            <li v-for="(messages, field) in validationErrors" :key="field">
-              <p v-for="(msg, idx) in messages" :key="idx">- {{ msg }}</p>
-            </li>
-          </ul>
-          <button @click="closeErrorPopup">Close</button>
-        </div>
-      </div>
-    </transition>
   </div>
 </template>
 
@@ -99,18 +108,21 @@ export default {
         password_confirmation: "",
         role: ""
       },
-      validationErrors: {}, // Store server errors
-      showErrorPopup: false // Controls whether the popup is visible
+      // Inline field errors for local + server validations
+      fieldErrors: {
+        name: "",
+        email: "",
+        phone: "",
+        password: "",
+        password_confirmation: "",
+        role: ""
+      },
+      // A general error message (e.g., if server fails in some unexpected way)
+      errorMessage: ""
     };
   },
-  computed: {
-    // If there is at least one error in validationErrors, show the popup
-    hasErrors() {
-      return this.showErrorPopup && Object.keys(this.validationErrors).length > 0;
-    }
-  },
   methods: {
-    // Remove all non-digit characters and limit to 11 digits
+    // Remove all non-digit characters from phone and limit to 11 digits
     handlePhoneInput(event) {
       let cleaned = event.target.value.replace(/[^\d]/g, "");
       if (cleaned.length > 11) {
@@ -119,12 +131,79 @@ export default {
       this.form.phone = cleaned;
     },
 
-    handleSignup() {
-      // Clear old errors before a new request
-      this.validationErrors = {};
-      this.showErrorPopup = false;
+    // Validate fields locally before sending to server
+    validateFields() {
+      // Clear previous errors
+      this.fieldErrors = {
+        name: "",
+        email: "",
+        phone: "",
+        password: "",
+        password_confirmation: "",
+        role: ""
+      };
 
-      // Send form data to backend API
+      let isValid = true;
+
+      // Check Name
+      if (!this.form.name) {
+        this.fieldErrors.name = "Name is required.";
+        isValid = false;
+      }
+
+      // Check Email (simple regex or at least presence)
+      if (!this.form.email) {
+        this.fieldErrors.email = "Email is required.";
+        isValid = false;
+      } else {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!re.test(this.form.email)) {
+          this.fieldErrors.email = "Please enter a valid email address.";
+          isValid = false;
+        }
+      }
+
+      // Check Phone
+      if (!this.form.phone) {
+        this.fieldErrors.phone = "Phone number is required.";
+        isValid = false;
+      }
+
+      // Check Password
+      if (!this.form.password) {
+        this.fieldErrors.password = "Password is required.";
+        isValid = false;
+      }
+
+      // Check Password Confirmation
+      if (!this.form.password_confirmation) {
+        this.fieldErrors.password_confirmation = "Please confirm your password.";
+        isValid = false;
+      } else if (this.form.password !== this.form.password_confirmation) {
+        this.fieldErrors.password_confirmation = "Passwords do not match.";
+        isValid = false;
+      }
+
+      // Check Role
+      if (!this.form.role) {
+        this.fieldErrors.role = "Role is required.";
+        isValid = false;
+      }
+
+      return isValid;
+    },
+
+    handleSignup() {
+      // First, do local (client-side) validation
+      this.errorMessage = "";
+      const isFormValid = this.validateFields();
+
+      if (!isFormValid) {
+        // If there are local validation errors, just stop here
+        return;
+      }
+
+      // Otherwise, send data to the server
       axios
         .post("/api/signup", this.form)
         .then((response) => {
@@ -134,20 +213,31 @@ export default {
         })
         .catch((error) => {
           console.error("Error during registration:", error);
+          // Clear old field errors
+          this.fieldErrors = {
+            name: "",
+            email: "",
+            phone: "",
+            password: "",
+            password_confirmation: "",
+            role: ""
+          };
+
           if (error.response && error.response.data && error.response.data.errors) {
-            // Store all validation errors
-            this.validationErrors = error.response.data.errors;
-            // Show the popup
-            this.showErrorPopup = true;
+            // Server responded with validation errors
+            const serverErrors = error.response.data.errors;
+            // Map each field's errors to our fieldErrors
+            for (const field in serverErrors) {
+              if (this.fieldErrors[field] !== undefined) {
+                // Join multiple server messages into a single string if needed
+                this.fieldErrors[field] = serverErrors[field].join(" ");
+              }
+            }
           } else {
-            // If it's some other kind of error, show a generic message
-            alert("An error occurred during registration.");
+            // If it's some other kind of error, set a general error message
+            this.errorMessage = "An error occurred during registration. Please try again.";
           }
         });
-    },
-
-    closeErrorPopup() {
-      this.showErrorPopup = false;
     }
   }
 };
@@ -198,6 +288,14 @@ export default {
   background-color: #ffffff;
 }
 
+/* ERROR MESSAGE (inline) */
+.error-message {
+  color: #b00000;
+  margin-top: 0.5rem;
+  text-align: center;
+  font-weight: bold;
+}
+
 /* BUTTON STYLING */
 button {
   width: 100%;
@@ -219,68 +317,6 @@ button:hover {
 
 button:active {
   background-color: #9B7EBD;
-}
-
-/* ERROR POPUP OVERLAY */
-.error-popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-}
-
-/* ERROR POPUP CONTENT */
-.error-popup-content {
-  background-color: #ffffff;
-  padding: 2rem;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 400px;
-  text-align: center;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-}
-
-.error-popup-content h3 {
-  color: #b00000;
-  font-size: 22px;
-  margin-bottom: 1rem;
-}
-
-.error-popup-content ul {
-  list-style: none;
-  padding: 0;
-  margin: 1rem 0;
-}
-
-.error-popup-content li {
-  color: #b00000;
-  font-size: 16px;
-  margin-bottom: 0.5rem;
-}
-
-.error-popup-content button {
-  background-color: #b00000;
-  color: #ffffff;
-  padding: 12px 16px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  margin-top: 1.5rem;
-  transition: background-color 0.3s ease;
-}
-
-.error-popup-content button:hover {
-  background-color: #d9534f;
-}
-
-.error-popup-content button:active {
-  background-color: #a52a2a;
 }
 
 /* RESPONSIVE DESIGN */
