@@ -35,7 +35,7 @@
         <ul class="collaborators-list">
           <li v-for="collab in project.collaborators" :key="collab.id">
             <span class="name">{{ collab.user.name }}</span>
-            <span class="role">({{ collab.role }})</span>
+            <!-- <span class="role">({{ collab.role }})</span> -->
           </li>
         </ul>
       </div>

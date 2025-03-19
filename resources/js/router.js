@@ -31,6 +31,10 @@ import ProjectDetail from './components/ProjectDetail.vue';
 import ProjectList from './components/ProjectList.vue';
 import MySentInvitations from './components/MySentInvitations.vue';
 import AdminFeedback from './components/AdminFeedback.vue';
+import ChangeEmail from './components/ChangeEmail.vue';     
+import Wishlist from './components/Wishlist.vue';
+import AddCart from './components/AddCart.vue'; // Import the cart component
+
 
 const routes = [  {
   path: '/user-profile/:id',
@@ -46,6 +50,12 @@ const routes = [  {
   path: '/manage-products',
   name: 'ManageProducts',
   component: ManageProducts,
+},
+{
+  path: '/cart',
+  name: 'cart',
+  component: AddCart,
+  meta: { requiresAuth: true } // Since your cart requires authentication
 },
 {
   path: '/products/:id', // Path for product details with dynamic ID
@@ -75,9 +85,20 @@ const routes = [  {
   { path: '/manage-products', component: ManageProducts, name: 'ManageProducts' },
   { path: '/admin-feedback', component: AdminFeedback },
   {
+    path: '/email-change',
+    name: 'ChangeEmail',
+    component: ChangeEmail,
+  },
+  {
     path: '/my-invitations',
     name: 'MyInvitations',
     component: MyInvitations
+  },
+  {
+    path: '/wishlist',
+    name: 'wishlist',
+    component: Wishlist,
+    meta: { requiresAuth: true } // Optional: Add auth protection
   },
   {
     path: '/my-projects',

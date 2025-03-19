@@ -12,6 +12,8 @@ use App\Http\Controllers\ArtistProfileController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\AdminProductController;
+use App\Http\Controllers\WishlistController;
+use App\Http\Controllers\CartController;
 
 /*
 |--------------------------------------------------------------------------
@@ -123,4 +125,29 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/admin/products', [AdminProductController::class, 'index']);
     Route::put('/admin/products/{id}', [AdminProductController::class, 'update']);
     Route::delete('/admin/products/{id}', [AdminProductController::class, 'destroy']);
+
+
+
+    // Email Change Routes
+    Route::prefix('email-change')->group(function () {
+    Route::post('/send-change-code', [EmailChangeController::class, 'sendChangeCode']);
+    Route::post('/verify-code', [EmailChangeController::class, 'verifyChangeCode']);
+    Route::post('/change', [EmailChangeController::class, 'changeEmail']);
+});
+
+    // Wishlist routes
+    Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/wishlist/add/{productId}', [WishlistController::class, 'addToWishlist']);
+    Route::delete('/wishlist/remove/{productId}', [WishlistController::class, 'removeFromWishlist']);
+    Route::get('/wishlist', [WishlistController::class, 'getWishlist']);
+});
+
+    Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/cart/add/{productId}', [CartController::class, 'addToCart']);
+    Route::put('/cart/update/{productId}', [CartController::class, 'updateCartItem']);
+    Route::delete('/cart/remove/{productId}', [CartController::class, 'removeFromCart']);
+    Route::get('/cart', [CartController::class, 'getCart']);
+    Route::delete('/cart/clear', [CartController::class, 'clearCart']);
+});
+
 });

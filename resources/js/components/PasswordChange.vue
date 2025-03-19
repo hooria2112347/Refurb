@@ -2,7 +2,8 @@
   <div class="user-password-dashboard">
     <!-- Side navigation for Change Password -->
     <aside class="side-nav">
-      <router-link to="/artist-dashboard" exact-active-class="active">Overview</router-link>
+      <!-- Dynamic Overview route based on user.role -->
+      <router-link :to="overviewRoute" exact-active-class="active">Overview</router-link>
       <router-link to="/account" exact-active-class="active">Account</router-link>
       <router-link to="/password-change" exact-active-class="active">Change Password</router-link>
     </aside>
@@ -76,17 +77,33 @@ export default {
   },
   computed: {
     isAuthenticated() {
+      // Retrieve and parse the user session from localStorage
       const session = localStorage.getItem("userSession");
       if (session) {
         try {
-          const userData = JSON.parse(session);
-          return userData;
+          return JSON.parse(session);
         } catch (e) {
           console.error("Error parsing session data:", e);
           return null;
         }
       }
       return null;
+    },
+    overviewRoute() {
+      // Dynamically return the appropriate Overview route based on user role
+      if (!this.isAuthenticated) {
+        return "/login";
+      }
+      switch (this.isAuthenticated.role) {
+        case "artist":
+          return "/artist-dashboard";
+        case "scrapSeller":
+          return "/scrap-seller-dashboard";
+        case "admin":
+          return "/admin-dashboard";
+        default:
+          return "/";
+      }
     },
   },
   methods: {
@@ -96,8 +113,6 @@ export default {
         this.errorMessage = "New Password and Confirm Password do not match.";
         return;
       }
-
-      // Optional: Add more validation for password strength here
 
       // Make API call to change password
       axios
@@ -134,17 +149,17 @@ export default {
     },
     fetchUserDetails() {
       // Optional: Fetch additional user details if needed
-      // Currently, user details are retrieved from localStorage
+      // Currently, user details are retrieved from localStorage (via isAuthenticated)
     },
   },
   mounted() {
+    // Check if user is authenticated
     const sessionData = this.isAuthenticated;
-    if (sessionData) {
-      // User is authenticated; proceed
-      this.fetchUserDetails(); // Load user details on component mount (if needed)
-    } else {
+    if (!sessionData) {
       alert("No active session found. Please log in.");
       this.$router.push("/login"); // Redirect if not authenticated
+    } else {
+      this.fetchUserDetails();
     }
   },
 };

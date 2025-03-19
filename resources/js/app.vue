@@ -1,10 +1,23 @@
 <template>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <div id="app">
     <header>
       <div class="nav-container">
         <h1 class="logo">Refurb</h1>
         <nav class="main-nav">
           <router-link to="/" class="nav-link">Home</router-link>
+
+           <!-- Cart icon with counter -->
+          <div class="nav-link cart-link">
+            <router-link v-if="isLoggedIn" to="/cart" class="cart-icon">
+              <i class="fas fa-shopping-cart"></i>
+              <span v-if="cartItemCount > 0" class="cart-count">{{ cartItemCount }}</span>
+            </router-link>
+            <div v-else @click="showCartLoginModal" class="cart-icon">
+              <i class="fas fa-shopping-cart"></i>
+              <span v-if="cartItemCount > 0" class="cart-count">{{ cartItemCount }}</span>
+            </div>
+          </div>
 
           <!-- Conditional display based on login status -->
           <div v-if="!isLoggedIn" class="dropdown">
@@ -34,40 +47,30 @@
             </button>
             <div class="dropdown-content" v-if="isDropdownOpen">
               <router-link :to="dashboardRoute">Dashboard</router-link>
+              <router-link to="/wishlist">My Wishlist</router-link>
               <a href="#" @click.prevent="logout">Logout</a>
             </div>
           </div>
         </nav>
-
-        <!-- Mobile menu toggle button -->
-        <button 
-          class="mobile-menu-toggle" 
-          @click="toggleMobileMenu" 
-          aria-label="Toggle navigation"
-        >
-          <span :class="['hamburger', { 'open': isMobileMenuOpen }]" ></span>
-          <span :class="['hamburger', { 'open': isMobileMenuOpen }]" ></span>
-          <span :class="['hamburger', { 'open': isMobileMenuOpen }]" ></span>
-        </button>
       </div>
-
-      <!-- Simplified Mobile menu -->
-      <transition name="slide">
-        <div v-if="isMobileMenuOpen" class="mobile-menu">
-          <router-link to="/" class="mobile-nav-link" @click="closeMobileMenu">Home</router-link>
-          <router-link v-if="!isLoggedIn" to="/login" class="mobile-nav-link" @click="closeMobileMenu">Login</router-link>
-          <router-link v-if="!isLoggedIn" to="/signup" class="mobile-nav-link" @click="closeMobileMenu">Sign Up</router-link>
-          <router-link v-else :to="dashboardRoute" class="mobile-nav-link" @click="closeMobileMenu">Dashboard</router-link>
-          <a v-else href="#" class="mobile-nav-link" @click="logout">Logout</a>
-        </div>
-      </transition>
     </header>
 
     <!-- Routed component -->
     <router-view></router-view>
+    
+    <!-- Modal for cart login -->
+    <div v-if="cartLoginModalVisible" class="modal-overlay">
+      <div class="modal-content">
+        <h2>Please Log In</h2>
+        <p>You need to be logged in to view your cart.</p>
+        <div class="modal-actions">
+          <router-link to="/login" @click="closeCartLoginModal" class="primary-button">Log In</router-link>
+          <button @click="closeCartLoginModal" class="secondary-button">Cancel</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
-
 
 <script>
 import axios from "axios";
@@ -79,8 +82,10 @@ export default {
       isLoggedIn: false,
       userName: "",
       userRole: "",
-      isMobileMenuOpen: false,
       isDropdownOpen: false,
+      cartItemCount: 0,
+      cartLoginModalVisible: false,
+      cartUpdateInterval: null
     };
   },
   computed: {
@@ -100,6 +105,104 @@ export default {
     },
   },
   methods: {
+    showCartLoginModal() {
+      this.cartLoginModalVisible = true;
+    },
+    
+    closeCartLoginModal() {
+      this.cartLoginModalVisible = false;
+    },
+    
+    async fetchCartCount() {
+      console.log("Fetching cart count...");
+      
+      // For guests, you might want to retrieve from localStorage or sessionStorage
+      // if your app supports guest carts
+      if (!this.isLoggedIn) {
+        const guestCart = localStorage.getItem("guestCart");
+        if (guestCart) {
+          try {
+            const cartItems = JSON.parse(guestCart);
+            this.cartItemCount = Array.isArray(cartItems) ? cartItems.length : 0;
+          } catch (err) {
+            console.error("Error parsing guest cart:", err);
+            this.cartItemCount = 0;
+          }
+          return;
+        }
+        
+        this.cartItemCount = 0;
+        return;
+      }
+      
+      // For logged-in users, fetch from API
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        this.cartItemCount = 0;
+        return;
+      }
+      
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/cart', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const cartData = await response.json();
+          console.log("Cart data fetched:", cartData);
+          
+          // Check the structure of the response to correctly count items
+          if (Array.isArray(cartData)) {
+            this.cartItemCount = cartData.length;
+          } else if (cartData.items && Array.isArray(cartData.items)) {
+            this.cartItemCount = cartData.items.length;
+          } else if (typeof cartData === 'object' && Object.keys(cartData).length) {
+            // If it's an object with keys representing cart items
+            this.cartItemCount = Object.keys(cartData).length;
+          } else {
+            this.cartItemCount = 0;
+          }
+          
+          console.log("Cart count updated:", this.cartItemCount);
+          
+          // Broadcast the update to other components
+          this.broadcastCartUpdate(this.cartItemCount);
+        } else {
+          console.error("Error fetching cart:", response.status);
+          this.cartItemCount = 0;
+        }
+      } catch (err) {
+        console.error("Error fetching cart:", err);
+        this.cartItemCount = 0;
+      }
+    },
+    
+    // New method to broadcast cart updates to other components
+    broadcastCartUpdate(count) {
+      // Using a custom event to notify all components
+      const event = new CustomEvent('global-cart-updated', {
+        detail: { count: count }
+      });
+      window.dispatchEvent(event);
+    },
+    
+    checkSession() {
+      const session = localStorage.getItem("userSession");
+      if (session) {
+        try {
+          const userData = JSON.parse(session);
+          this.isLoggedIn = true;
+          this.userName = userData.name;
+          this.userRole = userData.role;
+        } catch (e) {
+          console.error("Error parsing session data:", e);
+          this.logout();
+        }
+      }
+    },
+    
     logout() {
       console.log("Logout button clicked");
 
@@ -131,6 +234,7 @@ export default {
         this.handleLogoutCleanup();
       });
     },
+    
     handleLogoutCleanup() {
       console.log("Handling logout cleanup...");
       localStorage.removeItem('access_token');
@@ -138,55 +242,108 @@ export default {
       this.isLoggedIn = false;
       this.userName = "";
       this.userRole = "";
+      this.cartItemCount = 0;  // Reset cart count on logout
       this.$router.push('/').catch(err => console.error("Redirection error:", err));
       this.closeDropdown();
-      this.closeMobileMenu();
+      
+      // Broadcast cart reset
+      this.broadcastCartUpdate(0);
     },
-    checkSession() {
-      const session = localStorage.getItem("userSession");
-      if (session) {
-        try {
-          const userData = JSON.parse(session);
-          this.isLoggedIn = true;
-          this.userName = userData.name;
-          this.userRole = userData.role;
-        } catch (e) {
-          console.error("Error parsing session data:", e);
-          this.logout();
-        }
-      }
-    },
-    toggleMobileMenu() {
-      this.isMobileMenuOpen = !this.isMobileMenuOpen;
-      if (this.isMobileMenuOpen) {
-        document.body.style.overflow = 'hidden'; // Prevent background scrolling
-      } else {
-        document.body.style.overflow = '';
-      }
-    },
-    closeMobileMenu() {
-      this.isMobileMenuOpen = false;
-      document.body.style.overflow = '';
-    },
+    
     toggleDropdown() {
       this.isDropdownOpen = !this.isDropdownOpen;
     },
+    
     closeDropdown() {
       this.isDropdownOpen = false;
     },
+    
     handleClickOutside(event) {
       const dropdown = this.$el.querySelector('.dropdown');
       if (dropdown && !dropdown.contains(event.target)) {
         this.closeDropdown();
       }
     },
+    
+    // Setup cart polling
+    setupCartPolling() {
+      // Clear any existing interval
+      if (this.cartUpdateInterval) {
+        clearInterval(this.cartUpdateInterval);
+      }
+      
+      // Set up polling to fetch cart count periodically
+      this.cartUpdateInterval = setInterval(() => {
+        this.fetchCartCount();
+      }, 5000); // Check every 5 seconds
+    }
   },
+  
   mounted() {
     this.checkSession();
     document.addEventListener('click', this.handleClickOutside);
+    
+    // Listen for both custom events
+    window.addEventListener('cart-updated', () => {
+      console.log("Cart updated event received");
+      this.fetchCartCount();
+    });
+    
+    // Listen for storage changes (for cross-tab synchronization)
+    window.addEventListener('storage', (event) => {
+      if (event.key === 'guestCart' || event.key === 'userSession') {
+        this.fetchCartCount();
+      }
+    });
+    
+    // Initial cart fetch - make sure this happens AFTER checking the session
+    setTimeout(() => {
+      this.fetchCartCount();
+    }, 100);
+    
+    // Setup polling for cart updates
+    this.setupCartPolling();
+    
+    // Route change handler
+    this.$router.beforeEach((to, from, next) => {
+      if (this.cartLoginModalVisible) {
+        this.closeCartLoginModal();
+      }
+      next();
+    });
+    
+    // Fetch cart count when route changes
+    this.$router.afterEach(() => {
+      this.fetchCartCount();
+    });
   },
+
+  watch: {
+    // Watch for login status changes to update cart count
+    isLoggedIn(newValue) {
+      if (newValue) {
+        this.fetchCartCount();
+        this.setupCartPolling(); // Reset polling on login change
+      } else {
+        // Clear polling if logged out
+        if (this.cartUpdateInterval) {
+          clearInterval(this.cartUpdateInterval);
+          this.cartUpdateInterval = null;
+        }
+      }
+    }
+  },
+
   beforeDestroy() {
     document.removeEventListener('click', this.handleClickOutside);
+    window.removeEventListener('cart-updated', this.fetchCartCount);
+    window.removeEventListener('storage', this.fetchCartCount);
+    
+    // Clear the polling interval
+    if (this.cartUpdateInterval) {
+      clearInterval(this.cartUpdateInterval);
+      this.cartUpdateInterval = null;
+    }
   },
 };
 </script>
@@ -290,96 +447,136 @@ export default {
   transform: translateY(0);
 }
 
-/* Mobile menu toggle button */
-.mobile-menu-toggle {
-  display: none;
-  flex-direction: column;
-  justify-content: space-between;
-  width: 24px;
-  height: 18px;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-.hamburger {
-  width: 100%;
-  height: 3px;
-  background-color: #3C552D;
-  border-radius: 2px;
-  transition: all 0.3s ease;
+/* Cart styles */
+.cart-link {
   position: relative;
-  transform-origin: 1px;
-}
-
-.hamburger.open:nth-child(1) {
-  transform: rotate(45deg);
-}
-
-.hamburger.open:nth-child(2) {
-  opacity: 0;
-}
-
-.hamburger.open:nth-child(3) {
-  transform: rotate(-45deg);
-}
-
-/* Mobile menu styles */
-.mobile-menu {
   display: flex;
-  flex-direction: column;
-  background-color: #ffffff;
+  align-items: center;
+}
+
+.cart-icon {
+  position: relative;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #3B1E54;
+}
+
+.nav-link.cart-link a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.cart-icon:hover {
+  color: #9B7EBD;
+}
+
+.cart-count {
   position: absolute;
-  top: 100%;
+  top: -8px;
+  right: -8px;
+  background-color: #CA7373;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
   left: 0;
   width: 100%;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  z-index: 10;
-  padding: 1rem 0;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
 
-.mobile-nav-link {
-  padding: 0.75rem 2rem;
+.modal-content {
+  background-color: #fff;
+  padding: 24px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 20px;
+}
+
+.primary-button {
+  background-color: #D4BEE4;
+  color: #3B1E54;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
   text-decoration: none;
-  color: #3C552D;
-  transition: background-color 0.2s ease;
 }
 
-.mobile-nav-link:hover {
-  background-color: #f1f1f1;
+.primary-button:hover {
+  background-color: #EEEEEE;
 }
 
-/* Slide-down animation for mobile menu */
-.slide-enter-active, .slide-leave-active {
-  transition: max-height 0.3s ease, opacity 0.3s ease;
+.secondary-button {
+  background-color: #ccc;
+  color: #333;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
-.slide-enter, .slide-leave-to {
-  max-height: 0;
-  opacity: 0;
-}
-
-.slide-enter-to, .slide-leave {
-  max-height: 500px; /* Adjust as needed */
-  opacity: 1;
+.secondary-button:hover {
+  background-color: #b3b3b3;
 }
 
 /* Responsive styles */
 @media (max-width: 768px) {
+  .nav-container {
+    padding: 0.75rem 1.5rem;
+  }
+
+  .logo {
+    font-size: 1.5rem;
+  }
+
   .main-nav {
-    display: none;
+    gap: 1rem;
   }
 
-  .mobile-menu-toggle {
-    display: flex;
+  .nav-link {
+    padding: 0.4rem;
+    font-size: 0.9rem;
   }
 
-  /* Ensure mobile menu is hidden by default */
-  .mobile-menu {
-    display: none;
+  .dropbtn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
   }
 
-  /* When mobile menu is open, display it */
-  /* This is already handled by v-if and the transition */
+  .dropdown-content {
+    min-width: 140px;
+  }
+
+  .dropdown-content a,
+  .dropdown-content router-link {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.9rem;
+  }
 }
 </style>

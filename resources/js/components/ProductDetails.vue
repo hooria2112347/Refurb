@@ -1,4 +1,5 @@
 <template>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <div>
     <!-- Product Detail Page -->
     <div v-if="product" class="product-detail-page">
@@ -56,10 +57,44 @@
                 </p>
               </div>
 
-              <!-- Add to Cart Button (Does Nothing for Now) -->
-              <button class="add-to-cart-btn btn btn-primary btn-lg mt-3">
-                <i class="fas fa-shopping-cart mr-2"></i> Add to Cart
-              </button>
+
+            <!-- Add this before the button group in your template -->
+<div class="quantity-selector mb-3">
+  <label for="quantitySelect">Quantity:</label>
+  <div class="quantity-controls d-flex align-items-center">
+    <button 
+      @click="updateQuantity(-1)" 
+      :disabled="selectedQuantity <= 1"
+      class="quantity-btn"
+    >−</button>
+    <span class="quantity mx-3">{{ selectedQuantity }}</span>
+    <button 
+      @click="updateQuantity(1)" 
+      class="quantity-btn"
+    >+</button>
+  </div>
+</div>
+            <!-- Replace the existing button section with this: -->
+<div class="button-group mt-3">
+  <!-- Replace your existing add-to-cart-btn with this -->
+<button 
+  @click="addToCart" 
+  class="add-to-cart-btn btn btn-primary btn-lg"
+>
+  <i class="fas fa-shopping-cart"></i>
+</button>
+
+  <button 
+    @click="toggleWishlist" 
+    class="add-to-wishlist-btn btn btn-outline-primary btn-lg"
+  >
+    <i :class="isInWishlist ? 'fas fa-heart' : 'far fa-heart'"></i>
+  </button>
+</div>
+<!-- Add this right after your button-group -->
+<div v-if="showAddedToCartMessage" class="added-to-cart-message mt-3 alert alert-success">
+  Item added to cart successfully!
+</div>
             </div>
           </div>
         </div>
@@ -188,6 +223,9 @@ export default {
       currentPage: 1, // Current page for comments
       commentsPerPage: 5, // Number of comments per page
       loginModalVisible: false, // Controls visibility of login modal
+      isInWishlist: false,
+      selectedQuantity: 1,
+      showAddedToCartMessage: false
     };
   },
   computed: {
@@ -205,6 +243,50 @@ export default {
     }
   },
   methods: {
+
+    // Add this to your methods in the product details component
+    async addToCart() {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    this.showLoginModal();
+    return;
+  }
+  
+  try {
+    // Default quantity is 1 if not specified
+    const quantity = this.selectedQuantity || 1;
+    
+    const response = await fetch(`http://127.0.0.1:8000/api/cart/add/${this.product.id}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        quantity: quantity
+      })
+    });
+    
+    if (response.ok) {
+      this.showAddedToCartMessage = true;
+      // Hide the message after 3 seconds
+      setTimeout(() => {
+        this.showAddedToCartMessage = false;
+      }, 3000);
+    } else {
+      throw new Error('Failed to add to cart');
+    }
+  } catch (err) {
+    console.error("Error adding to cart:", err);
+    this.error = "Failed to add to cart. Please try again.";
+  }
+},
+updateQuantity(change) {
+  const newQuantity = this.selectedQuantity + change;
+  if (newQuantity >= 1) {
+    this.selectedQuantity = newQuantity;
+  }
+},
     // Fetch product details based on ID
     async fetchProductDetails() {
       const productId = this.$route.params.id; // Get the product ID from the route params
@@ -301,7 +383,75 @@ export default {
     closeLoginModal() {
       this.loginModalVisible = false;
     },
+    async checkWishlistStatus() {
+    const token = localStorage.getItem("access_token");
+    if (!token || !this.product) return;
+    
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/wishlist', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const productIds = data.map(item => item.id);
+        this.isInWishlist = productIds.includes(this.product.id);
+      }
+    } catch (err) {
+      console.error("Error checking wishlist status:", err);
+    }
   },
+  
+  // Toggle wishlist status
+  async toggleWishlist() {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      this.showLoginModal();
+      return;
+    }
+    
+    try {
+      if (this.isInWishlist) {
+        // Remove from wishlist
+        const response = await fetch(`http://127.0.0.1:8000/api/wishlist/remove/${this.product.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          this.isInWishlist = false;
+        }
+      } else {
+        // Add to wishlist
+        const response = await fetch(`http://127.0.0.1:8000/api/wishlist/add/${this.product.id}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          this.isInWishlist = true;
+        }
+      }
+    } catch (err) {
+      console.error("Error updating wishlist:", err);
+    }
+  },
+},
+watch: {
+  // Add this watch to check wishlist status when product changes
+  product() {
+    if (this.product) {
+      this.checkWishlistStatus();
+    }
+  }
+  },
+  
   mounted() {
     this.fetchProductDetails(); // Fetch the product details when the component mounts
   },
@@ -388,22 +538,65 @@ export default {
   color: #ff6f61;
 }
 
+/* Updated button group styles */
+.button-group {
+  display: flex;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+/* Updated add to cart button */
 .add-to-cart-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   background-color: #D4BEE4;
   color: #3B1E54;
   border: none;
-  padding: 10px 15px;
-  font-size: 1rem;
-  border-radius: 15px;
+  width: 60px;
+  height: 60px;
+  font-size: 1.5rem;
+  border-radius: 50%;
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.3s ease;
+  padding: 0;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 .add-to-cart-btn:hover {
-  background-color: #EEEEEE;
-  transform: translateY(-3px);
+  background-color: #C4A6DC;
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+/* Updated wishlist button */
+.add-to-wishlist-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  color: #D4BEE4;
+  border: 2px solid #D4BEE4;
+  width: 60px;
+  height: 60px;
+  font-size: 1.5rem;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.add-to-wishlist-btn:hover {
+  background-color: #FEF2F2;
+  color: #CA7373;
+  border-color: #CA7373;
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.add-to-wishlist-btn i.fa-heart {
+  color: #CA7373;
 }
 
 .comments-section h4 {
@@ -562,9 +755,16 @@ export default {
     padding: 10px;
   }
 
-  .add-to-cart-btn {
-    width: 100%;
+  /* Updated responsive styles for the buttons */
+  .button-group {
     justify-content: center;
+  }
+  
+  .add-to-cart-btn,
+  .add-to-wishlist-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 1.2rem;
   }
 
   .submit-review-btn {

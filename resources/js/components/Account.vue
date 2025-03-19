@@ -6,6 +6,7 @@
       <router-link :to="overviewRoute" exact-active-class="active">Overview</router-link>
       <router-link to="/account" exact-active-class="active">Account</router-link>
       <router-link to="/password-change" exact-active-class="active">Change Password</router-link>
+      <router-link to="/email-change" exact-active-class="active">Change Email</router-link>
     </aside>
 
     <section class="dashboard-content">
@@ -21,13 +22,13 @@
           <p>{{ user.email }}</p>
         </div>
         <!-- Optional: Display role-specific information -->
-        <div class="form-group" v-if="user.role === 'admin'">
+        <div class="form-group">
           <label>Role:</label>
           <p>{{ user.role }}</p>
         </div>
-        <div class="form-group" v-if="user.role === 'artist'">
-          <label>Portfolio:</label>
-          <p>{{ user.portfolio }}</p>
+        <div class="form-group">
+          <label>Phone no:</label>
+          <p>{{ user.phone }}</p>
         </div>
       </div>
     </section>
@@ -43,6 +44,7 @@ export default {
         name: "",
         email: "",
         role: "",
+        phone: "",
         // Additional fields based on role
         shopName: "",      // For scrapSeller
         portfolio: "",     // For artist
@@ -73,7 +75,7 @@ export default {
         case "admin":
           return "/admin-dashboard";
         default:
-          return "/"; // or a default route if none of the above
+          return "/";
       }
     },
   },
@@ -86,6 +88,7 @@ export default {
           this.user.name = userData.name;
           this.user.email = userData.email;
           this.user.role = userData.role;
+          this.user.phone = userData.phone;
 
           // Populate additional fields based on role
           if (userData.role === "scrapSeller") {
@@ -94,11 +97,10 @@ export default {
           if (userData.role === "artist") {
             this.user.portfolio = userData.portfolio || "N/A";
           }
-          // Add more role-specific fields as needed
         } catch (e) {
           console.error("Error parsing session data:", e);
           alert("Failed to load user details. Please log in again.");
-          this.$router.push("/login"); // Redirect to login on error
+          this.$router.push("/login");
         }
       } else {
         alert("No active session found. Please log in.");
@@ -109,9 +111,9 @@ export default {
   mounted() {
     const sessionData = this.isAuthenticated;
     if (sessionData) {
-      this.fetchUserDetails(); // Load user details on component mount
+      this.fetchUserDetails();
     } else {
-      this.$router.push("/login"); // Redirect if not authenticated
+      this.$router.push("/login");
     }
   },
 };
@@ -149,7 +151,7 @@ export default {
 }
 
 .side-nav a:hover {
-  background-color: #D4BEE4; /* Optional: Highlight on hover */
+  background-color: #D4BEE4; 
   color: #3B1E54;
 }
 
