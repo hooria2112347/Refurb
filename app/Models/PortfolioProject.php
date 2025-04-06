@@ -1,0 +1,36 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class PortfolioProject extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'project_id',
+        'artist_contribution',
+        'role_in_project',
+        'featured',
+        'public'
+    ];
+
+    /**
+     * Get the user (artist) who owns this portfolio item.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the project associated with this portfolio item.
+     */
+    public function project()
+    {
+        return $this->belongsTo(CollaborativeProject::class, 'project_id');
+    }
+}

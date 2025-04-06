@@ -39,4 +39,22 @@ class User extends Authenticatable
     {
         return $this->hasMany(Comment::class, 'user_id', 'id');
     }
+
+
+    /**
+     * Get the portfolio projects for this user.
+     */
+    public function portfolioProjects()
+    {
+        return $this->hasMany(PortfolioProject::class);
+    }
+
+    /**
+     * Get all completed projects that this user collaborated on.
+     */
+    public function completedProjects()
+    {
+        return $this->belongsToMany(CollaborativeProject::class, 'collaborator_project', 'user_id', 'project_id')
+            ->where('status', 'completed');
+    }
 }

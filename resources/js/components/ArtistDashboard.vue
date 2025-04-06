@@ -3,6 +3,7 @@
     <!-- Side navigation for Artist -->
     <aside class="side-nav">
       <router-link to="/artist-dashboard">Overview</router-link>
+      <router-link to="/portfolio">Portfolio</router-link>
       <router-link to="/account">Account</router-link>
 
       <!-- Projects Collapsible -->
@@ -19,7 +20,7 @@
         </div>
         <div class="collapsible-content">
           <router-link to="/projects/create">Create Project</router-link>
-          <router-link to="/my-projects">My Projects</router-link>
+          <router-link to="/projects">My Projects</router-link>
         </div>
       </div>
       

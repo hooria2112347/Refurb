@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
-class AdminProductController extends Controller
+class AdminController extends Controller
 {
     public function __construct()
     {

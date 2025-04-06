@@ -19,21 +19,11 @@
             </div>
           </div>
 
-          <!-- Conditional display based on login status -->
-          <div v-if="!isLoggedIn" class="dropdown">
-            <button 
-              class="dropbtn" 
-              @click="toggleDropdown" 
-              aria-haspopup="true" 
-              :aria-expanded="isDropdownOpen"
-            >
-              Guest <span class="arrow">&#x25BC;</span>
-            </button>
-            <div class="dropdown-content" v-if="isDropdownOpen">
-              <router-link to="/login">Login</router-link>
-              <router-link to="/signup">Sign Up</router-link>
-            </div>
-          </div>
+          <!-- Login/Signup links when not logged in -->
+          <template v-if="!isLoggedIn">
+            <router-link to="/login" class="nav-link">Login</router-link>
+            <router-link to="/signup" class="nav-link">Sign Up</router-link>
+          </template>
 
           <!-- User dropdown when logged in -->
           <div v-else class="dropdown">
@@ -71,7 +61,6 @@
     </div>
   </div>
 </template>
-
 <script>
 import axios from "axios";
 

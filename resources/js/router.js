@@ -25,7 +25,6 @@ import AdminDashboard from '@/components/AdminDashboard.vue';
 import ArtistDashboard from '@/components/ArtistDashboard.vue';
 import ScrapSellerDashboard from '@/components/ScrapSellerDashboard.vue';
 import MyInvitations from './components/MyInvitations.vue';
-import MyProjects from './components/MyProjects.vue';
 import ProjectCreate from './components/ProjectCreate.vue';
 import ProjectDetail from './components/ProjectDetail.vue';
 import ProjectList from './components/ProjectList.vue';
@@ -34,6 +33,8 @@ import AdminFeedback from './components/AdminFeedback.vue';
 import ChangeEmail from './components/ChangeEmail.vue';     
 import Wishlist from './components/Wishlist.vue';
 import AddCart from './components/AddCart.vue'; // Import the cart component
+import Portfolio from './components/Portfolio.vue';
+import CompletedProjects from './components/CompletedProjects.vue';
 
 
 const routes = [  {
@@ -50,6 +51,15 @@ const routes = [  {
   path: '/manage-products',
   name: 'ManageProducts',
   component: ManageProducts,
+},
+{
+  path: '/projects/completed',
+  name: 'CompletedProjects',
+  component: CompletedProjects,
+  meta: {
+    title: 'Completed Projects',
+    requiresAuth: false // This page is publicly accessible
+  }
 },
 {
   path: '/cart',
@@ -84,6 +94,7 @@ const routes = [  {
   { path: '/custom-request', component: CustomRequest },
   { path: '/manage-products', component: ManageProducts, name: 'ManageProducts' },
   { path: '/admin-feedback', component: AdminFeedback },
+  { path: '/portfolio', component: Portfolio },
   {
     path: '/email-change',
     name: 'ChangeEmail',
@@ -99,11 +110,6 @@ const routes = [  {
     name: 'wishlist',
     component: Wishlist,
     meta: { requiresAuth: true } // Optional: Add auth protection
-  },
-  {
-    path: '/my-projects',
-    name: 'MyProjects',
-    component: MyProjects
   },
   {
     path: '/projects/create',

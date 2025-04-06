@@ -18,7 +18,7 @@ class Feedback extends Model
 
     public function project()
     {
-        return $this->belongsTo(CollaborativeProject::class);
+        return $this->belongsTo(CollaborativeProject::class, 'project_id');
     }
 
     public function user()

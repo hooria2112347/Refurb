@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CollaborativeProject;
+use App\Models\PortfolioProject;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Feedback;
@@ -14,10 +15,19 @@ class ProjectController extends Controller
      */
     public function index(Request $request)
     {
-        $projects = CollaborativeProject::where('status', 'active')
-            ->with('owner')
-            ->get();
-
+        $query = CollaborativeProject::with('owner');
+        
+        // Add search functionality
+        if ($request->has('q') && !empty($request->q)) {
+            $searchTerm = $request->q;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('title', 'like', "%{$searchTerm}%")
+                  ->orWhere('description', 'like', "%{$searchTerm}%")
+                  ->orWhere('skills_required', 'like', "%{$searchTerm}%");
+            });
+        }
+        
+        $projects = $query->get();
         return response()->json($projects);
     }
 
@@ -29,10 +39,14 @@ class ProjectController extends Controller
         $request->validate([
             'title'           => 'required|string',
             'description'     => 'nullable|string',
-            'required_roles'  => 'required|string',
-            'skills_required' => 'required|string',
+            'required_roles'  => 'required|string|not_regex:/\d/',
+            'skills_required' => 'required|string|not_regex:/\d/',
             'deadline'        => 'required|date',
-            'budget'          => 'nullable|numeric'
+            'budget'          => 'required|numeric'
+        ], [
+            'required_roles.not_regex' => 'Required roles should not contain numbers.',
+            'skills_required.not_regex' => 'Skills required should not contain numbers.',
+            'budget.numeric' => 'Budget must be a numeric value.'
         ]);
 
         $project = CollaborativeProject::create([
@@ -66,20 +80,75 @@ class ProjectController extends Controller
     }
 
     /**
+     * Delete a project.
+     */
+    public function destroy($id)
+    {
+        $project = CollaborativeProject::findOrFail($id);
+        
+        // Check if user is authorized to delete the project
+        if ($project->owner_id !== Auth::id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        
+        // Remove the status check that was here before
+        // The block that prevented deleting completed projects has been removed
+        
+        // Delete related records first (to handle foreign key constraints)
+        // Remove collaborator relationships
+        $project->collaborators()->delete();
+        
+        // Remove feedback if exists
+        Feedback::where('project_id', $project->id)->delete();
+        
+        // Remove portfolio entries if any exist
+        PortfolioProject::where('project_id', $project->id)->delete();
+        
+        // Finally delete the project
+        $project->delete();
+        
+        return response()->json([
+            'message' => 'Project deleted successfully'
+        ]);
+    }
+
+    /**
      * Mark a project as completed.
      */
     public function completeProject($id)
     {
-        $project = CollaborativeProject::findOrFail($id);
+        $project = CollaborativeProject::with('collaborators.user')->findOrFail($id);
 
+        // Check if user is authorized to complete the project
         if ($project->owner_id !== Auth::id()) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
+        // Update project status to completed
         $project->update(['status' => 'completed']);
 
+        // Add the project to all collaborators' portfolios automatically
+        foreach ($project->collaborators as $collaborator) {
+            PortfolioProject::create([
+                'user_id' => $collaborator->user_id,
+                'project_id' => $project->id,
+                'role_in_project' => $collaborator->role ?? 'Collaborator',
+            ]);
+        }
+
+        // Also add to the owner's portfolio if owner is an artist
+        $owner = \App\Models\User::find($project->owner_id);
+        if ($owner && $owner->role === 'artist') {
+            PortfolioProject::create([
+                'user_id' => $owner->id,
+                'project_id' => $project->id,
+                'role_in_project' => 'Project Owner',
+                'featured' => true // Automatically feature your own projects
+            ]);
+        }
+
         return response()->json([
-            'message' => 'Project marked as completed.',
+            'message' => 'Project marked as completed and added to portfolios.',
             'project' => $project
         ]);
     }
@@ -100,42 +169,48 @@ class ProjectController extends Controller
         return response()->json($artists);
     }
 
-
     public function submitFeedback(Request $request, $id)
-{
-    // ... your validation ...
-    $project = CollaborativeProject::findOrFail($id);
+    {
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'comment' => 'required|string'
+        ]);
+        
+        $project = CollaborativeProject::findOrFail($id);
 
-    // If you only allow feedback for completed projects:
-    if ($project->status !== 'completed') {
-        return response()->json(['error' => 'Project not completed yet.'], 403);
+        // If you only allow feedback for completed projects:
+        if ($project->status !== 'completed') {
+            return response()->json(['error' => 'Project not completed yet.'], 403);
+        }
+
+        // In ProjectController.php submitFeedback method
+$feedback = Feedback::create([
+    'project_id' => $project->id,
+    'rating'     => $request->rating,
+    'comment'    => $request->comment,
+    'user_id'    => Auth::id(),
+]);
+
+// Load the user relationship before returning
+$feedback->load('user:id,name');
+
+return response()->json([
+    'message'  => 'Feedback submitted successfully!',
+    'feedback' => $feedback
+], 201);
     }
 
-    // Now insert user_id
-    $feedback = \App\Models\Feedback::create([
-        'project_id' => $project->id,
-        'rating'     => $request->rating,
-        'comment'    => $request->comment,
-        'user_id'    => Auth::id(),  // <<--- store the authenticated user's ID
-    ]);
+    public function getFeedback($id)
+    {
+        // 1. Ensure the project exists
+        $project = CollaborativeProject::findOrFail($id);
 
-    return response()->json([
-        'message'  => 'Feedback submitted successfully!',
-        'feedback' => $feedback
-    ], 201);
-}
+        // 2. Retrieve associated feedback with user information
+        $feedback = Feedback::where('project_id', $project->id)
+            ->with('user:id,name')
+            ->get();
 
-
-
-public function getFeedback($id)
-{
-    // 1. Ensure the project exists (optional if you want a 404 if project doesn't exist)
-    $project = CollaborativeProject::findOrFail($id);
-
-    // 2. Retrieve associated feedback
-    $feedback = \App\Models\Feedback::where('project_id', $project->id)->get();
-
-    // 3. Return as JSON
-    return response()->json($feedback);
-}
+        // 3. Return as JSON
+        return response()->json($feedback);
+    }
 }

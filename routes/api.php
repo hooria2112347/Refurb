@@ -11,9 +11,10 @@ use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\ArtistProfileController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ReviewController;
-use App\Http\Controllers\AdminProductController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\PortfolioController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -80,9 +81,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // -----------
     // Projects
     // -----------
+    Route::get('/projects/completed', [PortfolioController::class, 'completedProjects']);
     Route::get('/projects', [ProjectController::class, 'index']);
     Route::post('/projects', [ProjectController::class, 'store']);
     Route::get('/projects/{id}', [ProjectController::class, 'show']);
+    Route::delete('/projects/{id}', [ProjectController::class, 'destroy']);
     Route::get('/projects/{id}/available-artists', [ProjectController::class, 'getAvailableArtists']);
 
     // Complete project, feedback
@@ -122,32 +125,30 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Admin Product Management
     // -------------------------
     Route::get('/admin/feedback', [AdminController::class, 'getAllFeedback']);
-    Route::get('/admin/products', [AdminProductController::class, 'index']);
-    Route::put('/admin/products/{id}', [AdminProductController::class, 'update']);
-    Route::delete('/admin/products/{id}', [AdminProductController::class, 'destroy']);
+    Route::get('/admin/products', [AdminController::class, 'index']);
+    Route::put('/admin/products/{id}', [AdminController::class, 'update']);
+    Route::delete('/admin/products/{id}', [AdminController::class, 'destroy']);
 
-
-
-    // Email Change Routes
-    Route::prefix('email-change')->group(function () {
-    Route::post('/send-change-code', [EmailChangeController::class, 'sendChangeCode']);
-    Route::post('/verify-code', [EmailChangeController::class, 'verifyChangeCode']);
-    Route::post('/change', [EmailChangeController::class, 'changeEmail']);
-});
-
-    // Wishlist routes
-    Route::middleware('auth:sanctum')->group(function () {
+    // ---------------
+    // Wishlist Routes
+    // ---------------
     Route::post('/wishlist/add/{productId}', [WishlistController::class, 'addToWishlist']);
     Route::delete('/wishlist/remove/{productId}', [WishlistController::class, 'removeFromWishlist']);
     Route::get('/wishlist', [WishlistController::class, 'getWishlist']);
-});
 
-    Route::middleware('auth:sanctum')->group(function () {
+    // ---------------
+    // Cart Routes
+    // ---------------
     Route::post('/cart/add/{productId}', [CartController::class, 'addToCart']);
     Route::put('/cart/update/{productId}', [CartController::class, 'updateCartItem']);
     Route::delete('/cart/remove/{productId}', [CartController::class, 'removeFromCart']);
     Route::get('/cart', [CartController::class, 'getCart']);
     Route::delete('/cart/clear', [CartController::class, 'clearCart']);
-});
 
+    // ---------------
+    // Portfolio Routes
+    // ---------------
+    Route::get('/portfolio', [PortfolioController::class, 'index']);
+    Route::put('/portfolio/{id}', [PortfolioController::class, 'updatePortfolioProject']);
+    Route::delete('/portfolio/{id}', [PortfolioController::class, 'removeFromPortfolio']);
 });

@@ -1,51 +1,64 @@
 <template>
-  <div class="project-detail-page" v-if="project">
-    <div class="project-card">
-      <!-- Header Section -->
+  <div class="project-detail-page">
+    <!-- Loading/Error States -->
+    <div v-if="loading" class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>Loading project details...</p>
+    </div>
+    
+    <div v-else-if="errorMessage" class="error-container">
+      <p>{{ errorMessage }}</p>
+      <button @click="fetchProject" class="retry-button">Retry</button>
+    </div>
+
+    <!-- Main Content -->
+    <div v-else-if="project" class="project-card">
+      <!-- Project Header -->
       <div class="header-section">
-        <h1 class="project-title">{{ project.title }}</h1>
-        <span :class="['status-badge', project.status]">
-          {{ capitalize(project.status) }}
-        </span>
+        <div class="title-status">
+          <h1 class="project-title">{{ project.title }}</h1>
+          <span :class="['status-badge', project.status]">{{ capitalize(project.status) }}</span>
+        </div>
+        <div class="owner-info">
+          <span>Created by: <strong>{{ project.owner.name }}</strong></span>
+        </div>
       </div>
       
-      <!-- Project Description -->
       <p class="project-description">{{ project.description }}</p>
 
       <!-- Project Details -->
       <div class="details-section">
-        <div class="detail-item">
-          <strong>Required Roles:</strong> {{ project.required_roles }}
-        </div>
-        <div class="detail-item">
-          <strong>Skills Required:</strong> {{ project.skills_required }}
-        </div>
-        <div class="detail-item">
-          <strong>Deadline:</strong> {{ formattedDeadline }} 
-          <span v-if="timeRemaining" class="countdown">({{ timeRemaining }})</span>
-        </div>
-        <div class="detail-item" v-if="project.budget">
-          <strong>Budget:</strong> PKR {{ project.budget }}
+        <div class="detail-item" v-for="(detail, index) in projectDetails" :key="index">
+          <strong>{{ detail.label }}:</strong> {{ detail.value }}
+          <span v-if="detail.extra" :class="['countdown', isDeadlineNear ? 'urgent' : '']">
+            ({{ detail.extra }})
+          </span>
         </div>
       </div>
 
       <!-- Collaborators -->
       <div class="section collaborators-section">
         <h2>Collaborators</h2>
-        <ul class="collaborators-list">
-          <li v-for="collab in project.collaborators" :key="collab.id">
-            <span class="name">{{ collab.user.name }}</span>
-            <!-- <span class="role">({{ collab.role }})</span> -->
-          </li>
-        </ul>
+        <div v-if="project.collaborators && project.collaborators.length > 0">
+          <ul class="collaborators-list">
+            <li v-for="collab in project.collaborators" :key="collab.id" class="collaborator-card">
+              <div class="collaborator-avatar">{{ collab.user.name.charAt(0).toUpperCase() }}</div>
+              <div class="collaborator-info">
+                <span class="name">{{ collab.user.name }}</span>
+                <span class="role" v-if="collab.role">({{ collab.role }})</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div v-else class="empty-state">
+          <p>No collaborators yet</p>
+        </div>
       </div>
 
       <!-- Invitation Response (for invited artists) -->
-      <div v-if="userInvitation && userInvitation.status === 'pending' && project.status === 'active'" class="section invitation-response-section">
+      <div v-if="userInvitation?.status === 'pending' && project.status === 'active'" class="section invitation-response-section">
         <h2>Invitation to Collaborate</h2>
-        <p>
-          You have been invited by <strong>{{ userInvitation.inviter.name }}</strong> to collaborate on this project.
-        </p>
+        <p>You have been invited by <strong>{{ userInvitation.inviter.name }}</strong> to collaborate on this project.</p>
         <div class="action-buttons">
           <button @click="respondToInvitation('accepted')" class="accept-btn">Accept</button>
           <button @click="respondToInvitation('rejected')" class="reject-btn">Decline</button>
@@ -53,81 +66,161 @@
       </div>
 
       <!-- Invite an Artist (for project owners) -->
-      <div
-        class="section invite-section"
-        v-if="isOwner && project.status === 'active' && availableArtists.length > 0"
-      >
-        <h2>Invite an Artist</h2>
-        <div class="form-group">
-          <label for="artistSelect">Select Artist:</label>
-          <select id="artistSelect" v-model="selectedArtistId">
-            <option value="">-- Choose an Artist --</option>
-            <option
-              v-for="artist in availableArtists"
-              :key="artist.id"
-              :value="artist.id"
-            >
-              {{ artist.name }} (ID: {{ artist.id }})
-            </option>
-          </select>
+      <div class="section invite-section" v-if="isOwner && project.status === 'active'">
+        <h2>Team Management</h2>
+        <button class="primary-button" @click="openInviteModal">
+          <i class="fas fa-user-plus"></i> Invite Artists
+        </button>
+      </div>
+
+      <!-- Project Actions -->
+      <div class="section actions-section" v-if="project.status === 'active' && isOwner">
+        <button class="complete-button" @click="openConfirmCompleteModal">Mark as Completed</button>
+      </div>
+
+      <!-- Feedback Section -->
+      <div class="section feedback-section" v-if="project.status === 'completed'">
+        <h2>Project Feedback</h2>
+        
+        <!-- Leave Feedback Form -->
+        <div v-if="!userHasSubmittedFeedback && (isOwner || isCollaborator)" class="feedback-form">
+          <h3>Leave Your Feedback</h3>
+          <div class="rating-container">
+            <label>Rating:</label>
+            <div class="star-rating">
+              <span v-for="star in 5" :key="star" 
+                    :class="[star <= feedbackForm.rating ? 'star-filled' : 'star-empty']"
+                    @click="feedbackForm.rating = star">★</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="feedbackComment">Comment:</label>
+            <textarea id="feedbackComment" v-model="feedbackForm.comment" 
+                     placeholder="Share your experience working on this project..."></textarea>
+          </div>
+          <button class="submit-feedback-btn" 
+                 :disabled="feedbackForm.rating === 0 || feedbackSubmitting"
+                 @click="submitFeedback">
+            {{ feedbackSubmitting ? 'Submitting...' : 'Submit Feedback' }}
+          </button>
         </div>
-        <button
-          class="primary-button"
-          @click="sendInvite"
-          :disabled="!selectedArtistId"
+        
+        <!-- Feedback List -->
+        <div class="feedback-list">
+          <h3 v-if="projectFeedback.length > 0">Project Reviews</h3>
+          <div v-if="feedbackLoading" class="loading-spinner small"></div>
+          <div v-else-if="projectFeedback.length === 0" class="empty-state">
+            <p>No feedback yet</p>
+          </div>
+          <div v-else>
+            <div v-for="feedback in projectFeedback" :key="feedback.id" class="feedback-item">
+              <div class="feedback-header">
+                <div class="feedback-rating">
+                  <span v-for="star in 5" :key="star" 
+                        :class="[star <= feedback.rating ? 'star-filled' : 'star-empty']">★</span>
+                </div>
+                <div class="feedback-author">{{ getFeedbackAuthorName(feedback.user_id) }}</div>
+              </div>
+              <div class="feedback-comment">{{ feedback.comment }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALS -->
+  <!-- Artist Invite Modal -->
+  <app-modal v-if="showInviteModal" title="Invite Artists" @close="closeInviteModal">
+    <template #content>
+      <div class="search-container">
+        <input 
+          type="text" 
+          v-model="artistSearchQuery" 
+          placeholder="Search by name or ID..." 
+          class="search-input"
+          @input="searchArtists"
+        />
+      </div>
+      
+      <div v-if="inviteLoading" class="loading-spinner small"></div>
+      
+      <div v-else-if="filteredArtists.length === 0" class="empty-state">
+        <p>No artists found.</p>
+      </div>
+      
+      <div v-else class="artists-list">
+        <div 
+          v-for="artist in filteredArtists" 
+          :key="artist.id" 
+          class="artist-item"
+          :class="{ 'selected': selectedArtistId === artist.id }"
+          @click="selectArtist(artist.id)"
         >
-          Invite
-        </button>
+          <div class="artist-avatar">{{ artist.name.charAt(0).toUpperCase() }}</div>
+          <div class="artist-details">
+            <div class="artist-name">{{ artist.name }}</div>
+            <div class="artist-id">ID: {{ artist.id }}</div>
+          </div>
+          <div class="select-indicator">
+            <i class="fas fa-check" v-if="selectedArtistId === artist.id"></i>
+          </div>
+        </div>
       </div>
+    </template>
+    <template #actions>
+      <button 
+        class="primary-button" 
+        @click="sendInvite" 
+        :disabled="!selectedArtistId || inviteLoading"
+      >
+        <span v-if="inviteLoading">Sending...</span>
+        <span v-else>Send Invitation</span>
+      </button>
+      <button class="cancel-btn" @click="closeInviteModal">Cancel</button>
+    </template>
+  </app-modal>
 
-      <!-- Mark as Completed -->
-      <div class="section completion-section" v-if="isOwner && project.status === 'active'">
-        <button class="complete-button" @click="openConfirmCompleteModal">
-          Mark as Completed
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <div v-else class="loading">
-    <p>Loading project details...</p>
-  </div>
-
-  <!-- ==================== MODALS ==================== -->
-
-  <!-- 1) Confirm Completion Modal -->
-  <div v-if="showConfirmCompleteModal" class="modal-overlay" @click.self="cancelCompletion">
-    <div class="modal-content">
-      <h2>Confirmation</h2>
+  <app-modal v-if="showConfirmCompleteModal" title="Confirmation" @close="cancelCompletion">
+    <template #content>
       <p>Are you sure you want to mark this project as completed?</p>
-      <div class="modal-buttons">
-        <button class="ok-btn" @click="confirmMarkAsCompleted">Yes</button>
-        <button class="cancel-btn" @click="cancelCompletion">No</button>
-      </div>
-    </div>
-  </div>
+      <p class="modal-info">This will add the project to all collaborators' portfolios.</p>
+    </template>
+    <template #actions>
+      <button class="ok-btn" @click="confirmMarkAsCompleted" :disabled="completeLoading">
+        {{ completeLoading ? 'Processing...' : 'Yes, Complete Project' }}
+      </button>
+      <button class="cancel-btn" @click="cancelCompletion">Cancel</button>
+    </template>
+  </app-modal>
 
-  <!-- 2) Project Completed Success Modal -->
-  <div v-if="showCompleteSuccessModal" class="modal-overlay" @click.self="closeCompleteSuccessModal">
-    <div class="modal-content">
-      <h2>Notification</h2>
-      <p>Project marked as completed!</p>
-      <div class="modal-buttons">
-        <button class="ok-btn" @click="closeCompleteSuccessModal">OK</button>
-      </div>
-    </div>
-  </div>
+  <app-modal v-if="showCompleteSuccessModal" title="Success!" @close="closeCompleteSuccessModal">
+    <template #content>
+      <p>Project has been marked as completed!</p>
+      <p>The project has been added to all collaborators' portfolios.</p>
+    </template>
+    <template #actions>
+      <button class="ok-btn" @click="closeCompleteSuccessModal">OK</button>
+    </template>
+  </app-modal>
 
-  <!-- 3) Invitation Sent Success Modal -->
-  <div v-if="showInvitationSuccessModal" class="modal-overlay" @click.self="closeInvitationSuccessModal">
-    <div class="modal-content">
-      <h2>Notification</h2>
-      <p>Invitation sent!</p>
-      <div class="modal-buttons">
-        <button class="ok-btn" @click="closeInvitationSuccessModal">OK</button>
-      </div>
-    </div>
-  </div>
+  <app-modal v-if="showInvitationSuccessModal" title="Success!" @close="closeInvitationSuccessModal">
+    <template #content>
+      <p>Invitation sent successfully!</p>
+    </template>
+    <template #actions>
+      <button class="ok-btn" @click="closeInvitationSuccessModal">OK</button>
+    </template>
+  </app-modal>
+
+  <app-modal v-if="showFeedbackSuccessModal" title="Thank you!" @close="closeFeedbackSuccessModal">
+    <template #content>
+      <p>Your feedback has been submitted successfully!</p>
+    </template>
+    <template #actions>
+      <button class="ok-btn" @click="closeFeedbackSuccessModal">OK</button>
+    </template>
+  </app-modal>
 </template>
 
 <script>
@@ -135,175 +228,275 @@ import axios from "axios";
 
 export default {
   name: "ProjectDetail",
+  components: {
+    AppModal: {
+      props: ['title'],
+      template: `
+        <div class="modal-overlay" @click.self="$emit('close')">
+          <div class="modal-content">
+            <h2>{{ title }}</h2>
+            <slot name="content"></slot>
+            <div class="modal-buttons">
+              <slot name="actions"></slot>
+            </div>
+          </div>
+        </div>
+      `
+    }
+  },
   data() {
     return {
       project: null,
       currentUserId: null,
       availableArtists: [],
-      selectedArtistId: "",
+      selectedArtistId: null,
       deadlineTimer: null,
       timeRemaining: "",
-      userInvitation: null, // To track user's invitation status
-
-      // ========= MODAL CONTROLS =========
-      showConfirmCompleteModal: false,     // "Are you sure...?" for completion
-      showCompleteSuccessModal: false,     // "Project marked as completed!"
-      showInvitationSuccessModal: false,   // "Invitation sent!"
+      userInvitation: null,
+      projectFeedback: [],
+      loading: true,
+      inviteLoading: false,
+      completeLoading: false,
+      feedbackLoading: false,
+      feedbackSubmitting: false,
+      errorMessage: null,
+      feedbackForm: { rating: 0, comment: "" },
+      showConfirmCompleteModal: false,
+      showCompleteSuccessModal: false,
+      showInvitationSuccessModal: false,
+      showFeedbackSuccessModal: false,
+      showInviteModal: false,
+      artistSearchQuery: "",
+      filteredArtists: [],
+      userHasSubmittedFeedback: false // New flag to track submission
     };
   },
   computed: {
     isOwner() {
       return this.project && this.project.owner_id === this.currentUserId;
     },
+    isCollaborator() {
+      if (!this.project?.collaborators) return false;
+      return this.project.collaborators.some(c => c.user_id === this.currentUserId);
+    },
     formattedDeadline() {
-      if (!this.project.deadline) return "N/A";
+      if (!this.project?.deadline) return "N/A";
       const options = { year: 'numeric', month: 'long', day: 'numeric' };
       return new Date(this.project.deadline).toLocaleDateString(undefined, options);
     },
+    isDeadlineNear() {
+      if (!this.project?.deadline) return false;
+      const now = new Date();
+      const deadline = new Date(this.project.deadline);
+      const diffDays = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
+      return diffDays <= 3 && diffDays > 0;
+    },
+    projectDetails() {
+      if (!this.project) return [];
+      return [
+        { label: "Required Roles", value: this.project.required_roles },
+        { label: "Skills Required", value: this.project.skills_required },
+        { label: "Deadline", value: this.formattedDeadline, extra: this.timeRemaining },
+        ...(this.project.budget ? [{ label: "Budget", value: `PKR ${this.formatCurrency(this.project.budget)}` }] : [])
+      ];
+    }
   },
   watch: {
     project(newProject) {
-      if (newProject && newProject.deadline) {
-        this.startCountdown(newProject.deadline);
-      }
+      if (newProject?.deadline) this.startCountdown(newProject.deadline);
+      if (newProject?.status === "completed") this.fetchProjectFeedback();
     },
+    projectFeedback: {
+      handler(newFeedback) {
+        // Update userHasSubmittedFeedback whenever projectFeedback changes
+        if (this.currentUserId) {
+          this.userHasSubmittedFeedback = newFeedback.some(f => f.user_id === this.currentUserId);
+        }
+      },
+      immediate: true
+    }
   },
   async created() {
-    // Load current user if available
-    const session = localStorage.getItem("userSession");
-    if (session) {
-      const userData = JSON.parse(session);
-      this.currentUserId = userData.id;
-    }
+    try {
+      // Load current user if available
+      const session = localStorage.getItem("userSession");
+      if (session) this.currentUserId = JSON.parse(session).id;
 
-    // Fetch project details
-    await this.fetchProject();
+      await this.fetchProject();
 
-    // If user is owner & project is active, fetch possible invitees
-    if (this.isOwner && this.project.status === "active") {
-      await this.fetchAvailableArtists();
-    }
-
-    // Check if the user has an invitation for this project
-    await this.checkUserInvitation();
-
-    // Start countdown if deadline exists
-    if (this.project && this.project.deadline) {
-      this.startCountdown(this.project.deadline);
+      // Conditional fetches based on project state
+      if (this.project) {
+        if (this.isOwner && this.project.status === "active") await this.fetchAvailableArtists();
+        if (this.currentUserId) await this.checkUserInvitation();
+        if (this.project.status === "completed") await this.fetchProjectFeedback();
+      }
+    } catch (err) {
+      console.error("Error during initialization:", err);
+      this.errorMessage = "Failed to initialize page. Please try again.";
+    } finally {
+      this.loading = false;
     }
   },
   beforeDestroy() {
-    if (this.deadlineTimer) {
-      clearInterval(this.deadlineTimer);
-    }
+    if (this.deadlineTimer) clearInterval(this.deadlineTimer);
   },
   methods: {
     capitalize(str) {
+      if (!str) return '';
       return str.charAt(0).toUpperCase() + str.slice(1);
+    },
+
+    formatCurrency(amount) {
+      return amount.toLocaleString('en-PK');
+    },
+
+    getFeedbackAuthorName(userId) {
+      if (!this.project) return "Anonymous User";
+      if (this.project.owner_id === userId) return `${this.project.owner.name} (Owner)`;
+      const collaborator = this.project.collaborators.find(c => c.user_id === userId);
+      return collaborator ? collaborator.user.name : "Anonymous User";
+    },
+
+    async fetchData(url, errorMsg, stateKey = null) {
+      try {
+        const res = await axios.get(url);
+        if (stateKey) this[stateKey] = res.data;
+        return res.data;
+      } catch (error) {
+        console.error(errorMsg, error);
+        return null;
+      }
     },
 
     async fetchProject() {
       try {
-        const res = await axios.get(`/api/projects/${this.$route.params.id}`);
-        this.project = res.data;
-      } catch (error) {
-        console.error("Error fetching project details:", error);
-        alert("Failed to load project details."); // Keep existing alert
+        this.loading = true;
+        this.errorMessage = null;
+        const data = await this.fetchData(
+          `/api/projects/${this.$route.params.id}`, 
+          "Error fetching project details:", 
+          "project"
+        );
+        if (!data) this.errorMessage = "Failed to load project details. Please try again.";
+      } finally {
+        this.loading = false;
       }
     },
 
     async fetchAvailableArtists() {
+      this.inviteLoading = true;
       try {
-        const res = await axios.get(
-          `/api/projects/${this.$route.params.id}/available-artists`
-        );
-        this.availableArtists = res.data;
+        const response = await axios.get(`/api/projects/${this.$route.params.id}/available-artists`);
+        this.availableArtists = response.data;
+        this.filteredArtists = [...this.availableArtists];
       } catch (error) {
         console.error("Error fetching available artists:", error);
-        alert("Failed to load available artists."); // Keep existing alert
+      } finally {
+        this.inviteLoading = false;
       }
     },
 
-    // =========================================================
-    // =============== INVITATION RELATED LOGIC ================
-    // =========================================================
+    async fetchProjectFeedback() {
+      this.feedbackLoading = true;
+      try {
+        const feedback = await this.fetchData(
+          `/api/projects/${this.project.id}/feedback`, 
+          "Error fetching project feedback:", 
+          "projectFeedback"
+        );
+        
+        // Check if current user has already submitted feedback
+        if (feedback && this.currentUserId) {
+          this.userHasSubmittedFeedback = feedback.some(f => f.user_id === this.currentUserId);
+        }
+      } catch (error) {
+        console.error("Error fetching project feedback:", error);
+      } finally {
+        this.feedbackLoading = false;
+      }
+    },
+
+    // Invite Modal Methods
+    openInviteModal() {
+      this.showInviteModal = true;
+      this.artistSearchQuery = "";
+      this.selectedArtistId = null;
+      this.fetchAvailableArtists().then(() => {
+        this.filteredArtists = [...this.availableArtists];
+      });
+    },
+    
+    closeInviteModal() {
+      this.showInviteModal = false;
+    },
+    
+    selectArtist(artistId) {
+      this.selectedArtistId = artistId;
+    },
+    
+    searchArtists() {
+      if (!this.artistSearchQuery.trim()) {
+        this.filteredArtists = [...this.availableArtists];
+        return;
+      }
+      
+      const query = this.artistSearchQuery.toLowerCase();
+      this.filteredArtists = this.availableArtists.filter(artist => 
+        artist.name.toLowerCase().includes(query) || 
+        artist.id.toString().includes(query)
+      );
+    },
+
     async sendInvite() {
       try {
         if (!this.selectedArtistId) {
-          alert("Please select an artist first."); // Keep existing alert
+          alert("Please select an artist first.");
           return;
         }
+        
+        this.inviteLoading = true;
         await axios.post(`/api/projects/${this.project.id}/invite`, {
           invitee_id: this.selectedArtistId,
         });
-        // --- Original code: alert("Invitation sent!");
-        //     We'll replace it with a success modal instead:
-        // alert("Invitation sent!");
 
-        // Show invitation success modal:
         this.showInvitationSuccessModal = true;
-
-        // Remove the invited artist from the available list
-        this.availableArtists = this.availableArtists.filter(
-          (a) => a.id !== parseInt(this.selectedArtistId)
-        );
-        this.selectedArtistId = "";
+        this.closeInviteModal();
+        
+        // Update the available artists list
+        this.availableArtists = this.availableArtists.filter(a => a.id !== this.selectedArtistId);
+        this.selectedArtistId = null;
       } catch (error) {
         console.error("Error sending invite:", error);
-        alert("Failed to send invitation."); // Keep existing alert
+        alert("Failed to send invitation.");
+      } finally {
+        this.inviteLoading = false;
       }
     },
 
-    // close the "Invitation sent!" modal
-    closeInvitationSuccessModal() {
-      this.showInvitationSuccessModal = false;
-    },
-
-    // =========================================================
-    // ============ MARK PROJECT AS COMPLETED LOGIC ============
-    // =========================================================
-
-    // The button calls this to open the "Are you sure?" modal
     openConfirmCompleteModal() {
-      // --- Original code:
-      // if (!confirm("Are you sure you want to mark this project as completed?")) {
-      //   return;
-      // }
-      // Instead, show a modal:
       this.showConfirmCompleteModal = true;
     },
 
-    // If user clicks NO, just close the modal
     cancelCompletion() {
       this.showConfirmCompleteModal = false;
     },
 
-    // If user clicks YES in the modal, proceed
     async confirmMarkAsCompleted() {
       try {
+        this.completeLoading = true;
         await axios.post(`/api/projects/${this.project.id}/complete`);
         this.project.status = "completed";
-
-        // --- Original code: alert("Project marked as completed!");
-        // We'll show a success modal instead:
+        await this.fetchProjectFeedback();
         this.showCompleteSuccessModal = true;
       } catch (error) {
         console.error("Error marking project as completed:", error);
-        alert("Failed to mark project as completed."); // Keep existing alert
+        alert("Failed to mark project as completed.");
       } finally {
-        // Always close the confirm modal
+        this.completeLoading = false;
         this.showConfirmCompleteModal = false;
       }
     },
 
-    // Close the success modal after the project is completed
-    closeCompleteSuccessModal() {
-      this.showCompleteSuccessModal = false;
-    },
-
-    // =========================================================
-    // ============ DEADLINE COUNTDOWN LOGIC ===================
-    // =========================================================
     startCountdown(deadline) {
       const updateCountdown = () => {
         const now = new Date();
@@ -317,9 +510,7 @@ export default {
         }
 
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor(
-          (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-        );
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
         this.timeRemaining = `${days}d ${hours}h ${minutes}m`;
@@ -329,17 +520,12 @@ export default {
       this.deadlineTimer = setInterval(updateCountdown, 60000); // Update every minute
     },
 
-    // =========================================================
-    // =========== CHECK / RESPOND TO USER INVITATION ==========
-    // =========================================================
     async checkUserInvitation() {
-      try {
-        const res = await axios.get(`/api/projects/${this.project.id}/invitations/${this.currentUserId}`);
-        this.userInvitation = res.data;
-      } catch (error) {
-        console.error("Error fetching user invitation:", error);
-        // If no invitation, we do nothing
-      }
+      await this.fetchData(
+        `/api/projects/${this.project.id}/invitations/${this.currentUserId}`, 
+        "Error fetching user invitation:", 
+        "userInvitation"
+      );
     },
 
     async respondToInvitation(newStatus) {
@@ -348,398 +534,569 @@ export default {
           status: newStatus,
         });
         this.userInvitation.status = newStatus;
-        alert(`Invitation ${newStatus}!`); // Keep existing alert
+        
+        if (newStatus === 'accepted') await this.fetchProject();
+        alert(`Invitation ${newStatus}!`);
       } catch (error) {
         console.error("Error responding to invitation:", error);
-        alert("Failed to respond to the invitation."); // Keep existing alert
+        alert("Failed to respond to the invitation.");
       }
     },
+    
+    async submitFeedback() {
+      try {
+        if (this.feedbackForm.rating === 0) {
+          alert("Please provide a rating.");
+          return;
+        }
+        
+        this.feedbackSubmitting = true;
+        const response = await axios.post(`/api/projects/${this.project.id}/feedback`, {
+          rating: this.feedbackForm.rating,
+          comment: this.feedbackForm.comment
+        });
+        
+        // Add the new feedback to the list immediately
+        if (response.data && response.data.feedback) {
+          this.projectFeedback.push(response.data.feedback);
+        }
+        
+        // Mark user as having submitted feedback
+        this.userHasSubmittedFeedback = true;
+        
+        // Reset form
+        this.feedbackForm = { rating: 0, comment: "" };
+        this.showFeedbackSuccessModal = true;
+      } catch (error) {
+        console.error("Error submitting feedback:", error);
+        alert("Failed to submit feedback. Please try again.");
+      } finally {
+        this.feedbackSubmitting = false;
+      }
+    },
+    
+    // Modal close handlers
+    closeInvitationSuccessModal() { this.showInvitationSuccessModal = false; },
+    closeCompleteSuccessModal() { this.showCompleteSuccessModal = false; },
+    closeFeedbackSuccessModal() { this.showFeedbackSuccessModal = false; }
   },
 };
 </script>
 
-<style scoped>
-/* CONTAINER FOR THE PAGE */
+<style>
+/* Main Layout & Container Styles */
 .project-detail-page {
-  max-width: 800px;
-  margin: 40px auto;
-  padding: 0 16px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  color: #333;
+  line-height: 1.5;
 }
 
-/* MAIN CARD */
+/* Loading States */
+.loading-container, .loading-spinner, .loading-spinner.small {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-container { padding: 60px 0; }
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+.loading-spinner.small {
+  width: 20px;
+  height: 20px;
+  border-width: 3px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error State */
+.error-container {
+  text-align: center;
+  background-color: #fff5f5;
+  border: 1px solid #ffcccc;
+  border-radius: 5px;
+  padding: 30px;
+  margin: 40px 0;
+}
+
+/* Common Button Styles */
+.retry-button, .primary-button, .accept-btn, .reject-btn, .complete-button, 
+.submit-feedback-btn, .ok-btn, .cancel-btn {
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.retry-button, .primary-button, .ok-btn { 
+  background-color: #3498db; 
+  color: white;
+}
+
+.accept-btn, .complete-button { 
+  background-color: #4caf50; 
+  color: white;
+}
+
+.reject-btn, .cancel-btn { 
+  background-color: #f44336; 
+  color: white;
+}
+
+.primary-button:disabled, .submit-feedback-btn:disabled {
+  background-color: #b3b3b3;
+  cursor: not-allowed;
+}
+
+/* Project Card */
 .project-card {
   background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  padding: 32px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 25px;
+  margin-bottom: 30px;
 }
 
-/* HEADER SECTION */
+/* Header Section */
 .header-section {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+}
+
+.title-status {
+  display: flex;
   justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
+  margin-bottom: 10px;
 }
 
 .project-title {
-  font-size: 2rem;
-  color: #3B1E54;
-  margin-bottom: 8px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: bold;
+  margin: 0;
+  color: #2c3e50;
+  flex: 1;
 }
 
+/* Status Badge Styles */
 .status-badge {
+  display: inline-block;
   padding: 6px 12px;
   border-radius: 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-transform: capitalize;
-  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
-.status-badge.active {
-  background-color: #5d9b8b;
-}
+.active { background-color: #e1f5fe; color: #0288d1; }
+.completed { background-color: #e8f5e9; color: #388e3c; }
+.cancelled { background-color: #ffebee; color: #d32f2f; }
 
-.status-badge.completed {
-  background-color: #4CAF50;
-}
-
-/* PROJECT DESCRIPTION */
+/* Project Sections */
 .project-description {
-  font-size: 1rem;
-  color: #555;
-  margin: 16px 0;
+  font-size: 16px;
+  margin-bottom: 25px;
   line-height: 1.6;
 }
 
-/* DETAILS SECTION */
 .details-section {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 24px;
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 25px;
 }
 
-.detail-item {
-  flex: 1 1 45%;
-  font-size: 0.95rem;
-  color: #333;
-}
+.detail-item { margin-bottom: 10px; }
+.detail-item:last-child { margin-bottom: 0; }
 
 .countdown {
-  font-size: 0.9rem;
-  color: #FF6B6B;
-  margin-left: 8px;
+  display: inline-block;
+  margin-left: 10px;
+  font-weight: normal;
+  color: #666;
 }
 
-/* COLLABORATORS SECTION */
-.collaborators-section {
-  margin-top: 24px;
+.countdown.urgent {
+  color: #e74c3c;
+  font-weight: bold;
 }
 
-.collaborators-section h2 {
-  font-size: 1.5rem;
-  color: #3B1E54;
-  margin-bottom: 16px;
-  font-weight: 600;
+/* Section Headers */
+.section {
+  margin-bottom: 30px;
 }
 
+.section h2 {
+  font-size: 18px;
+  margin-bottom: 15px;
+  color: #2c3e50;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 8px;
+}
+
+/* Collaborators */
 .collaborators-list {
   list-style: none;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 15px;
 }
 
-.collaborators-list li {
+.collaborator-card {
   display: flex;
   align-items: center;
-  background-color: #f9f9f9;
-  padding: 8px 12px;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
-  font-size: 0.95rem;
-  color: #333;
+  background-color: #f5f5f5;
+  padding: 10px 15px;
+  border-radius: 5px;
+  min-width: 200px;
 }
 
-.collaborators-list .name {
-  margin-right: 4px;
-}
-
-.collaborators-list .role {
-  font-style: italic;
-  color: #777;
-}
-
-/* SECTION HEADINGS */
-.section h2 {
-  font-size: 1.4rem;
-  color: #3B1E54;
-  margin-bottom: 12px;
-  font-weight: 600;
-}
-
-/* INVITE SECTION */
-.invite-section {
-  margin-top: 24px;
-  padding: 16px;
-  background-color: #fdfdfd;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-.invite-section .form-group {
-  margin-bottom: 16px;
-}
-
-.invite-section label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: 500;
-  color: #3B1E54;
-}
-
-.invite-section select {
-  width: 100%;
-  padding: 10px;
-  font-size: 0.95rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background-color: #fafafa;
-  transition: border-color 0.3s ease, background-color 0.3s ease;
-}
-
-.invite-section select:focus {
-  border-color: #5d9b8b;
-  outline: none;
-  background-color: #fff;
-}
-
-/* STYLING THE "INVITE" BUTTON */
-.primary-button {
-  display: inline-block;
-  padding: 10px 16px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  background-color: #8D6E97;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-}
-
-.primary-button:hover {
-  background-color: #6F5880;
-  transform: translateY(-2px);
-}
-
-/* COMPLETION SECTION */
-.completion-section {
-  margin-top: 24px;
+.collaborator-avatar {
+  width: 40px;
+  height: 40px;
+  background-color: #3498db;
+  color: white;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 18px;
+  margin-right: 15px;
 }
 
-.complete-button {
-  padding: 10px 20px;
-  font-size: 1rem;
-  font-weight: 600;
-  background-color: #D4BEE4;
-  color: #3B1E54;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-}
-
-.complete-button:hover {
-  background-color: #EEEEEE;
-  transform: translateY(-2px);
-}
-
-/* INVITATION RESPONSE SECTION */
+/* Invitation/Feedback Sections */
 .invitation-response-section {
-  margin-top: 24px;
-  padding: 16px;
-  background-color: #fefefe;
-  border: 2px solid #FFEB3B;
+  background-color: #fff8e1;
+  padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-}
-
-.invitation-response-section h2 {
-  margin-bottom: 12px;
-  color: #FF6F00;
-}
-
-.invitation-response-section p {
-  font-size: 1rem;
-  color: #555;
-  margin-bottom: 16px;
+  border: 1px solid #ffe082;
 }
 
 .action-buttons {
   display: flex;
-  gap: 12px;
-  justify-content: flex-start;
+  gap: 15px;
+  margin-top: 15px;
 }
 
-.accept-btn,
-.reject-btn {
-  padding: 8px 16px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  border: none;
-  border-radius: 6px;
+.invite-section, .feedback-form {
+  background-color: #f5f5f5;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.form-group select, .form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.form-group textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Star Ratings */
+.star-rating {
+  display: inline-block;
+  font-size: 24px;
   cursor: pointer;
-  transition: opacity 0.3s ease;
+  margin-left: 10px;
 }
 
-.accept-btn {
-  background-color: #27ae60;
-  color: #fff;
+.star-filled { color: #f1c40f; }
+.star-empty { color: #ddd; }
+
+/* Feedback List */
+.feedback-item {
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+  border-left: 3px solid #3498db;
 }
 
-.accept-btn:hover {
-  opacity: 0.9;
+.feedback-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  align-items: center;
 }
 
-.reject-btn {
-  background-color: #e74c3c;
-  color: #fff;
-}
-
-.reject-btn:hover {
-  opacity: 0.9;
-}
-
-/* LOADING STATE */
-.loading {
+/* Empty State */
+.empty-state {
   text-align: center;
-  padding: 50px;
-  font-size: 1.2rem;
-  color: #555;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 5px;
+  color: #666;
 }
 
-/* ========= MODAL STYLES ========= */
+/* Modal Styles */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.5);
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center;
   justify-content: center;
-  z-index: 999;
+  align-items: center;
+  z-index: 1000;
 }
 
 .modal-content {
-  background-color: #fff;
-  padding: 2rem;
-  width: 90%;
-  max-width: 500px;
+  background-color: white;
+  padding: 25px;
   border-radius: 8px;
-  position: relative;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  text-align: left;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
-.modal-content h2 {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  color: #3B1E54;
+.modal-info {
+  color: #666;
+  font-style: italic;
+  margin: 15px 0;
 }
 
 .modal-buttons {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 25px;
 }
 
-/* Shared styling for modal buttons */
-.ok-btn,
-.cancel-btn {
-  padding: 0.6rem 1rem;
+/* Artist Selection Modal */
+.search-container {
+  margin-bottom: 20px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
   border-radius: 4px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.artists-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
+
+.artist-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid #eee;
   cursor: pointer;
-  border: none;
-  color: #3B1E54;
+  transition: background-color 0.2s;
 }
 
-.ok-btn {
-  background-color: #D4BEE4; /* or your preferred success color */
+.artist-item:last-child {
+  border-bottom: none;
 }
 
-.ok-btn:hover {
-  opacity: 0.9;
+.artist-item:hover {
+  background-color: #f5f5f5;
 }
 
-.cancel-btn {
-  background-color: #D4BEE4;
+.artist-item.selected {
+  background-color: #e1f5fe;
 }
 
-.cancel-btn:hover {
-  opacity: 0.9;
+.artist-avatar {
+  width: 40px;
+  height: 40px;
+  background-color: #3498db;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 18px;
+  margin-right: 15px;
 }
 
-/* RESPONSIVE DESIGN */
+.artist-details {
+  flex-grow: 1;
+}
+
+.artist-name {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.artist-id {
+  font-size: 12px;
+  color: #666;
+}
+
+.select-indicator {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Feedback Styles */
+.rating-container {
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.feedback-rating {
+  margin-right: 10px;
+}
+
+.feedback-author {
+  font-weight: bold;
+}
+
+.feedback-comment {
+  margin-top: 10px;
+}
+
+/* Responsive Styles */
 @media (max-width: 768px) {
-  .details-section {
-    flex-direction: column;
+  .project-title {
+    margin-bottom: 10px;
   }
-
-  .detail-item {
-    flex: 1 1 100%;
-  }
-
-  .header-section {
+  
+  .title-status {
     flex-direction: column;
     align-items: flex-start;
   }
-
-  .status-badge {
-    margin-top: 8px;
+  
+  .collaborators-list {
+    flex-direction: column;
+  }
+  
+  .collaborator-card {
+    width: 100%;
+    max-width: none;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .action-buttons button {
+    width: 100%;
+  }
+  
+  .modal-content {
+    width: 95%;
+    padding: 15px;
+  }
+  
+  .modal-buttons {
+    flex-direction: column;
+  }
+  
+  .modal-buttons button {
+    width: 100%;
+    margin-top: 10px;
   }
 }
 
-@media (max-width: 480px) {
-  .project-card {
-    padding: 20px;
-  }
+/* Additional Utility Classes */
+.owner-info {
+  color: #666;
+  margin-top: 5px;
+}
 
-  .project-title {
-    font-size: 1.6rem;
-  }
+.collaborator-info {
+  display: flex;
+  flex-direction: column;
+}
 
-  .status-badge {
-    font-size: 0.8rem;
-    padding: 4px 10px;
-  }
+.collaborator-info .name {
+  font-weight: bold;
+}
 
-  .collaborators-list li {
-    flex: 1 1 45%;
-    justify-content: center;
-  }
+.collaborator-info .role {
+  font-size: 12px;
+  color: #666;
+}
 
-  .invite-section {
-    padding: 12px;
-  }
+/* Button Hover Effects */
+.retry-button:hover, .primary-button:hover, .ok-btn:hover {
+  background-color: #2980b9;
+}
 
-  .complete-button,
-  .primary-button,
-  .accept-btn,
-  .reject-btn,
-  .ok-btn,
-  .cancel-btn {
-    width: 100%;
-    padding: 10px;
-  }
+.accept-btn:hover, .complete-button:hover {
+  background-color: #3e8e41;
+}
+
+.reject-btn:hover, .cancel-btn:hover {
+  background-color: #d32f2f;
+}
+
+/* Focus States for Accessibility */
+button:focus, input:focus, textarea:focus {
+  outline: 2px solid #3498db;
+  outline-offset: 2px;
+}
+
+/* Make sure buttons have proper spacing */
+.actions-section button {
+  margin-right: 10px;
+  margin-bottom: 10px;
+}
+
+/* Feedback success styling */
+.submit-feedback-btn {
+  background-color: #3498db;
+  color: white;
+  padding: 10px 20px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.submit-feedback-btn:hover {
+  background-color: #2980b9;
 }
 </style>

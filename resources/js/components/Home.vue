@@ -7,7 +7,15 @@
         <p class="hero-subtitle">
           Your go-to marketplace for buying and refurbishing scrap items.
         </p>
-        <button @click="exploreItems" class="hero-button">Explore Items</button>
+        <div class="hero-buttons">
+          <button @click="exploreItems" class="hero-button">Explore Items</button>
+          <button 
+            @click="viewPortfolioOrProjects" 
+            class="hero-button portfolio-button"
+          >
+            {{ isArtist ? 'View Portfolio' : 'View Projects' }}
+          </button>
+        </div>
       </div>
       <div class="hero-image-wrapper">
         <img src="images/main.jpg" alt="Refurb Marketplace" class="hero-image" />
@@ -19,9 +27,36 @@
 <script>
 export default {
   name: 'HomePage',
+  computed: {
+    isLoggedIn() {
+      // Check if user is logged in using the same logic from App.vue
+      return localStorage.getItem("userSession") !== null;
+    },
+    isArtist() {
+      // Check if the logged-in user is an artist
+      if (!this.isLoggedIn) return false;
+      
+      try {
+        const userData = JSON.parse(localStorage.getItem("userSession"));
+        return userData && userData.role === "artist";
+      } catch (e) {
+        console.error("Error parsing user session:", e);
+        return false;
+      }
+    }
+  },
   methods: {
     exploreItems() {
       this.$router.push('/scrap-items');
+    },
+    viewPortfolioOrProjects() {
+      if (this.isArtist) {
+        // If user is an artist, go to their portfolio
+        this.$router.push('/portfolio');
+      } else {
+        // Otherwise, go to public projects
+        this.$router.push('/projects/completed'); 
+      }
     }
   }
 };
@@ -65,6 +100,11 @@ export default {
   line-height: 1.6;
 }
 
+.hero-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
 .hero-button {
   background-color: #D4BEE4;
   color: #3B1E54;
@@ -77,9 +117,19 @@ export default {
   transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
+.portfolio-button {
+  background-color: #3B1E54;
+  color: white;
+}
+
 .hero-button:hover {
   background-color: #EEEEEE;
   transform: translateY(-2px);
+}
+
+.portfolio-button:hover {
+  background-color: #5E3285;
+  color: white;
 }
 
 .hero-image-wrapper {
@@ -95,9 +145,6 @@ export default {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* No Products / No Projects Message */
-/* Removed as these sections are no longer present */
-
 /* Responsive Design */
 @media (max-width: 1024px) {
   .hero {
@@ -108,6 +155,10 @@ export default {
   .hero-content {
     max-width: 100%;
     text-align: center;
+  }
+  
+  .hero-buttons {
+    justify-content: center;
   }
 
   .hero-image-wrapper {
@@ -147,6 +198,10 @@ export default {
 
   .hero-subtitle {
     font-size: 1rem;
+  }
+  
+  .hero-buttons {
+    flex-direction: column;
   }
 
   .hero-button {

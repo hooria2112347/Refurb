@@ -36,4 +36,12 @@ class CollaborativeProject extends Model
     {
         return $this->hasMany(Invitation::class, 'project_id');
     }
+
+    /**
+     * Get all portfolio entries related to this project.
+     */
+    public function portfolioEntries()
+    {
+        return $this->hasMany(PortfolioProject::class, 'project_id');
+    }
 }

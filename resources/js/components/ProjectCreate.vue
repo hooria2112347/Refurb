@@ -7,6 +7,14 @@
       <p v-for="(error, index) in serverErrors" :key="index" class="error">{{ error }}</p>
     </div>
 
+    <!-- Success Alert/Toast -->
+    <div v-if="showSuccessAlert" class="success-alert">
+      <div class="success-content">
+        <span class="success-icon">✓</span>
+        <p>Project successfully created!</p>
+      </div>
+    </div>
+
     <form @submit.prevent="createProject">
       <div class="form-group">
         <label for="title">
@@ -45,6 +53,7 @@
         <input 
           id="required_roles" 
           v-model="form.required_roles"
+          @input="filterNonAlphabetic('required_roles')"
           :class="{ 'input-error': clientErrors.required_roles }"
           placeholder="Example: Designer, Copywriter..."
         />
@@ -60,6 +69,7 @@
         <input 
           id="skills_required" 
           v-model="form.skills_required"
+          @input="filterNonAlphabetic('skills_required')"
           :class="{ 'input-error': clientErrors.skills_required }"
           placeholder="e.g. UX Design, Photoshop..."
         />
@@ -121,29 +131,45 @@ export default {
       },
       clientErrors: {},
       serverErrors: [],
+      showSuccessAlert: false,
     };
   },
   methods: {
+    filterNonAlphabetic(field) {
+      // Replace any non-alphabetic characters (except spaces, commas, and hyphens)
+      this.form[field] = this.form[field].replace(/[^a-zA-Z\s,\-]/g, '');
+    },
     validateForm() {
       this.clientErrors = {};
 
       if (!this.form.title.trim()) {
         this.clientErrors.title = 'Project title is required.';
       }
+      
       if (!this.form.description.trim()) {
         this.clientErrors.description = 'Project description is required.';
       }
+      
       if (!this.form.required_roles.trim()) {
         this.clientErrors.required_roles = 'Required roles field is required.';
+      } else if (/\d/.test(this.form.required_roles)) {
+        this.clientErrors.required_roles = 'Required roles should not contain numbers.';
       }
+      
       if (!this.form.skills_required.trim()) {
         this.clientErrors.skills_required = 'Skills required field is required.';
+      } else if (/\d/.test(this.form.skills_required)) {
+        this.clientErrors.skills_required = 'Skills required should not contain numbers.';
       }
+      
       if (!this.form.deadline) {
         this.clientErrors.deadline = 'Deadline is required.';
       }
+      
       if (this.form.budget === '') {
         this.clientErrors.budget = 'Budget is required.';
+      } else if (isNaN(this.form.budget) || /[a-zA-Z]/.test(this.form.budget)) {
+        this.clientErrors.budget = 'Budget must be a numeric value.';
       }
     },
     async createProject() {
@@ -159,8 +185,16 @@ export default {
 
       try {
         const res = await axios.post('/api/projects', this.form);
-        // On success, redirect to the new project's detail page
-        this.$router.push(`/projects/${res.data.project.id}`);
+        
+        // Show success alert
+        this.showSuccessAlert = true;
+        
+        // Wait a moment before redirecting (give the alert time to be seen)
+        setTimeout(() => {
+          // On success, redirect to the new project's detail page
+          this.$router.push(`/projects/${res.data.project.id}`);
+        }, 1500); // Redirect after 1.5 seconds
+        
       } catch (error) {
         console.error(error);
         // Server-side validation or error response
@@ -184,6 +218,7 @@ export default {
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  position: relative; /* For absolute positioning of alert */
 }
 
 /* HEADING */
@@ -193,6 +228,49 @@ export default {
   color: #3B1E54;
   margin-bottom: 25px;
   font-weight: 600;
+}
+
+/* SUCCESS ALERT */
+.success-alert {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 0;
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+}
+
+.success-content {
+  display: flex;
+  align-items: center;
+  background-color: #5d9b8b;
+  color: white;
+  padding: 16px 25px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.success-icon {
+  font-size: 20px;
+  margin-right: 12px;
+  font-weight: bold;
+}
+
+.success-content p {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 /* SERVER ERRORS BLOCK */
@@ -293,6 +371,12 @@ button[type="submit"]:hover {
   .project-create-form > h1 {
     font-size: 1.4rem;
     margin-bottom: 20px;
+  }
+  
+  .success-alert {
+    right: 10px;
+    left: 10px;
+    width: auto;
   }
 }
 </style>
