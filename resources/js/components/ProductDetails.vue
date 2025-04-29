@@ -557,11 +557,9 @@ export default {
 
 .price {
   display: inline-block;
-  font-size: 1.4rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  color: #CA7373;
   margin-bottom: 12px;
-  background-color: #FEF8F8;
   padding: 4px 10px;
   border-radius: 4px;
 }
@@ -569,7 +567,6 @@ export default {
 /* Product Details */
 .product-details {
   margin: 12px 0;
-  background-color: #f9f9f9;
   border-radius: 6px;
   padding: 15px;
   overflow-y: auto;
@@ -710,8 +707,8 @@ export default {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background-color: #6c63ff;
-  color: white;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   border: none;
   padding: 10px 15px;
   font-size: 0.95rem;
@@ -723,7 +720,7 @@ export default {
 }
 
 .add-to-cart-btn:hover {
-  background-color: #5046e5;
+  background-color: #EEEEEE;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(108, 99, 255, 0.3);
 }
@@ -925,8 +922,8 @@ export default {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background-color: #6c63ff;
-  color: white;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   border: none;
   padding: 8px 16px;
   font-size: 0.9rem;
@@ -938,7 +935,7 @@ export default {
 }
 
 .submit-review-btn:hover {
-  background-color: #5046e5;
+  background-color: #EEEEEE;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(108, 99, 255, 0.3);
 }

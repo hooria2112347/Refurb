@@ -646,18 +646,18 @@ export default {
 }
 
 .retry-button, .primary-button, .ok-btn { 
-  background-color: #3498db; 
-  color: white;
+  background-color: #D4BEE4; 
+  color: #3B1E54;
 }
 
 .accept-btn, .complete-button { 
-  background-color: #4caf50; 
-  color: white;
+  background-color: #D4BEE4; 
+  color: #3B1E54;
 }
 
 .reject-btn, .cancel-btn { 
-  background-color: #f44336; 
-  color: white;
+  background-color: #EEEEEE; 
+  color: #3B1E54;
 }
 
 .primary-button:disabled, .submit-feedback-btn:disabled {
@@ -1064,15 +1064,15 @@ export default {
 
 /* Button Hover Effects */
 .retry-button:hover, .primary-button:hover, .ok-btn:hover {
-  background-color: #2980b9;
+  background-color: #EEEEEE;
 }
 
 .accept-btn:hover, .complete-button:hover {
-  background-color: #3e8e41;
+  background-color: #EEEEEE;
 }
 
 .reject-btn:hover, .cancel-btn:hover {
-  background-color: #d32f2f;
+  background-color: #D4BEE4;
 }
 
 /* Focus States for Accessibility */
@@ -1089,14 +1089,14 @@ button:focus, input:focus, textarea:focus {
 
 /* Feedback success styling */
 .submit-feedback-btn {
-  background-color: #3498db;
-  color: white;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   padding: 10px 20px;
   width: 100%;
   margin-top: 10px;
 }
 
 .submit-feedback-btn:hover {
-  background-color: #2980b9;
+  background-color: #EEEEEE;
 }
 </style>

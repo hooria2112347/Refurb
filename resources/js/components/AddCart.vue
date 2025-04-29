@@ -377,8 +377,8 @@ export default {
 
 .page-header h1 {
   margin-top: 1rem;
-  color: #2d3748;
-  font-weight: 700;
+  color: #3B1E54;
+  font-weight: 700; 
 }
 
 .page-header p {
@@ -452,8 +452,8 @@ export default {
 
 .browse-btn {
   display: inline-block;
-  background-color: #9B7EBD;
-  color: #fff;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   padding: 12px 28px;
   border-radius: 8px;
   text-decoration: none;
@@ -462,7 +462,7 @@ export default {
 }
 
 .browse-btn:hover {
-  background-color: #8a68ad;
+  background-color: #EEEEEE;
   transform: translateY(-2px);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
@@ -565,7 +565,10 @@ export default {
   font-weight: 600;
   color: #2d3748;
 }
-
+.subtotal{
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
 /* Quantity Controls */
 .quantity-controls {
   display: flex;
@@ -637,7 +640,7 @@ export default {
 
 .summary-card h3 {
   font-weight: 600;
-  color: #2d3748;
+  color: #3B1E54;
   margin-bottom: 20px;
   text-align: center;
 }
@@ -665,8 +668,8 @@ export default {
 .checkout-btn {
   display: block;
   width: 100%;
-  background-color: #9B7EBD;
-  color: white;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   border: none;
   padding: 14px;
   border-radius: 8px;
@@ -677,7 +680,7 @@ export default {
 }
 
 .checkout-btn:hover {
-  background-color: #8a68ad;
+  background-color: #EEEEEE;
   transform: translateY(-2px);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
@@ -739,8 +742,8 @@ export default {
 }
 
 .confirm-btn, .primary-button {
-  background-color: #9B7EBD;
-  color: white;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   border: none;
   padding: 10px 24px;
   border-radius: 8px;
@@ -751,15 +754,15 @@ export default {
 }
 
 .confirm-btn:hover, .primary-button:hover {
-  background-color: #8a68ad;
+  background-color: #EEEEEE;
   transform: translateY(-1px);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .cancel-btn, .secondary-button {
-  background-color: white;
+  background-color: #EEEEEE;
   border: 1px solid #e2e8f0;
-  color: #718096;
+  color: #3B1E54;
   padding: 10px 24px;
   border-radius: 8px;
   font-weight: 500;
@@ -768,7 +771,7 @@ export default {
 }
 
 .cancel-btn:hover, .secondary-button:hover {
-  background-color: #f7fafc;
+  background-color: #D4BEE4;
   color: #4a5568;
 }
 

@@ -30,57 +30,42 @@
             <router-link to="/scrap-items" class="browse-btn">Explore Items</router-link>
           </div>
           
-          <!-- Wishlist Items - Improved Grid Layout -->
+          <!-- Wishlist Items -->
           <div v-else class="wishlist-items">
-            <!-- Option to sort and filter -->
-            <div class="mb-8 flex flex-wrap items-center justify-between">
-              <div class="flex items-center gap-4 mb-3 md:mb-0">
-                <p class="text-gray-700"><span class="font-medium">{{ wishlistItems.length }}</span> items saved</p>
-              </div>
-              <div class="flex items-center gap-3">
-                <select v-model="sortOption" class="sort-select">
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="price-high">Price: High to Low</option>
-                  <option value="price-low">Price: Low to High</option>
-                </select>
-              </div>
-            </div>
             
-            <!-- Improved Grid Display -->
-            <div class="grid-container">
-              <div v-for="item in sortedWishlistItems" :key="item.id" class="wishlist-card">
-                <!-- New Badge if item was added recently -->
-                <div v-if="isRecentlyAdded(item.added_at)" class="new-badge">NEW</div>
-                
-                <!-- Product Image with Hover Effects -->
-                <div class="image-container" @click="viewProductDetails(item.id)">
-                  <img 
-                    :src="item.images && item.images.length ? item.images[0] : 'default-image.jpg'" 
-                    :alt="item.name" 
-                    class="product-image"
-                  />
-                  <div class="image-overlay">
-                    <span class="view-details">View Details</span>
+            <!-- Wishlist Items List -->
+            <div class="wishlist-list">
+              <div v-for="item in wishlistItems" :key="item.id" class="wishlist-item">
+                <div class="item-container">
+                  <!-- Product Image -->
+                  <div class="item-image-container">
+                    <img 
+                      :src="item.images && item.images.length ? item.images[0] : 'default-image.jpg'" 
+                      :alt="item.name" 
+                      class="item-image"
+                      @click="viewProductDetails(item.id)"
+                    />
                   </div>
-                </div>
-                
-                <!-- Quick Actions -->
-                <div class="quick-actions">
-                  <button @click="removeFromWishlist(item.id)" class="action-btn remove-btn" aria-label="Remove from wishlist">
-                    <span class="action-icon">×</span>
-                  </button>
-                  <button @click="addToCart(item.id)" class="action-btn cart-btn" aria-label="Add to cart">
-                    <span class="action-icon">🛒</span>
-                  </button>
-                </div>
-                
-                <!-- Product Info -->
-                <div class="product-info">
-                  <h3 class="product-name" @click="viewProductDetails(item.id)">{{ item.name }}</h3>
-                  <div class="price-row">
-                    <p class="product-price">PKR {{ formatPrice(item.price) }}</p>
-                    <p class="added-date">Added {{ formatDateRelative(item.added_at) }}</p>
+                  
+                  <!-- Product Info -->
+                  <div class="item-details">
+                    <h3 class="item-name" @click="viewProductDetails(item.id)">{{ item.name }}</h3>
+                    <p class="item-price">Rs. {{ formatPrice(item.price) }}</p>
+                    <p v-if="item.original_price && item.original_price > item.price" class="item-original-price">
+                      Rs. {{ formatPrice(item.original_price) }}
+                      <span class="discount-percentage">-{{ calculateDiscount(item.price, item.original_price) }}%</span>
+                    </p>
+                    <p v-if="item.price_dropped" class="price-dropped">Price dropped</p>
+                  </div>
+                  
+                  <!-- Action Buttons -->
+                  <div class="item-actions">
+                    <button @click="removeFromWishlist(item.id)" class="delete-btn" title="Remove from wishlist">
+                      <span class="trash-icon">🗑️</span>
+                    </button>
+                    <button @click="addToCart(item.id)" class="cart-btn" title="Add to cart">
+                      <span class="cart-icon">+</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -125,28 +110,8 @@ export default {
       error: null,
       showConfirmModal: false,
       itemToRemove: null,
-      showLoginModal: false,
-      sortOption: 'newest'
+      showLoginModal: false
     };
-  },
-  
-  computed: {
-    sortedWishlistItems() {
-      const items = [...this.wishlistItems];
-      
-      switch(this.sortOption) {
-        case 'newest':
-          return items.sort((a, b) => new Date(b.added_at) - new Date(a.added_at));
-        case 'oldest':
-          return items.sort((a, b) => new Date(a.added_at) - new Date(b.added_at));
-        case 'price-high':
-          return items.sort((a, b) => b.price - a.price);
-        case 'price-low':
-          return items.sort((a, b) => a.price - b.price);
-        default:
-          return items;
-      }
-    }
   },
   
   methods: {
@@ -227,53 +192,20 @@ export default {
       this.$router.push('/browse-scrap');
     },
     
-    formatDate(dateString) {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    },
-    
-    formatDateRelative(dateString) {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffTime = Math.abs(now - date);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays < 1) {
-        return 'Today';
-      } else if (diffDays === 1) {
-        return 'Yesterday';
-      } else if (diffDays < 7) {
-        return `${diffDays} days ago`;
-      } else if (diffDays < 30) {
-        const weeks = Math.floor(diffDays / 7);
-        return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
-      } else {
-        return this.formatDate(dateString);
-      }
-    },
-    
     formatPrice(price) {
       return price.toLocaleString();
     },
     
-    isRecentlyAdded(dateString) {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffTime = Math.abs(now - date);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      return diffDays <= 3; // Items added within last 3 days are considered "new"
+    calculateDiscount(currentPrice, originalPrice) {
+      if (!originalPrice || originalPrice <= currentPrice) return 0;
+      const discount = ((originalPrice - currentPrice) / originalPrice) * 100;
+      return Math.round(discount);
     },
     
     async addToCart(productId) {
       const token = localStorage.getItem("access_token");
       
       try {
-        // Assuming you have an API endpoint to add items to cart
         const response = await fetch(`http://127.0.0.1:8000/api/cart/add/${productId}`, {
           method: 'POST',
           headers: {
@@ -284,7 +216,7 @@ export default {
         });
         
         if (response.ok) {
-          // Show success message or update UI
+          // Show success message
           alert('Item added to cart successfully!');
         } else {
           throw new Error('Failed to add item to cart');
@@ -293,7 +225,7 @@ export default {
         console.error("Error adding item to cart:", err);
         alert('Could not add item to cart. Please try again.');
       }
-    }
+    },
   },
   
   mounted() {
@@ -310,7 +242,7 @@ export default {
 
 .page-header h1 {
   margin-top: 1rem;
-  color: #2d3748;
+  color: #3B1E54;
   font-weight: 700;
 }
 
@@ -385,8 +317,8 @@ export default {
 
 .browse-btn {
   display: inline-block;
-  background-color: #9B7EBD;
-  color: #fff;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   padding: 12px 28px;
   border-radius: 8px;
   text-decoration: none;
@@ -395,152 +327,107 @@ export default {
 }
 
 .browse-btn:hover {
-  background-color: #8a68ad;
+  background-color: #EEEEEE;
   transform: translateY(-2px);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Improved Grid Layout */
-.wishlist-items {
+/* Add All to Cart Button */
+.add-all-cart-wrapper {
+  margin-bottom: 20px;
+}
+
+
+/* Wishlist Items Styling */
+.wishlist-list {
   margin-bottom: 40px;
 }
 
-.sort-select {
-  padding: 8px 12px;
-  margin-bottom: 1rem;
-  border: 1px solid #e2e8f0;
+.wishlist-item {
+  background-color: white;
   border-radius: 8px;
-  background-color: white;
-  color: #4a5568;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-
-.sort-select:hover {
-  border-color: #cbd5e0;
-}
-
-.sort-select:focus {
-  outline: none;
-  border-color: #9B7EBD;
-  box-shadow: 0 0 0 2px rgba(155, 126, 189, 0.2);
-}
-
-/* New Grid Container with CSS Grid */
-.grid-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 20px;
-  margin: 0 auto;
-}
-
-.wishlist-card {
-  position: relative;
-  background-color: white;
-  border-radius: 12px;
-  overflow: hidden;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  height: 100%;
-  display: flex;
-  flex-direction: column;
 }
 
-.wishlist-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+.wishlist-item:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* New Badge for recently added items */
-.new-badge {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  background-color: #9B7EBD;
-  color: white;
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 4px;
-  z-index: 2;
-}
-
-.image-container {
-  position: relative;
-  height: 220px;
-  overflow: hidden;
-  cursor: pointer;
-}
-
-.product-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s ease;
-}
-
-.wishlist-card:hover .product-image {
-  transform: scale(1.08);
-}
-
-.image-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.3);
+.item-container {
+  padding: 16px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s ease;
 }
 
-.wishlist-card:hover .image-overlay {
-  opacity: 1;
+.item-image-container {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+  margin-right: 16px;
+  cursor: pointer;
 }
 
-.view-details {
-  color: white;
-  background-color: rgba(0, 0, 0, 0.6);
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 0.9rem;
+.item-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.item-details {
+  flex-grow: 1;
+}
+
+.item-name {
+  font-size: 1rem;
   font-weight: 500;
-  transform: translateY(10px);
-  transition: transform 0.3s ease;
+  color: #3B1E54;
+  margin-bottom: 8px;
+  cursor: pointer;
 }
 
-.wishlist-card:hover .view-details {
-  transform: translateY(0);
+.item-name:hover {
+  color: #D4BEE4;
 }
 
-/* Quick action buttons that appear on hover */
-.quick-actions {
-  position: absolute;
-  top: 12px;
-  right: 12px;
+.item-price {
+  font-weight: 700;
+  color: #3B1E54;
+  font-size: 1.1rem;
+}
+
+.item-original-price {
+  color: #718096;
+  font-size: 0.9rem;
+  text-decoration: line-through;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 8px;
-  z-index: 3;
-  opacity: 0;
-  transform: translateX(10px);
-  transition: all 0.3s ease;
 }
 
-.wishlist-card:hover .quick-actions {
-  opacity: 1;
-  transform: translateX(0);
+.discount-percentage {
+  color: #e53e3e;
+  text-decoration: none;
 }
 
-.action-btn {
-  width: 32px;
-  height: 32px;
+.price-dropped {
+  color: #e53e3e;
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.item-actions {
+  display: flex;
+  gap: 12px;
+  margin-left: 16px;
+}
+
+.delete-btn, .cart-btn {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -548,71 +435,29 @@ export default {
   transition: all 0.2s ease;
 }
 
-.remove-btn {
-  background-color: rgba(229, 62, 62, 0.9);
-  color: white;
+.delete-btn {
+  background-color: transparent;
+  border: 1px solid #e2e8f0;
+  color: #718096;
 }
 
-.remove-btn:hover {
-  background-color: rgba(229, 62, 62, 1);
-  transform: scale(1.1);
+.delete-btn:hover {
+  background-color: #f7fafc;
+  color: #e53e3e;
 }
 
 .cart-btn {
-  background-color: rgba(155, 126, 189, 0.9);
-  color: white;
+  background-color: #D4BEE4;
+  color: #3B1E54;
+  border: none;
 }
 
 .cart-btn:hover {
-  background-color: rgba(155, 126, 189, 1);
-  transform: scale(1.1);
+  background-color: #EEEEEE;
 }
 
-.action-icon {
+.trash-icon, .cart-icon {
   font-size: 1.2rem;
-  line-height: 1;
-}
-
-/* Product Info Section */
-.product-info {
-  padding: 16px;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.product-name {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #2d3748;
-  cursor: pointer;
-  transition: color 0.2s;
-  margin-bottom: 8px;
-  line-height: 1.4;
-  height: 2.8em; /* Fixed height for two lines of text */
-}
-
-.product-name:hover {
-  color: #9B7EBD;
-}
-
-.price-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.product-price {
-  font-weight: 700;
-  color: #9B7EBD;
-  font-size: 1.1rem;
-}
-
-.added-date {
-  font-size: 0.8rem;
-  color: #718096;
-  text-align: right;
 }
 
 /* Modals */
@@ -688,44 +533,27 @@ export default {
 }
 
 /* Responsive Adjustments */
-@media (max-width: 1200px) {
-  .grid-container {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 992px) {
-  .grid-container {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
 @media (max-width: 768px) {
-  .grid-container {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
-  }
-  
-  .image-container {
-    height: 180px;
-  }
-}
-
-@media (max-width: 576px) {
-  .grid-container {
-    grid-template-columns: 1fr;
-    max-width: 320px;
-    margin: 0 auto;
-  }
-  
-  .price-row {
+  .item-container {
     flex-direction: column;
     align-items: flex-start;
   }
   
-  .added-date {
-    margin-top: 4px;
-    text-align: left;
+  .item-image-container {
+    width: 100%;
+    height: auto;
+    margin-right: 0;
+    margin-bottom: 16px;
+  }
+  
+  .item-image {
+    aspect-ratio: 1/1;
+  }
+  
+  .item-actions {
+    margin-left: 0;
+    margin-top: 16px;
+    align-self: flex-end;
   }
 }
 </style>

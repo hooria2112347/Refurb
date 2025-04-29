@@ -389,22 +389,22 @@ export default {
 }
 
 .search-button {
-  background-color: #4a6cfa;
-  color: white;
+  background-color: #D4BEE4;
+  color: #3B1E54;
 }
 
 .search-button:hover {
-  background-color: #3451c6;
+  background-color: #EEEEEE;
   transform: translateY(-1px);
 }
 
 .bulk-delete-button {
-  background-color: #ff4d4f;
-  color: white;
+  background-color: #D4BEE4;
+  color: #3B1E54;
 }
 
 .bulk-delete-button:hover {
-  background-color: #d9363e;
+  background-color: #EEEEEE;
   transform: translateY(-1px);
 }
 
@@ -523,30 +523,30 @@ export default {
 }
 
 .view-button {
-  background-color: #4a6cfa;
-  color: white;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   flex-grow: 1;
   text-decoration: none;
 }
 
 .view-button:hover {
-  background-color: #3451c6;
+  background-color: #EEEEEE;
   transform: translateY(-2px);
 }
 
 .delete-button {
-  background-color: #ff4d4f;
-  color: white;
+  background-color: #D4BEE4;
+  color: #3B1E54;
 }
 
 .delete-button:hover {
-  background-color: #d9363e;
+  background-color: #EEEEEE;
   transform: translateY(-2px);
 }
 
 .create-button {
-  background-color: #4caf50;
-  color: white;
+  background-color: #D4BEE4;
+  color: #3B1E54;
   display: inline-flex;
   align-items: center;
   margin-top: 15px;
@@ -554,7 +554,7 @@ export default {
 }
 
 .create-button:hover {
-  background-color: #388e3c;
+  background-color: #EEEEEE;
   transform: translateY(-2px);
 }
 
@@ -682,21 +682,21 @@ export default {
 }
 
 .confirm-delete {
-  background-color: #ff4d4f;
-  color: white;
+  background-color: #D4BEE4;
+  color: #3B1E54;
 }
 
 .confirm-delete:hover {
-  background-color: #d9363e;
+  background-color: #EEEEEE;
 }
 
 .cancel-button {
-  background-color: #f0f0f0;
-  color: #333;
+  background-color: #EEEEEE;
+  color: #3B1E54;
 }
 
 .cancel-button:hover {
-  background-color: #e0e0e0;
+  background-color: #D4BEE4;
 }
 
 /* Responsive styles */

@@ -6,6 +6,7 @@
     </div>
 
     <div v-if="loading" class="loading-container">
+      <div class="loader"></div>
       <p>Loading completed projects...</p>
     </div>
 
@@ -15,9 +16,6 @@
       <p>
         Check back soon as our community completes more amazing projects!
       </p>
-      <router-link to="/projects" class="browse-button">
-        Browse Active Projects
-      </router-link>
     </div>
 
     <div v-else class="projects-grid">
@@ -26,10 +24,12 @@
         :key="project.id"
         class="project-item"
       >
-        <div class="project-card">
+        <div class="project-card" @click="navigateToProject(project.id)">
           <div class="project-header">
-            <h2>{{ project.title }}</h2>
-            <span class="status-badge">Completed</span>
+            <div class="title-section">
+              <h2>{{ project.title }}</h2>
+              <span class="status-badge">Completed</span>
+            </div>
           </div>
 
           <p class="project-description">{{ project.description }}</p>
@@ -38,22 +38,6 @@
             <div class="meta-item">
               <strong>Completed:</strong> {{ formatDate(project.updated_at) }}
             </div>
-            <div class="meta-item">
-              <strong>Contributors:</strong> {{ project.contributor_count || 'Multiple artists' }}
-            </div>
-          </div>
-
-          <div class="project-footer">
-            <router-link :to="`/projects/${project.id}`" class="view-button">
-              View Details
-            </router-link>
-            <router-link 
-              v-if="project.primary_artist_id"
-              :to="`/profile/${project.primary_artist_id}`" 
-              class="artist-button"
-            >
-              View Artist Profile
-            </router-link>
           </div>
         </div>
       </div>
@@ -98,36 +82,31 @@ export default {
   },
   methods: {
     async fetchCompletedProjects() {
-  try {
-    console.log('Fetching completed projects, page:', this.currentPage);
-    this.loading = true;
-    
-    const url = '/api/projects/completed';
-    console.log('API URL:', url);
-    
-    const response = await axios.get(url, {
-      params: {
-        page: this.currentPage,
-        per_page: this.perPage
+      try {
+        this.loading = true;
+        
+        const url = '/api/projects/completed';
+        
+        const response = await axios.get(url, {
+          params: {
+            page: this.currentPage,
+            per_page: this.perPage
+          }
+        });
+        
+        this.completedProjects = response.data.data;
+        
+        // If pagination info is included in the response
+        if (response.data.meta) {
+          this.currentPage = response.data.meta.current_page;
+          this.totalPages = response.data.meta.last_page;
+        }
+      } catch (error) {
+        console.error('Error fetching completed projects:', error);
+      } finally {
+        this.loading = false;
       }
-    });
-    
-    console.log('API Response:', response);
-    this.completedProjects = response.data.data;
-    
-    // If pagination info is included in the response
-    if (response.data.meta) {
-      this.currentPage = response.data.meta.current_page;
-      this.totalPages = response.data.meta.last_page;
-      console.log('Pagination info:', this.currentPage, 'of', this.totalPages);
-    }
-  } catch (error) {
-    console.error('Error fetching completed projects:', error);
-    console.error('Error details:', error.response ? error.response.data : 'No response data');
-  } finally {
-    this.loading = false;
-  }
-},
+    },
     formatDate(dateString) {
       if (!dateString) return 'N/A';
       
@@ -143,6 +122,9 @@ export default {
         this.currentPage = page;
         this.fetchCompletedProjects();
       }
+    },
+    navigateToProject(projectId) {
+      this.$router.push(`/projects/${projectId}`);
     }
   }
 };
@@ -151,79 +133,114 @@ export default {
 <style scoped>
 .completed-projects-page {
   max-width: 1200px;
-  margin: 40px auto;
-  padding: 0 16px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0 auto;
+  padding: 40px 20px;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  color: #333;
 }
 
 .header-section {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 48px;
 }
 
 .header-section h1 {
   font-size: 2.5rem;
+  font-weight: 700;
   color: #3B1E54;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .subtitle {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   color: #666;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Loading State */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.loader {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #6c63ff;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* Projects Grid */
 .projects-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 30px;
 }
 
 .project-item {
-  position: relative;
+  height: 100%;
 }
 
 .project-card {
   background-color: #fff;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s ease;
   height: 100%;
   display: flex;
   flex-direction: column;
   padding: 24px;
+  cursor: pointer;
 }
 
 .project-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
 }
 
 .project-header {
-  margin-bottom: 16px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.title-section {
+  flex: 1;
 }
 
 .project-header h2 {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
+  font-weight: 600;
   color: #3B1E54;
+  margin-bottom: 12px;
+  line-height: 1.3;
 }
 
 .status-badge {
   display: inline-block;
-  background-color: #4caf50;
-  color: white;
-  padding: 4px 10px;
-  border-radius: 16px;
+  background-color: #D4BEE4;
+  color: #3B1E54;
+  padding: 6px 14px;
+  border-radius: 4px;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .project-description {
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: #555;
   line-height: 1.6;
   margin-bottom: 16px;
@@ -231,63 +248,20 @@ export default {
 }
 
 .project-meta {
-  margin-top: 16px;
+  margin-top: auto;
   padding-top: 16px;
   border-top: 1px solid #eee;
 }
 
 .meta-item {
-  margin-bottom: 8px;
   font-size: 0.9rem;
   color: #555;
-}
-
-.project-footer {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 20px;
-}
-
-.view-button,
-.artist-button {
-  padding: 10px 16px;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  text-align: center;
-  text-decoration: none;
-  transition: background-color 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.view-button {
-  background-color: #8D6E97;
-  color: white;
-  border: none;
-}
-
-.view-button:hover {
-  background-color: #6F5880;
-}
-
-.artist-button {
-  background-color: #f0e6f5;
-  color: #3B1E54;
-  border: 1px solid #d7c1e0;
-}
-
-.artist-button:hover {
-  background-color: #e2d3e9;
 }
 
 /* Empty State */
 .empty-state {
   text-align: center;
-  padding: 60px 20px;
+  padding: 40px 20px;
   background-color: #f9f9f9;
   border-radius: 12px;
   max-width: 500px;
@@ -312,24 +286,17 @@ export default {
 
 .browse-button {
   display: inline-block;
-  background-color: #8D6E97;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
+  background-color: #D4BEE4;
+  color: #3B1E54;
+  padding: 12px 24px;
+  border-radius: 4px;
   text-decoration: none;
   font-weight: 600;
   transition: background-color 0.3s ease;
 }
 
 .browse-button:hover {
-  background-color: #6F5880;
-}
-
-/* Loading State */
-.loading-container {
-  text-align: center;
-  padding: 40px;
-  color: #666;
+  background-color: #EEEEEE;
 }
 
 /* Pagination */
@@ -342,8 +309,8 @@ export default {
 }
 
 .pagination-button {
-  background-color: #e0e0e0;
-  border: none;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
   padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
@@ -352,7 +319,7 @@ export default {
 }
 
 .pagination-button:hover:not(:disabled) {
-  background-color: #d0d0d0;
+  background-color: #e0e0e0;
 }
 
 .pagination-button:disabled {
@@ -374,8 +341,8 @@ export default {
     font-size: 2rem;
   }
   
-  .project-footer {
-    grid-template-columns: 1fr;
+  .subtitle {
+    font-size: 1rem;
   }
 }
 </style>
