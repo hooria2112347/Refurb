@@ -5,6 +5,7 @@
       <!-- Non-collapsible links -->
       <router-link to="/scrap-seller-dashboard">Overview</router-link>
       <router-link to="/account">Account</router-link>
+      <router-link to="/orders-received">View Orders Received</router-link>
 
       <!-- Selling Collapsible -->
       <div 

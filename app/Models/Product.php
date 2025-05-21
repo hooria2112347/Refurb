@@ -36,4 +36,17 @@ class Product extends Model
     {
         return $this->hasMany(Comment::class, 'product_id', 'product_id');
     }
+      public function seller()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+    
+    /**
+     * Get all order items containing this product
+     */
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class, 'product_id', 'product_id');
+    }
+
 }

@@ -297,6 +297,65 @@ export default {
       this.showConfirmModal = true;
     },
     
+    proceedToCheckout() {
+      // First make sure we sync any pending quantity updates
+      if (this.updateTimeout) {
+        clearTimeout(this.updateTimeout);
+        this.syncPendingUpdates();
+      }
+      
+      // Check if cart is empty
+      if (this.cartItems.length === 0) {
+        this.error = "Your cart is empty. Please add items before checkout.";
+        return;
+      }
+      
+      // Navigate to checkout page
+      this.$router.push({ name: 'checkout' });
+    },
+    
+    async performCheckout() {
+      const token = localStorage.getItem("access_token");
+      
+      try {
+        // Show loading state
+        this.loading = true;
+        
+        const response = await fetch('http://127.0.0.1:8000/api/orders', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Checkout failed');
+        }
+        
+        const data = await response.json();
+        
+        // Clear the cart after successful checkout
+        this.cartItems = [];
+        
+        // Redirect to order history page with success message
+        this.$router.push({ 
+          name: 'order-history',
+          params: { 
+            message: 'Order placed successfully!',
+            status: 'success',
+            orderId: data.order_id
+          }
+        });
+      } catch (err) {
+        console.error("Error during checkout:", err);
+        this.error = "Checkout failed. Please try again.";
+      } finally {
+        this.loading = false;
+        this.showConfirmModal = false;
+      }
+    },
+    
     async confirmAction() {
       const token = localStorage.getItem("access_token");
       
@@ -329,6 +388,10 @@ export default {
           } else {
             throw new Error('Failed to clear cart');
           }
+        } else if (this.confirmActionType === 'checkout') {
+          // Call the checkout method
+          await this.performCheckout();
+          return; // Early return as performCheckout handles its own state
         }
       } catch (err) {
         console.error("Error performing cart action:", err);
@@ -347,11 +410,6 @@ export default {
     closeLoginModal() {
       this.showLoginModal = false;
       this.$router.push('/browse-scrap');
-    },
-    
-    proceedToCheckout() {
-      // This will be implemented when you have a checkout page
-      alert('Checkout functionality will be implemented in the future!');
     }
   },
   

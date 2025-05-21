@@ -35,8 +35,9 @@ import Wishlist from './components/Wishlist.vue';
 import AddCart from './components/AddCart.vue'; // Import the cart component
 import Portfolio from './components/Portfolio.vue';
 import CompletedProjects from './components/CompletedProjects.vue';
-
-
+import OrderHistory from './components/OrderHistory.vue';
+import Checkout from './components/Checkout.vue';
+import OrdersReceived from './components/OrdersReceived.vue';
 const routes = [  {
   path: '/user-profile/:id',
   name: 'UserProfile',
@@ -61,6 +62,14 @@ const routes = [  {
     requiresAuth: false // This page is publicly accessible
   }
 },
+ {
+    path: '/orders-received',
+    name: 'OrdersReceived',
+    component: OrdersReceived,
+    meta: { 
+      requiresAuth: true  // If you're using navigation guards for authentication
+    }
+  },
 {
   path: '/cart',
   name: 'cart',
@@ -73,7 +82,7 @@ const routes = [  {
   component: ProductDetails,
   props: true, // Pass the `id` as a prop to the ProductDetails component
 },
-// ... other routes
+
 {
   path: '/:pathMatch(.*)*',
   redirect: '/manage-products', // Redirect unknown routes to Manage Products
@@ -122,6 +131,30 @@ const routes = [  {
     name: 'ProjectDetail',
     component: ProjectDetail,
     props: true  // allows route params -> props
+  },
+  {
+    path: '/orders-received',
+    name: 'OrdersReceived',
+    component: OrdersReceived,
+    meta: { requiresAuth: true, requiresSeller: true }
+  },
+  {
+    path: '/checkout',
+    name: 'checkout',
+    component: Checkout,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/order-history',
+    name: 'order-history',
+    component: OrderHistory,
+    meta: { requiresAuth: true }
+  }, 
+  {
+    path: '/order-history/:orderId',
+    name: 'order-history-with-id',
+    component: OrderHistory,
+    meta: { requiresAuth: true }
   },
   {
     path: '/projects',

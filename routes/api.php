@@ -14,7 +14,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\PortfolioController;
-
+use App\Http\Controllers\OrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,9 +42,21 @@ Route::get('/products/{id}', [ProductController::class, 'show']);
 */
 Route::middleware(['auth:sanctum'])->group(function () {
 
-    // -------------------------
-    // Authentication & Profile
-    // -------------------------
+ Route::get('orders/seller', [OrderController::class, 'getSellerOrders']);
+ // User order routes
+    Route::prefix('orders')->group(function () {
+        // Customer routes
+        Route::post('/checkout', [OrderController::class, 'checkout']);
+        Route::get('/', [OrderController::class, 'getUserOrders']);
+        Route::get('/{orderId}', [OrderController::class, 'getOrderDetails']);
+        Route::put('/{orderId}/cancel', [OrderController::class, 'cancelOrder']);
+        
+        // Add seller routes - these match what your Vue component is calling
+
+        // Route::get('/seller', [OrderController::class, 'getSellerOrders']);
+        Route::put('/{orderId}/status', [OrderController::class, 'updateOrderItemStatus']);
+    });
+
     Route::get('/users/{id}', [AuthController::class, 'showProfile']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -151,4 +163,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/portfolio', [PortfolioController::class, 'index']);
     Route::put('/portfolio/{id}', [PortfolioController::class, 'updatePortfolioProject']);
     Route::delete('/portfolio/{id}', [PortfolioController::class, 'removeFromPortfolio']);
+
+
+    
 });
