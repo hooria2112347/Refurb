@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,19 +19,4 @@ class Wishlist extends Model
     {
         return $this->belongsTo(Product::class, 'product_id', 'product_id');
     }
-
-
-    public function up()
-{
-    Schema::create('wishlists', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('user_id')->constrained()->onDelete('cascade');
-        $table->foreignId('product_id')->references('product_id')->on('products')->onDelete('cascade');
-        $table->timestamps();
-        
-        // Make sure a product can only be in a user's wishlist once
-        $table->unique(['user_id', 'product_id']);
-    });
-}
-    
 }

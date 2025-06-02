@@ -1,37 +1,38 @@
 <template>
   <div class="browse-container">
     <!-- Recommendations Banner (5-10% of page height) -->
-    <div class="recommendations-banner">
-      <div class="recommendations-header">
-        <h3>{{ recommendationTitle }}</h3>
-        <div class="banner-controls">
-          <button class="control-btn" @click="prevRecommendation" :disabled="currentRecommendationIndex === 0">‹</button>
-          <button class="control-btn" @click="nextRecommendation" :disabled="currentRecommendationIndex >= recommendations.length - visibleRecommendations">›</button>
+<div class="recommendations-banner">
+  <div class="recommendations-header">
+    <h3>{{ recommendationTitle }}</h3>
+    <div class="banner-controls">
+      <button class="control-btn" @click="prevRecommendation" :disabled="currentRecommendationIndex === 0">‹</button>
+      <button class="control-btn" @click="nextRecommendation" :disabled="currentRecommendationIndex >= recommendations.length - visibleRecommendations">›</button>
+    </div>
+  </div>
+  <div class="recommendations-slider">
+    <div class="recommendations-track" :style="{ transform: `translateX(-${currentRecommendationIndex * (100 / visibleRecommendations)}%)` }">
+      <div 
+        v-for="product in recommendations" 
+        :key="product.id" 
+        class="recommendation-card"
+        @click="viewProductDetails(product)"
+      >
+        <div class="recommendation-tag">{{ getRecommendationReason(product) }}</div>
+        <div class="recommendation-image">
+          <img 
+            :src="product.images && product.images.length ? product.images[0] : 'https://via.placeholder.com/150'" 
+            :alt="product.name"
+          />
         </div>
-      </div>
-      <div class="recommendations-slider">
-        <div class="recommendations-track" :style="{ transform: `translateX(-${currentRecommendationIndex * (100 / visibleRecommendations)}%)` }">
-          <div 
-            v-for="product in recommendations" 
-            :key="product.id" 
-            class="recommendation-card"
-            @click="viewProductDetails(product)"
-          >
-            <div class="recommendation-tag">{{ getRecommendationReason(product) }}</div>
-            <div class="recommendation-image">
-              <img 
-                :src="product.images && product.images.length ? product.images[0] : 'https://via.placeholder.com/150'" 
-                :alt="product.name"
-              />
-            </div>
-            <div class="recommendation-info">
-              <h4>{{ product.name }}</h4>
-              <span class="recommendation-price">{{ product.price }} PKR</span>
-            </div>
-          </div>
+        <!-- Product name displayed outside the card image -->
+        <div class="recommendation-details">
+          <h4 class="product-name">{{ product.name }}</h4>
+          <span class="recommendation-price">{{ product.price }} PKR</span>
         </div>
       </div>
     </div>
+  </div>
+</div>
 
     <!-- Search and Filter Bar -->
     <div class="search-filter-bar">
@@ -216,179 +217,9 @@ export default {
       return this.filteredProducts.slice(startIndex, endIndex);
     }
   },
+
   methods: {
-async fetchRecommendations() {
-  const token = localStorage.getItem("access_token");
-  
-  if (!token) {
-    console.log("No token found, showing fallback recommendations");
-    this.generateFallbackRecommendations();
-    return;
-  }
-  
-  this.recommendationsLoading = true;
-  
-  try {
-    console.log("Fetching recommendations with token:", token.substring(0, 10) + "...");
-    
-    const response = await fetch('http://127.0.0.1:8000/api/recommendations', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    console.log("Response status:", response.status);
-    console.log("Response headers:", response.headers);
-    
-    if (response.ok) {
-      const data = await response.json();
-      console.log("Recommendations data received:", data);
-      
-      // Check if it's the "no recommendations yet" message
-      if (data.message && data.recommendations) {
-        this.recommendationTitle = "Popular Products";
-        this.recommendations = data.recommendations;
-        console.log("Using popular products as recommendations");
-      } else if (Array.isArray(data)) {
-        // We have real recommendations
-        this.recommendations = data;
-        this.recommendationTitle = "Recommended for You";
-        console.log("Using personalized recommendations");
-      } else {
-        console.log("Unexpected data format, using fallback");
-        this.generateFallbackRecommendations();
-      }
-      
-      // Set recommendation reasons from backend
-      this.recommendations.forEach(product => {
-        if (product.recommendation_reason) {
-          this.recommendationReasons[product.id] = product.recommendation_reason;
-        }
-      });
-      
-      console.log("Final recommendations:", this.recommendations);
-      console.log("Recommendation reasons:", this.recommendationReasons);
-      
-    } else {
-      const errorText = await response.text();
-      console.error("HTTP Error:", response.status, errorText);
-      
-      if (response.status === 401) {
-        console.log("Unauthorized - removing token");
-        localStorage.removeItem("access_token");
-        this.generateFallbackRecommendations();
-      } else if (response.status === 404) {
-        console.error("Recommendations endpoint not found - check your routes");
-        this.generateFallbackRecommendations();
-      } else {
-        console.error("Failed to fetch recommendations - HTTP", response.status);
-        this.generateFallbackRecommendations();
-      }
-    }
-  } catch (err) {
-    console.error("Network error fetching recommendations:", err);
-    console.error("Error details:", err.message);
-    this.generateFallbackRecommendations();
-  } finally {
-    this.recommendationsLoading = false;
-  }
-},
-
-// Add a method to test the recommendations endpoint
-async testRecommendationsEndpoint() {
-  const token = localStorage.getItem("access_token");
-  if (!token) {
-    console.log("No token for testing");
-    return;
-  }
-
-  try {
-    // Test if the endpoint exists
-    const response = await fetch('http://127.0.0.1:8000/api/recommendations', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json'
-      }
-    });
-
-    console.log("Test response status:", response.status);
-    const text = await response.text();
-    console.log("Test response body:", text);
-
-    if (response.status === 404) {
-      console.error("❌ Route not found! Check your routes/api.php file");
-    } else if (response.status === 401) {
-      console.error("❌ Unauthorized! Check your authentication");
-    } else if (response.status === 500) {
-      console.error("❌ Server error! Check your Laravel logs");
-    }
-  } catch (err) {
-    console.error("❌ Network error:", err.message);
-  }
-},
-
-// Updated generateFallbackRecommendations with better logging
-generateFallbackRecommendations() {
-  if (!this.products || this.products.length === 0) {
-    console.log("No products available for fallback recommendations");
-    return;
-  }
-
-  console.log("Generating fallback recommendations from", this.products.length, "products");
-  
-  // Generate random recommendations when no user data is available
-  const shuffled = [...this.products].sort(() => 0.5 - Math.random());
-  this.recommendations = shuffled.slice(0, 8);
-  
-  const token = localStorage.getItem("access_token");
-  if (!token) {
-    this.recommendationTitle = "Featured Products";
-  } else {
-    this.recommendationTitle = "Popular Products";
-  }
-  
-  // Set default reasons for fallback recommendations
-  this.recommendations.forEach(product => {
-    this.recommendationReasons[product.id] = "Featured";
-  });
-  
-  console.log("Fallback recommendations set:", this.recommendations.length, "products");
-},
-
-// Simplified - no need for complex analysis since backend handles it
-async analyzeRecommendationReasons() {
-  // This method is now simplified since the backend provides the reasons
-  this.recommendations.forEach(product => {
-    if (!this.recommendationReasons[product.id]) {
-      this.recommendationReasons[product.id] = "Recommended";
-    }
-  });
-},
-
-getRecommendationReason(product) {
-  return this.recommendationReasons[product.id] || "Recommended";
-},
-    // Fallback recommendations for non-logged-in users or when no purchase history exists
-    generateFallbackRecommendations() {
-      if (!this.products || this.products.length === 0) {
-        return;
-      }
-
-      // Generate random recommendations when no user data is available
-      const shuffled = [...this.products].sort(() => 0.5 - Math.random());
-      this.recommendations = shuffled.slice(0, 8);
-      
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        this.recommendationTitle = "Featured Products";
-      } else {
-        this.recommendationTitle = "Based on your interests";
-      }
-    },
-    
+    // Recommendation navigation methods
     nextRecommendation() {
       if (this.currentRecommendationIndex < this.recommendations.length - this.visibleRecommendations) {
         this.currentRecommendationIndex++;
@@ -401,29 +232,135 @@ getRecommendationReason(product) {
       }
     },
 
-    // Pagination methods
-    nextPage() {
-      if (this.currentPage < this.totalPages) {
-        this.currentPage++;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    async fetchRecommendations() {
+      const token = localStorage.getItem("access_token");
+      
+      if (!token) {
+        console.log("No token found, showing fallback recommendations");
+        this.generateFallbackRecommendations();
+        return;
       }
-    },
-    prevPage() {
-      if (this.currentPage > 1) {
-        this.currentPage--;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      this.recommendationsLoading = true;
+      
+      try {
+        console.log("Fetching recommendations with token:", token.substring(0, 10) + "...");
+        
+        const response = await fetch('http://127.0.0.1:8000/api/recommendations', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log("Response status:", response.status);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Recommendations data received:", data);
+          
+          // Check if it's the "no recommendations yet" message
+          if (data.message && data.recommendations) {
+            this.recommendationTitle = "Popular Products";
+            this.recommendations = data.recommendations;
+            console.log("Using popular products as recommendations");
+          } else if (Array.isArray(data)) {
+            // We have real recommendations
+            this.recommendations = data;
+            this.recommendationTitle = "Recommended for You";
+            console.log("Using personalized recommendations");
+          } else {
+            console.log("Unexpected data format, using fallback");
+            this.generateFallbackRecommendations();
+          }
+          
+          // Set recommendation reasons from backend
+          this.recommendations.forEach(product => {
+            if (product.recommendation_reason) {
+              this.recommendationReasons[product.product_id || product.id] = product.recommendation_reason;
+            }
+          });
+          
+          console.log("Final recommendations:", this.recommendations);
+          console.log("Recommendation reasons:", this.recommendationReasons);
+          
+        } else {
+          const errorText = await response.text();
+          console.error("HTTP Error:", response.status, errorText);
+          
+          if (response.status === 401) {
+            console.log("Unauthorized - removing token");
+            localStorage.removeItem("access_token");
+            this.generateFallbackRecommendations();
+          } else if (response.status === 404) {
+            console.error("Recommendations endpoint not found - check your routes");
+            this.generateFallbackRecommendations();
+          } else {
+            console.error("Failed to fetch recommendations - HTTP", response.status);
+            this.generateFallbackRecommendations();
+          }
+        }
+      } catch (err) {
+        console.error("Network error fetching recommendations:", err);
+        console.error("Error details:", err.message);
+        this.generateFallbackRecommendations();
+      } finally {
+        this.recommendationsLoading = false;
       }
     },
 
+    // Updated generateFallbackRecommendations with better logging
+    generateFallbackRecommendations() {
+      if (!this.products || this.products.length === 0) {
+        console.log("No products available for fallback recommendations");
+        return;
+      }
+
+      console.log("Generating fallback recommendations from", this.products.length, "products");
+      
+      // Generate random recommendations when no user data is available
+      const shuffled = [...this.products].sort(() => 0.5 - Math.random());
+      this.recommendations = shuffled.slice(0, 8);
+      
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        this.recommendationTitle = "Featured Products";
+      } else {
+        this.recommendationTitle = "Popular Products";
+      }
+      
+      // Set default reasons for fallback recommendations
+      this.recommendations.forEach(product => {
+        this.recommendationReasons[product.product_id || product.id] = "Featured";
+      });
+      
+      console.log("Fallback recommendations set:", this.recommendations.length, "products");
+    },
+
+    getRecommendationReason(product) {
+      const productId = product.product_id || product.id;
+      return this.recommendationReasons[productId] || "Recommended";
+    },
+
+    // Updated to handle both product_id and id fields
+    viewProductDetails(product) {
+      const productId = product.product_id || product.id;
+      this.$router.push({ name: 'product-details', params: { id: productId } });
+    },
+
+    // FIXED: Single addToCart method that handles both product_id and id fields
     async addToCart(product) {
       const token = localStorage.getItem("access_token");
       if (!token) {
         this.loginModalVisible = true;
         return;
       }
+
+      const productId = product.product_id || product.id;
       
       try {
-        const response = await fetch(`http://127.0.0.1:8000/api/cart/add/${product.id}`, {
+        const response = await fetch(`http://127.0.0.1:8000/api/cart/add/${productId}`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -496,16 +433,19 @@ getRecommendationReason(product) {
       }
     },
 
+    // Updated to handle both product_id and id fields
     async toggleWishlist(product) {
       const token = localStorage.getItem("access_token");
       if (!token) {
         this.loginModalVisible = true;
         return;
       }
+
+      const productId = product.product_id || product.id;
       
       try {
-        if (this.isInWishlist(product.id)) {
-          const response = await fetch(`http://127.0.0.1:8000/api/wishlist/remove/${product.id}`, {
+        if (this.isInWishlist(productId)) {
+          const response = await fetch(`http://127.0.0.1:8000/api/wishlist/remove/${productId}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -514,12 +454,12 @@ getRecommendationReason(product) {
           });
           
           if (response.ok) {
-            this.wishlistItems = this.wishlistItems.filter(id => id !== product.id);
+            this.wishlistItems = this.wishlistItems.filter(id => id !== productId);
           } else if (response.status === 401) {
             this.loginModalVisible = true;
           }
         } else {
-          const response = await fetch(`http://127.0.0.1:8000/api/wishlist/add/${product.id}`, {
+          const response = await fetch(`http://127.0.0.1:8000/api/wishlist/add/${productId}`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -528,13 +468,56 @@ getRecommendationReason(product) {
           });
           
           if (response.ok) {
-            this.wishlistItems.push(product.id);
+            this.wishlistItems.push(productId);
           } else if (response.status === 401) {
             this.loginModalVisible = true;
           }
         }
       } catch (err) {
         console.error("Error updating wishlist:", err);
+      }
+    },
+
+    // Debug method to test recommendations
+    async testRecommendations() {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        console.log("No token for testing");
+        return;
+      }
+
+      try {
+        // Test the debug endpoint
+        const response = await fetch('http://127.0.0.1:8000/api/recommendations/debug', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Debug data:", data);
+        } else {
+          console.error("Debug endpoint failed:", response.status);
+        }
+      } catch (err) {
+        console.error("Error testing recommendations:", err);
+      }
+    },
+
+    // Pagination methods
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    },
+    prevPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     },
     
@@ -603,10 +586,6 @@ getRecommendationReason(product) {
       this.selectedCategory = "";
       this.filterProducts();
     },
-
-    viewProductDetails(product) {
-      this.$router.push({ name: 'product-details', params: { id: product.id } });
-    },
     
     async fetchWishlist() {
       const token = localStorage.getItem("access_token");
@@ -635,86 +614,18 @@ getRecommendationReason(product) {
     closeLoginModal() {
       this.loginModalVisible = false;
     },
-
-    // Analyze why each product was recommended
-    async analyzeRecommendationReasons() {
-      const token = localStorage.getItem("access_token");
-      if (!token) return;
-
-      try {
-        // Get user's purchase history to determine recommendation reasons
-        const response = await fetch('http://127.0.0.1:8000/api/purchase-history', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const purchaseHistory = await response.json();
-          
-          // Analyze each recommendation
-          this.recommendations.forEach(product => {
-            this.recommendationReasons[product.id] = this.determineRecommendationReason(product, purchaseHistory);
-          });
-        }
-      } catch (err) {
-        console.error("Error analyzing recommendation reasons:", err);
-        // Set default reasons if analysis fails
-        this.recommendations.forEach(product => {
-          this.recommendationReasons[product.id] = "Trending";
-        });
-      }
-    },
-
-    determineRecommendationReason(product, purchaseHistory) {
-      if (!purchaseHistory || purchaseHistory.length === 0) {
-        return "Popular";
-      }
-
-      // Check if same seller
-      const sameSeller = purchaseHistory.find(purchase => 
-        purchase.seller_id === product.user_id
-      );
-      if (sameSeller) {
-        return "Favorite Seller";
-      }
-
-      // Check if same category
-      const sameCategory = purchaseHistory.find(purchase => 
-        purchase.category === product.category
-      );
-      if (sameCategory) {
-        return "Similar Category";
-      }
-
-      // Check if similar name keywords
-      const productWords = product.name.toLowerCase().split(' ');
-      const hasKeywordMatch = purchaseHistory.some(purchase => {
-        const purchaseWords = purchase.name.toLowerCase().split(' ');
-        return productWords.some(word => 
-          word.length > 3 && purchaseWords.some(pWord => pWord.includes(word))
-        );
-      });
-      
-      if (hasKeywordMatch) {
-        return "Similar Products";
-      }
-
-      return "Recommended";
-    },
-
-    getRecommendationReason(product) {
-      return this.recommendationReasons[product.id] ;
-    },
   },
   mounted() {
     this.fetchProducts();
     this.fetchWishlist();
     this.fetchCartCount();
+    
+    // Uncomment this line to test the debug endpoint
+    this.testRecommendations();
   },
 };
 </script>
+
 <style scoped>
 .browse-container {
   max-width: 1200px;
@@ -723,124 +634,341 @@ getRecommendationReason(product) {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
-/* Recommendations Banner Styles */
-.recommendations-banner {
-  background: linear-gradient(135deg, #f8f5ff 0%, #e8dff5 100%);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  height: 120px; /* Fixed height for 5-10% of typical page */
-  overflow: hidden;
+recommendations-banner {
+  background: linear-gradient(135deg, #f9f5fc 0%, #ffffff 100%);
+  border: 1px solid #e6d7f3;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 15px rgba(155, 126, 189, 0.1);
 }
 
 .recommendations-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .recommendations-header h3 {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.3rem;
+  font-weight: 700;
   color: #3b1e54;
+  text-shadow: 0 1px 2px rgba(155, 126, 189, 0.1);
 }
 
 .banner-controls {
   display: flex;
-  gap: 0.25rem;
+  gap: 0.5rem;
 }
 
 .control-btn {
-  width: 24px;
-  height: 24px;
-  border: 1px solid #d4bee4;
-  background: white;
+  width: 36px;
+  height: 36px;
+  border: 2px solid #e6d7f3;
+  background: linear-gradient(135deg, #ffffff 0%, #f9f5fc 100%);
   border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   font-weight: bold;
   color: #9b7ebd;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(155, 126, 189, 0.15);
 }
 
 .control-btn:hover:not(:disabled) {
-  background: #d4bee4;
-  color: #3b1e54;
+  background: linear-gradient(135deg, #9b7ebd 0%, #d4bee4 100%);
+  border-color: #9b7ebd;
+  color: #ffffff;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 15px rgba(155, 126, 189, 0.3);
 }
 
 .control-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.3;
   cursor: not-allowed;
+  transform: none;
 }
 
 .recommendations-slider {
   overflow: hidden;
-  height: 70px;
+  height: 280px; /* Increased height to accommodate product names */
+  border-radius: 0.5rem;
 }
 
 .recommendations-track {
   display: flex;
-  transition: transform 0.3s ease;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   height: 100%;
+  gap: 1rem;
 }
 
 .recommendation-card {
-  flex: 0 0 25%; /* Show 4 cards at once on desktop */
+  flex: 0 0 calc(25% - 0.9375rem); /* Show 4 cards at once */
   display: flex;
-  background: white;
-  border-radius: 0.25rem;
-  margin-right: 0.5rem;
+  flex-direction: column;
+  background: linear-gradient(135deg, #ffffff 0%, #f9f5fc 100%);
+  border-radius: 0.75rem;
   cursor: pointer;
-  transition: transform 0.2s;
-  border: 1px solid #e8dff5;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid #e6d7f3;
   overflow: hidden;
+  position: relative;
+  box-shadow: 0 4px 15px rgba(155, 126, 189, 0.1);
 }
 
 .recommendation-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(155, 126, 189, 0.15);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 12px 30px rgba(155, 126, 189, 0.25);
+  border-color: #9b7ebd;
+}
+
+.recommendation-tag {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: linear-gradient(135deg, #9b7ebd 0%, #d4bee4 100%);
+  color: #ffffff;
+  padding: 0.25rem 0.6rem;
+  border-radius: 1rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  z-index: 3;
+  box-shadow: 0 2px 8px rgba(155, 126, 189, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  max-width: 70%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .recommendation-image {
-  width: 70px;
-  height: 68px;
+  width: 100%;
+  height: 180px; /* Adjusted height */
   flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.5rem 0.5rem 0 0;
 }
 
 .recommendation-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.recommendation-info {
-  padding: 0.5rem;
+.recommendation-card:hover .recommendation-image img {
+  transform: scale(1.1);
+}
+
+/* NEW: Product details section outside the image */
+.recommendation-details {
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   flex: 1;
-  min-width: 0;
+  background: linear-gradient(135deg, #ffffff 0%, #f9f5fc 100%);
+  border-radius: 0 0 0.5rem 0.5rem;
 }
 
-.recommendation-info h4 {
-  margin: 0 0 0.25rem 0;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #333;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.product-name {
+  margin: 0 0 0.6rem 0;
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  color: #3b1e54 !important;
+  line-height: 1.3 !important;
+  text-align: center;
+  max-height: none;
+  overflow: visible;
+  text-overflow: unset;
+  display: block;
+  -webkit-line-clamp: unset;
+  -webkit-box-orient: unset;
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 .recommendation-price {
-  font-size: 0.7rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 800;
   color: #9b7ebd;
+  margin-top: auto;
+  padding: 0.4rem 0.8rem;
+  background: linear-gradient(135deg, #e6d7f3 0%, #f9f5fc 100%);
+  border-radius: 1rem;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(155, 126, 189, 0.15);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+  .recommendations-banner {
+    padding: 1.25rem;
+  }
+  
+  .recommendations-header h3 {
+    font-size: 1.2rem;
+  }
+  
+  .recommendation-card {
+    flex: 0 0 calc(33.333% - 0.833rem); /* Show 3 cards on tablet */
+  }
+  
+  .recommendations-slider {
+    height: 270px;
+  }
+  
+  .recommendation-image {
+    height: 170px;
+  }
+  
+  .product-name {
+    font-size: 0.9rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .recommendations-banner {
+    padding: 1rem;
+    border-radius: 0.5rem;
+  }
+  
+  .recommendations-header {
+    margin-bottom: 1rem;
+  }
+  
+  .recommendations-header h3 {
+    font-size: 1.1rem;
+  }
+  
+  .control-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+  
+  .recommendations-slider {
+    height: 250px;
+  }
+  
+  .recommendation-card {
+    flex: 0 0 calc(50% - 0.625rem); /* Show 2 cards on tablet */
+  }
+  
+  .recommendation-image {
+    height: 150px;
+  }
+  
+  .recommendation-details {
+    padding: 0.8rem;
+  }
+  
+  .product-name {
+    font-size: 0.85rem !important;
+    margin-bottom: 0.5rem;
+  }
+  
+  .recommendation-price {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.6rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .recommendations-banner {
+    padding: 0.8rem;
+    margin-bottom: 1rem;
+  }
+  
+  .recommendations-header {
+    margin-bottom: 0.8rem;
+  }
+  
+  .recommendations-header h3 {
+    font-size: 1rem;
+  }
+  
+  .control-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 0.9rem;
+  }
+  
+  .recommendations-slider {
+    height: 230px;
+  }
+  
+  .recommendation-card {
+    flex: 0 0 calc(50% - 0.625rem); /* Keep 2 cards on mobile */
+  }
+  
+  .recommendations-track {
+    gap: 1rem;
+  }
+  
+  .recommendation-image {
+    height: 130px;
+  }
+  
+  .recommendation-details {
+    padding: 0.75rem;
+  }
+  
+  .product-name {
+    font-size: 0.8rem !important;
+    margin-bottom: 0.4rem;
+  }
+  
+  .recommendation-price {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .recommendation-tag {
+    font-size: 0.6rem;
+    padding: 0.2rem 0.5rem;
+    top: 0.4rem;
+    right: 0.4rem;
+    max-width: 60%;
+  }
+}
+
+@media (max-width: 480px) {
+  .recommendations-track {
+    gap: 0.8rem;
+  }
+  
+  .recommendation-card {
+    flex: 0 0 calc(50% - 0.4rem);
+  }
+  
+  .recommendations-slider {
+    height: 220px;
+  }
+  
+  .recommendation-image {
+    height: 120px;
+  }
+  
+  .recommendation-details {
+    padding: 0.6rem;
+  }
+  
+  .product-name {
+    font-size: 0.75rem !important;
+  }
+  
+  .recommendation-price {
+    font-size: 0.7rem;
+  }
 }
 
 /* Search and Filter Bar */

@@ -387,7 +387,7 @@ export default {
 };
 </script>
   
-  <style scoped>
+<style scoped>
   .checkout-page {
     min-height: 80vh;
     background-color: #f9f9fc;

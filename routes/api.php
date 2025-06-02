@@ -73,8 +73,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     // Recommendations
-    Route::get('/recommendations', [RecommendationController::class, 'getRecommendations']);
-    Route::get('/debug-recommendations', [RecommendationController::class, 'debugRecommendations']);
+   Route::get('/recommendations', [RecommendationController::class, 'getRecommendations']);
+    Route::get('/recommendations/debug', [RecommendationController::class, 'debugRecommendations']);
     Route::get('/purchase-history', [PurchaseController::class, 'purchaseHistory']);
 
     // User order routes

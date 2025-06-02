@@ -15,7 +15,7 @@ class Product extends Model
     protected $fillable = [
         'name', 'description', 'price', 'category_id', 'user_id', 'additional_info'
     ];
-
+   protected $appends = ['category_name'];
     public function images()
     {
         return $this->hasMany(ProductImage::class, 'product_id', 'product_id');
@@ -48,5 +48,9 @@ class Product extends Model
     {
         return $this->hasMany(OrderItem::class, 'product_id', 'product_id');
     }
-
+// Accessor to get category name easily
+    public function getCategoryNameAttribute()
+    {
+        return $this->category ? $this->category->name : null;
+    }
 }

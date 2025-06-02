@@ -9,7 +9,7 @@ class Order extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'order_id';
+    protected $primaryKey = 'order_id'; // Keep this consistent
     
     protected $fillable = [
         'user_id',
@@ -31,7 +31,6 @@ class Order extends Model
         return $this->hasMany(OrderItem::class, 'order_id', 'order_id');
     }
     
-    // Helper method to get all products in this order
     public function products()
     {
         return $this->hasManyThrough(
