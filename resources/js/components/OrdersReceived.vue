@@ -3,10 +3,17 @@
       <!-- Side navigation -->
       <aside class="side-nav">
         <router-link :to="overviewRoute" exact-active-class="active">Overview</router-link>
-        <router-link to="/orders-received" exact-active-class="active">Orders Received</router-link>
-        <router-link to="/account" exact-active-class="active">Account</router-link>
+         <router-link to="/orders-received">View Orders Received</router-link>
+      <router-link to="/order-history">Orders History</router-link>
+        <!-- <router-link to="/account" exact-active-class="active">Account</router-link> -->
         <router-link to="/password-change" exact-active-class="active">Change Password</router-link>
-        <router-link to="/email-change" exact-active-class="active">Change Email</router-link>
+           <!-- Selling Collapsible -->
+     
+        <div class="collapsible-content">
+          <router-link to="/add-product">Add Product</router-link>
+          <router-link to="/manage-products">Manage Products</router-link>
+        </div>
+      
       </aside>
   
       <section class="dashboard-content">

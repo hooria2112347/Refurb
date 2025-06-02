@@ -1,5 +1,38 @@
 <template>
   <div class="browse-container">
+    <!-- Recommendations Banner (5-10% of page height) -->
+    <div class="recommendations-banner">
+      <div class="recommendations-header">
+        <h3>{{ recommendationTitle }}</h3>
+        <div class="banner-controls">
+          <button class="control-btn" @click="prevRecommendation" :disabled="currentRecommendationIndex === 0">‹</button>
+          <button class="control-btn" @click="nextRecommendation" :disabled="currentRecommendationIndex >= recommendations.length - visibleRecommendations">›</button>
+        </div>
+      </div>
+      <div class="recommendations-slider">
+        <div class="recommendations-track" :style="{ transform: `translateX(-${currentRecommendationIndex * (100 / visibleRecommendations)}%)` }">
+          <div 
+            v-for="product in recommendations" 
+            :key="product.id" 
+            class="recommendation-card"
+            @click="viewProductDetails(product)"
+          >
+            <div class="recommendation-tag">{{ getRecommendationReason(product) }}</div>
+            <div class="recommendation-image">
+              <img 
+                :src="product.images && product.images.length ? product.images[0] : 'https://via.placeholder.com/150'" 
+                :alt="product.name"
+              />
+            </div>
+            <div class="recommendation-info">
+              <h4>{{ product.name }}</h4>
+              <span class="recommendation-price">{{ product.price }} PKR</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Search and Filter Bar -->
     <div class="search-filter-bar">
       <div class="search-category-container">
@@ -61,7 +94,7 @@
           <!-- Product Image with Overlay Actions -->
           <div class="image-container">
             <img 
-              :src="product.images.length ? product.images[0] : 'default-image.jpg'" 
+              :src="product.images && product.images.length ? product.images[0] : 'https://via.placeholder.com/200'" 
               alt="Product Image" 
               class="product-image"
             />
@@ -152,7 +185,6 @@ export default {
       showCartNotification: false,
       cartNotificationMessage: "",
       cartCount: 0,
-      
       // Search and filter data
       searchQuery: "",
       selectedCategory: "",
@@ -160,7 +192,15 @@ export default {
       
       // Pagination data
       currentPage: 1,
-      productsPerPage: 10
+      productsPerPage: 10,
+      
+      // Recommendation system data
+      recommendations: [],
+      currentRecommendationIndex: 0,
+      visibleRecommendations: 4,
+      recommendationTitle: "Recommended for You",
+      recommendationsLoading: false,
+      recommendationReasons: {} // Store reasons for each product
     };
   },
   computed: {
@@ -177,6 +217,190 @@ export default {
     }
   },
   methods: {
+async fetchRecommendations() {
+  const token = localStorage.getItem("access_token");
+  
+  if (!token) {
+    console.log("No token found, showing fallback recommendations");
+    this.generateFallbackRecommendations();
+    return;
+  }
+  
+  this.recommendationsLoading = true;
+  
+  try {
+    console.log("Fetching recommendations with token:", token.substring(0, 10) + "...");
+    
+    const response = await fetch('http://127.0.0.1:8000/api/recommendations', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log("Response status:", response.status);
+    console.log("Response headers:", response.headers);
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log("Recommendations data received:", data);
+      
+      // Check if it's the "no recommendations yet" message
+      if (data.message && data.recommendations) {
+        this.recommendationTitle = "Popular Products";
+        this.recommendations = data.recommendations;
+        console.log("Using popular products as recommendations");
+      } else if (Array.isArray(data)) {
+        // We have real recommendations
+        this.recommendations = data;
+        this.recommendationTitle = "Recommended for You";
+        console.log("Using personalized recommendations");
+      } else {
+        console.log("Unexpected data format, using fallback");
+        this.generateFallbackRecommendations();
+      }
+      
+      // Set recommendation reasons from backend
+      this.recommendations.forEach(product => {
+        if (product.recommendation_reason) {
+          this.recommendationReasons[product.id] = product.recommendation_reason;
+        }
+      });
+      
+      console.log("Final recommendations:", this.recommendations);
+      console.log("Recommendation reasons:", this.recommendationReasons);
+      
+    } else {
+      const errorText = await response.text();
+      console.error("HTTP Error:", response.status, errorText);
+      
+      if (response.status === 401) {
+        console.log("Unauthorized - removing token");
+        localStorage.removeItem("access_token");
+        this.generateFallbackRecommendations();
+      } else if (response.status === 404) {
+        console.error("Recommendations endpoint not found - check your routes");
+        this.generateFallbackRecommendations();
+      } else {
+        console.error("Failed to fetch recommendations - HTTP", response.status);
+        this.generateFallbackRecommendations();
+      }
+    }
+  } catch (err) {
+    console.error("Network error fetching recommendations:", err);
+    console.error("Error details:", err.message);
+    this.generateFallbackRecommendations();
+  } finally {
+    this.recommendationsLoading = false;
+  }
+},
+
+// Add a method to test the recommendations endpoint
+async testRecommendationsEndpoint() {
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    console.log("No token for testing");
+    return;
+  }
+
+  try {
+    // Test if the endpoint exists
+    const response = await fetch('http://127.0.0.1:8000/api/recommendations', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    console.log("Test response status:", response.status);
+    const text = await response.text();
+    console.log("Test response body:", text);
+
+    if (response.status === 404) {
+      console.error("❌ Route not found! Check your routes/api.php file");
+    } else if (response.status === 401) {
+      console.error("❌ Unauthorized! Check your authentication");
+    } else if (response.status === 500) {
+      console.error("❌ Server error! Check your Laravel logs");
+    }
+  } catch (err) {
+    console.error("❌ Network error:", err.message);
+  }
+},
+
+// Updated generateFallbackRecommendations with better logging
+generateFallbackRecommendations() {
+  if (!this.products || this.products.length === 0) {
+    console.log("No products available for fallback recommendations");
+    return;
+  }
+
+  console.log("Generating fallback recommendations from", this.products.length, "products");
+  
+  // Generate random recommendations when no user data is available
+  const shuffled = [...this.products].sort(() => 0.5 - Math.random());
+  this.recommendations = shuffled.slice(0, 8);
+  
+  const token = localStorage.getItem("access_token");
+  if (!token) {
+    this.recommendationTitle = "Featured Products";
+  } else {
+    this.recommendationTitle = "Popular Products";
+  }
+  
+  // Set default reasons for fallback recommendations
+  this.recommendations.forEach(product => {
+    this.recommendationReasons[product.id] = "Featured";
+  });
+  
+  console.log("Fallback recommendations set:", this.recommendations.length, "products");
+},
+
+// Simplified - no need for complex analysis since backend handles it
+async analyzeRecommendationReasons() {
+  // This method is now simplified since the backend provides the reasons
+  this.recommendations.forEach(product => {
+    if (!this.recommendationReasons[product.id]) {
+      this.recommendationReasons[product.id] = "Recommended";
+    }
+  });
+},
+
+getRecommendationReason(product) {
+  return this.recommendationReasons[product.id] || "Recommended";
+},
+    // Fallback recommendations for non-logged-in users or when no purchase history exists
+    generateFallbackRecommendations() {
+      if (!this.products || this.products.length === 0) {
+        return;
+      }
+
+      // Generate random recommendations when no user data is available
+      const shuffled = [...this.products].sort(() => 0.5 - Math.random());
+      this.recommendations = shuffled.slice(0, 8);
+      
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        this.recommendationTitle = "Featured Products";
+      } else {
+        this.recommendationTitle = "Based on your interests";
+      }
+    },
+    
+    nextRecommendation() {
+      if (this.currentRecommendationIndex < this.recommendations.length - this.visibleRecommendations) {
+        this.currentRecommendationIndex++;
+      }
+    },
+    
+    prevRecommendation() {
+      if (this.currentRecommendationIndex > 0) {
+        this.currentRecommendationIndex--;
+      }
+    },
+
     // Pagination methods
     nextPage() {
       if (this.currentPage < this.totalPages) {
@@ -190,8 +414,7 @@ export default {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     },
-    
-    // Add to cart 
+
     async addToCart(product) {
       const token = localStorage.getItem("access_token");
       if (!token) {
@@ -204,12 +427,15 @@ export default {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           },
           body: JSON.stringify({
             quantity: 1
           })
         });
+        
+        const data = await response.json();
         
         if (response.ok) {
           this.fetchCartCount();
@@ -220,15 +446,98 @@ export default {
             this.showCartNotification = false;
           }, 3000);
         } else {
-          throw new Error('Failed to add to cart');
+          console.error('Cart error:', data);
+          this.error = data.error || data.message || 'Failed to add to cart';
+          
+          if (response.status === 401) {
+            this.loginModalVisible = true;
+          }
         }
       } catch (err) {
         console.error("Error adding to cart:", err);
-        this.error = "Failed to add to cart. Please try again.";
+        this.error = "Network error. Please check your connection and try again.";
       }
     },
     
-    // Fetch products
+    async fetchCartCount() {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        this.cartCount = 0;
+        return;
+      }
+      
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/cart', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data)) {
+            this.cartCount = data.reduce((total, item) => total + (item.quantity || 0), 0);
+          } else if (data.items && Array.isArray(data.items)) {
+            this.cartCount = data.items.reduce((total, item) => total + (item.quantity || 0), 0);
+          } else {
+            this.cartCount = 0;
+          }
+        } else if (response.status === 401) {
+          this.cartCount = 0;
+          localStorage.removeItem("access_token");
+        } else {
+          console.error("Failed to fetch cart count");
+          this.cartCount = 0;
+        }
+      } catch (err) {
+        console.error("Error fetching cart:", err);
+        this.cartCount = 0;
+      }
+    },
+
+    async toggleWishlist(product) {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        this.loginModalVisible = true;
+        return;
+      }
+      
+      try {
+        if (this.isInWishlist(product.id)) {
+          const response = await fetch(`http://127.0.0.1:8000/api/wishlist/remove/${product.id}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            this.wishlistItems = this.wishlistItems.filter(id => id !== product.id);
+          } else if (response.status === 401) {
+            this.loginModalVisible = true;
+          }
+        } else {
+          const response = await fetch(`http://127.0.0.1:8000/api/wishlist/add/${product.id}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            this.wishlistItems.push(product.id);
+          } else if (response.status === 401) {
+            this.loginModalVisible = true;
+          }
+        }
+      } catch (err) {
+        console.error("Error updating wishlist:", err);
+      }
+    },
+    
     async fetchProducts() {
       this.loading = true;
       this.error = null;
@@ -243,6 +552,9 @@ export default {
         
         this.extractCategories();
         
+        // Fetch recommendations after products are loaded
+        await this.fetchRecommendations();
+        
       } catch (err) {
         this.error = 'Failed to fetch products.';
         console.error(err);
@@ -251,7 +563,6 @@ export default {
       }
     },
     
-    // Extract categories
     extractCategories() {
       const categorySet = new Set();
       this.products.forEach(product => {
@@ -262,26 +573,21 @@ export default {
       this.categories = Array.from(categorySet).sort();
     },
     
-    // Filter products
     filterProducts() {
       this.filteredProducts = this.products.filter(product => {
-        // Search query filter
         const matchesSearch = !this.searchQuery || 
           product.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
           (product.description && product.description.toLowerCase().includes(this.searchQuery.toLowerCase()));
         
-        // Category filter
         const matchesCategory = !this.selectedCategory || 
           product.category === this.selectedCategory;
         
         return matchesSearch && matchesCategory;
       });
       
-      // Reset to first page when filters change
       this.currentPage = 1;
     },
     
-    // Reset filters
     resetFilters() {
       this.searchQuery = "";
       this.selectedCategory = "";
@@ -298,43 +604,10 @@ export default {
       this.filterProducts();
     },
 
-    // View product details
     viewProductDetails(product) {
       this.$router.push({ name: 'product-details', params: { id: product.id } });
     },
     
-    // Go to cart
-    goToCart() {
-      this.$router.push({ name: 'cart' });
-    },
-    
-    // Go to wishlist
-    goToWishlist() {
-      this.$router.push({ name: 'wishlist' });
-    },
-    
-    // Fetch cart count
-    async fetchCartCount() {
-      const token = localStorage.getItem("access_token");
-      if (!token) return;
-      
-      try {
-        const response = await fetch('http://127.0.0.1:8000/api/cart', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          this.cartCount = data.reduce((total, item) => total + item.quantity, 0);
-        }
-      } catch (err) {
-        console.error("Error fetching cart:", err);
-      }
-    },
-    
-    // Fetch wishlist
     async fetchWishlist() {
       const token = localStorage.getItem("access_token");
       if (!token) return;
@@ -353,55 +626,86 @@ export default {
       } catch (err) {
         console.error("Error fetching wishlist:", err);
       }
-    },
+    }, 
     
-    // Check if in wishlist
     isInWishlist(productId) {
       return this.wishlistItems.includes(productId);
     },
     
-    // Toggle wishlist
-    async toggleWishlist(product) {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        this.loginModalVisible = true;
-        return;
-      }
-      
-      try {
-        if (this.isInWishlist(product.id)) {
-          // Remove from wishlist
-          const response = await fetch(`http://127.0.0.1:8000/api/wishlist/remove/${product.id}`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          
-          if (response.ok) {
-            this.wishlistItems = this.wishlistItems.filter(id => id !== product.id);
-          }
-        } else {
-          // Add to wishlist
-          const response = await fetch(`http://127.0.0.1:8000/api/wishlist/add/${product.id}`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          
-          if (response.ok) {
-            this.wishlistItems.push(product.id);
-          }
-        }
-      } catch (err) {
-        console.error("Error updating wishlist:", err);
-      }
-    },
-    
-    // Close login modal
     closeLoginModal() {
       this.loginModalVisible = false;
+    },
+
+    // Analyze why each product was recommended
+    async analyzeRecommendationReasons() {
+      const token = localStorage.getItem("access_token");
+      if (!token) return;
+
+      try {
+        // Get user's purchase history to determine recommendation reasons
+        const response = await fetch('http://127.0.0.1:8000/api/purchase-history', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const purchaseHistory = await response.json();
+          
+          // Analyze each recommendation
+          this.recommendations.forEach(product => {
+            this.recommendationReasons[product.id] = this.determineRecommendationReason(product, purchaseHistory);
+          });
+        }
+      } catch (err) {
+        console.error("Error analyzing recommendation reasons:", err);
+        // Set default reasons if analysis fails
+        this.recommendations.forEach(product => {
+          this.recommendationReasons[product.id] = "Trending";
+        });
+      }
+    },
+
+    determineRecommendationReason(product, purchaseHistory) {
+      if (!purchaseHistory || purchaseHistory.length === 0) {
+        return "Popular";
+      }
+
+      // Check if same seller
+      const sameSeller = purchaseHistory.find(purchase => 
+        purchase.seller_id === product.user_id
+      );
+      if (sameSeller) {
+        return "Favorite Seller";
+      }
+
+      // Check if same category
+      const sameCategory = purchaseHistory.find(purchase => 
+        purchase.category === product.category
+      );
+      if (sameCategory) {
+        return "Similar Category";
+      }
+
+      // Check if similar name keywords
+      const productWords = product.name.toLowerCase().split(' ');
+      const hasKeywordMatch = purchaseHistory.some(purchase => {
+        const purchaseWords = purchase.name.toLowerCase().split(' ');
+        return productWords.some(word => 
+          word.length > 3 && purchaseWords.some(pWord => pWord.includes(word))
+        );
+      });
+      
+      if (hasKeywordMatch) {
+        return "Similar Products";
+      }
+
+      return "Recommended";
+    },
+
+    getRecommendationReason(product) {
+      return this.recommendationReasons[product.id] ;
     },
   },
   mounted() {
@@ -411,13 +715,132 @@ export default {
   },
 };
 </script>
-
 <style scoped>
 .browse-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0.5rem;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Recommendations Banner Styles */
+.recommendations-banner {
+  background: linear-gradient(135deg, #f8f5ff 0%, #e8dff5 100%);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  height: 120px; /* Fixed height for 5-10% of typical page */
+  overflow: hidden;
+}
+
+.recommendations-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.recommendations-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #3b1e54;
+}
+
+.banner-controls {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.control-btn {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #d4bee4;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #9b7ebd;
+  transition: all 0.2s;
+}
+
+.control-btn:hover:not(:disabled) {
+  background: #d4bee4;
+  color: #3b1e54;
+}
+
+.control-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.recommendations-slider {
+  overflow: hidden;
+  height: 70px;
+}
+
+.recommendations-track {
+  display: flex;
+  transition: transform 0.3s ease;
+  height: 100%;
+}
+
+.recommendation-card {
+  flex: 0 0 25%; /* Show 4 cards at once on desktop */
+  display: flex;
+  background: white;
+  border-radius: 0.25rem;
+  margin-right: 0.5rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+  border: 1px solid #e8dff5;
+  overflow: hidden;
+}
+
+.recommendation-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(155, 126, 189, 0.15);
+}
+
+.recommendation-image {
+  width: 70px;
+  height: 68px;
+  flex-shrink: 0;
+}
+
+.recommendation-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.recommendation-info {
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.recommendation-info h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recommendation-price {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #9b7ebd;
 }
 
 /* Search and Filter Bar */
@@ -546,7 +969,7 @@ export default {
   transition: transform 0.15s, box-shadow 0.15s;
   background: white;
   cursor: pointer;
-  min-height: 230px; /* Increase minimum height */
+  min-height: 230px;
 }
 
 .product-card:hover {
@@ -623,12 +1046,12 @@ export default {
 
 .product-info h3 {
   margin: 0;
-  font-size: 0.9rem; /* Increase from 0.8rem to 0.9rem */
-  font-weight: 600; /* Make font weight bolder */
+  font-size: 0.9rem;
+  font-weight: 600;
   color: #333;
-  margin-bottom: 0.3rem; /* Increase bottom margin */
-  line-height: 1.2; /* Add line height */
-  height: 2.4em; /* Set fixed height for 2 lines */
+  margin-bottom: 0.3rem;
+  line-height: 1.2;
+  height: 2.4em;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -817,6 +1240,24 @@ export default {
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
+  .recommendations-banner {
+    height: 100px;
+    padding: 0.75rem;
+  }
+  
+  .recommendation-card {
+    flex: 0 0 33.333%; /* Show 3 cards on tablet */
+  }
+  
+  .recommendations-header h3 {
+    font-size: 0.9rem;
+  }
+  
+  .recommendation-image {
+    width: 60px;
+    height: 58px;
+  }
+  
   .search-category-container {
     flex-direction: column;
     align-items: stretch;
@@ -840,6 +1281,28 @@ export default {
 }
 
 @media (max-width: 480px) {
+  .recommendations-banner {
+    height: 90px;
+    padding: 0.5rem;
+  }
+  
+  .recommendation-card {
+    flex: 0 0 50%; /* Show 2 cards on mobile */
+  }
+  
+  .recommendation-image {
+    width: 50px;
+    height: 48px;
+  }
+  
+  .recommendation-info h4 {
+    font-size: 0.7rem;
+  }
+  
+  .recommendation-price {
+    font-size: 0.65rem;
+  }
+  
   .products-grid {
     grid-template-columns: repeat(2, 1fr);
   }

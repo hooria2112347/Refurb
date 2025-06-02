@@ -3,10 +3,11 @@
     <!-- Side navigation for Scrap Seller -->
     <aside class="side-nav">
       <!-- Non-collapsible links -->
-      <router-link to="/scrap-seller-dashboard">Overview</router-link>
-      <router-link to="/account">Account</router-link>
+      <!-- <router-link to="/scrap-seller-dashboard">Overview</router-link>
+      <router-link to="/account">Account</router-link> -->
       <router-link to="/orders-received">View Orders Received</router-link>
-
+      <router-link to="/order-history">Orders History</router-link>
+      
       <!-- Selling Collapsible -->
       <div 
         class="collapsible" 
@@ -45,7 +46,7 @@
     </aside>
 
     <section class="dashboard-content">
-      <h2>Welcome to the Scrap Seller Dashboard</h2>
+      <h2>Welcome to your dashboard</h2>
       <p>Manage your scrap product listings and handle custom requests.</p>
       <!-- Place your scrap-seller content here -->
     </section>

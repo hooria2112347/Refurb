@@ -140,9 +140,9 @@ export default {
           if (role === "admin") {
             this.$router.push("/admin-dashboard");
           } else if (role === "artist") {
-            this.$router.push("/artist-dashboard");
+            this.$router.push("/scrap-items");
           } else if (role === "scrapSeller") {
-            this.$router.push("/scrap-seller-dashboard");
+            this.$router.push("/scrap-items");
           } else {
             // general or any other role
             this.$router.push("/");

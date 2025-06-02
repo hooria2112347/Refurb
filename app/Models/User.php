@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -15,9 +14,11 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
-        'password',
         'phone',
+        'password',
         'role',
+        'total_rating',
+        'rating_count',
     ];
 
     protected $hidden = [
@@ -27,43 +28,46 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'total_rating' => 'decimal:2',
+        'rating_count' => 'integer',
     ];
 
-    // Add this relationship
+    /**
+     * Add a rating to this user
+     */
+    public function addRating($rating)
+    {
+        $this->total_rating += $rating;
+        $this->rating_count += 1;
+        $this->save();
+        
+        return $this;
+    }
+
+    /**
+     * Get the average rating for this user
+     */
+    public function getAverageRatingAttribute()
+    {
+        if ($this->rating_count > 0) {
+            return round($this->total_rating / $this->rating_count, 1);
+        }
+        return 0;
+    }
+
+    /**
+     * Get products belonging to this user
+     */
     public function products()
     {
-        return $this->hasMany(Product::class, 'user_id', 'id');
-    }
-
-    public function orders()
-    {
-        return $this->hasMany(Order::class, 'user_id', 'id');
-    }
-    
-    public function cart()
-    {
-        return $this->hasMany(Cart::class);
-    }
-    public function comments()
-    {
-        return $this->hasMany(Comment::class, 'user_id', 'id');
-    }
-
-
-    /**
-     * Get the portfolio projects for this user.
-     */
-    public function portfolioProjects()
-    {
-        return $this->hasMany(PortfolioProject::class);
+        return $this->hasMany(Product::class);
     }
 
     /**
-     * Get all completed projects that this user collaborated on.
+     * Check if user can rate another user
      */
-    public function completedProjects()
+    public function canRate($userId)
     {
-        return $this->belongsToMany(CollaborativeProject::class, 'collaborator_project', 'user_id', 'project_id')
-            ->where('status', 'completed');
+        return $this->id != $userId;
     }
 }

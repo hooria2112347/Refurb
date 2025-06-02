@@ -159,7 +159,6 @@
     </div>
   </div>
 </template>
-
 <script>
 export default {
   data() {
@@ -209,19 +208,32 @@ export default {
       try {
         const response = await fetch('http://127.0.0.1:8000/api/cart', {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
           }
         });
         
         if (!response.ok) {
-          throw new Error('Failed to fetch cart');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch cart');
         }
         
         const data = await response.json();
-        this.cartItems = data.items;
+        this.cartItems = data.items || [];
+        console.log('Cart items loaded:', this.cartItems);
+        
+        // Debug: Check each item's ID structure
+        this.cartItems.forEach(item => {
+          console.log('Cart item:', {
+            id: item.id,
+            product_id: item.product_id,
+            name: item.name
+          });
+        });
       } catch (err) {
         console.error("Error fetching cart:", err);
-        this.error = "Could not load your cart. Please try again.";
+        this.error = err.message || "Could not load your cart. Please try again.";
       } finally {
         this.loading = false;
       }
@@ -232,6 +244,14 @@ export default {
     },
     
     removeFromCart(productId) {
+      // Add validation to ensure productId exists
+      if (!productId) {
+        console.error('Product ID is null or undefined');
+        this.error = 'Invalid product ID';
+        return;
+      }
+      
+      console.log('Removing product with ID:', productId); // Debug log
       this.confirmModalTitle = "Remove Item";
       this.confirmModalMessage = "Are you sure you want to remove this item from your cart?";
       this.confirmActionType = 'remove';
@@ -241,12 +261,22 @@ export default {
     
     // Client-side quantity increment with debounced API update
     incrementQuantity(item) {
+      if (!item.id) {
+        console.error('Item ID is null or undefined');
+        return;
+      }
+      
       item.quantity += 1;
       this.debouncedUpdateQuantity(item.id, item.quantity);
     },
     
     // Client-side quantity decrement with debounced API update
     decrementQuantity(item) {
+      if (!item.id) {
+        console.error('Item ID is null or undefined');
+        return;
+      }
+      
       if (item.quantity > 1) {
         item.quantity -= 1;
         this.debouncedUpdateQuantity(item.id, item.quantity);
@@ -255,6 +285,11 @@ export default {
     
     // Debounced API update to prevent excessive API calls
     debouncedUpdateQuantity(productId, newQuantity) {
+      if (!productId) {
+        console.error('Product ID is null or undefined in debouncedUpdateQuantity');
+        return;
+      }
+      
       this.pendingUpdates[productId] = newQuantity;
       
       if (this.updateTimeout) {
@@ -273,19 +308,36 @@ export default {
       this.pendingUpdates = {};
       
       for (const [productId, quantity] of Object.entries(updates)) {
+        if (!productId || productId === 'null' || productId === 'undefined') {
+          console.error('Invalid product ID in syncPendingUpdates:', productId);
+          continue;
+        }
+        
         try {
-          await fetch(`http://127.0.0.1:8000/api/cart/update/${productId}`, {
+          const response = await fetch(`http://127.0.0.1:8000/api/cart/update/${productId}`, {
             method: 'PUT',
             headers: {
               'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
             },
             body: JSON.stringify({ quantity: quantity })
           });
+          
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to update quantity');
+          }
+          
+          console.log(`Updated quantity for product ${productId} to ${quantity}`);
         } catch (err) {
           console.error("Error updating quantity:", err);
-          // If there's an error, we could restore the original quantity or show an error message
-          // For now, we'll just log the error and keep the client-side quantity
+          // Revert the client-side change if API fails
+          const item = this.cartItems.find(item => item.id == productId);
+          if (item) {
+            // You might want to reload the cart or show an error message
+            this.error = "Failed to update quantity. Please refresh the page.";
+          }
         }
       }
     },
@@ -295,6 +347,63 @@ export default {
       this.confirmModalMessage = "Are you sure you want to remove all items from your cart?";
       this.confirmActionType = 'clear';
       this.showConfirmModal = true;
+    },
+    
+    async confirmAction() {
+      const token = localStorage.getItem("access_token");
+      
+      try {
+        if (this.confirmActionType === 'remove') {
+          // Validate actionItemId before making the request
+          if (!this.actionItemId || this.actionItemId === 'null' || this.actionItemId === 'undefined') {
+            throw new Error('Invalid product ID');
+          }
+          
+          console.log('Removing item with ID:', this.actionItemId); // Debug log
+          
+          const response = await fetch(`http://127.0.0.1:8000/api/cart/remove/${this.actionItemId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            // Remove the item from local cart state
+            this.cartItems = this.cartItems.filter(item => item.id != this.actionItemId);
+            console.log(`Removed item ${this.actionItemId} from cart`);
+          } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to remove item');
+          }
+        } else if (this.confirmActionType === 'clear') {
+          const response = await fetch('http://127.0.0.1:8000/api/cart/clear', {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            // Clear the cart
+            this.cartItems = [];
+            console.log('Cart cleared successfully');
+          } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to clear cart');
+          }
+        }
+      } catch (err) {
+        console.error("Error performing cart action:", err);
+        this.error = err.message || "Action failed. Please try again.";
+      } finally {
+        this.showConfirmModal = false;
+        this.actionItemId = null;
+      }
     },
     
     proceedToCheckout() {
@@ -311,95 +420,8 @@ export default {
       }
       
       // Navigate to checkout page
+      console.log('Proceeding to checkout with items:', this.cartItems.length);
       this.$router.push({ name: 'checkout' });
-    },
-    
-    async performCheckout() {
-      const token = localStorage.getItem("access_token");
-      
-      try {
-        // Show loading state
-        this.loading = true;
-        
-        const response = await fetch('http://127.0.0.1:8000/api/orders', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error('Checkout failed');
-        }
-        
-        const data = await response.json();
-        
-        // Clear the cart after successful checkout
-        this.cartItems = [];
-        
-        // Redirect to order history page with success message
-        this.$router.push({ 
-          name: 'order-history',
-          params: { 
-            message: 'Order placed successfully!',
-            status: 'success',
-            orderId: data.order_id
-          }
-        });
-      } catch (err) {
-        console.error("Error during checkout:", err);
-        this.error = "Checkout failed. Please try again.";
-      } finally {
-        this.loading = false;
-        this.showConfirmModal = false;
-      }
-    },
-    
-    async confirmAction() {
-      const token = localStorage.getItem("access_token");
-      
-      try {
-        if (this.confirmActionType === 'remove') {
-          const response = await fetch(`http://127.0.0.1:8000/api/cart/remove/${this.actionItemId}`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          
-          if (response.ok) {
-            // Remove the item from local cart state
-            this.cartItems = this.cartItems.filter(item => item.id !== this.actionItemId);
-          } else {
-            throw new Error('Failed to remove item');
-          }
-        } else if (this.confirmActionType === 'clear') {
-          const response = await fetch('http://127.0.0.1:8000/api/cart/clear', {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          
-          if (response.ok) {
-            // Clear the cart
-            this.cartItems = [];
-          } else {
-            throw new Error('Failed to clear cart');
-          }
-        } else if (this.confirmActionType === 'checkout') {
-          // Call the checkout method
-          await this.performCheckout();
-          return; // Early return as performCheckout handles its own state
-        }
-      } catch (err) {
-        console.error("Error performing cart action:", err);
-        this.error = "Action failed. Please try again.";
-      } finally {
-        this.showConfirmModal = false;
-        this.actionItemId = null;
-      }
     },
     
     cancelAction() {
@@ -426,7 +448,6 @@ export default {
   }
 };
 </script>
-
 <style scoped>
 .cart-page {
   min-height: 80vh;

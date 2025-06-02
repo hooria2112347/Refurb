@@ -3,8 +3,8 @@
     <!-- Side navigation for Change Password -->
     <aside class="side-nav">
       <!-- Dynamic Overview route based on user.role -->
-      <router-link :to="overviewRoute" exact-active-class="active">Overview</router-link>
-      <router-link to="/account" exact-active-class="active">Account</router-link>
+      <!-- <router-link :to="overviewRoute" exact-active-class="active">Overview</router-link> -->
+      <!-- <router-link to="/account" exact-active-class="active">Account</router-link> -->
       <router-link to="/password-change" exact-active-class="active">Change Password</router-link>
     </aside>
 

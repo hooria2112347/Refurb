@@ -10,7 +10,7 @@ import Login from './components/Login.vue';
 import Signup from './components/Signup.vue';
 import CustomRequest from './components/CustomRequest.vue';
 import AddProduct from './components/AddProduct.vue';
-import Account from './components/Account.vue';
+// import Account from './components/Account.vue';
 import PasswordChange from './components/PasswordChange.vue';
 import ManageProducts from './components/ManageProducts.vue';
 import ForgetPassword from './components/ForgetPassword.vue'; // Import ForgetPassword component
@@ -38,21 +38,24 @@ import CompletedProjects from './components/CompletedProjects.vue';
 import OrderHistory from './components/OrderHistory.vue';
 import Checkout from './components/Checkout.vue';
 import OrdersReceived from './components/OrdersReceived.vue';
+import Recommendations from './components/BrowseScrap.vue'
 const routes = [  {
   path: '/user-profile/:id',
   name: 'UserProfile',
   component: UserProfile,
 }, 
+  {
+    path: '/manage-products',
+    name: 'ManageProducts',
+    component: ManageProducts,
+    meta: { requiresAuth: true }
+  },
 {
   path: '/my-sent-invitations',
   name: 'MySentInvitations',
   component: MySentInvitations
 },
-{
-  path: '/manage-products',
-  name: 'ManageProducts',
-  component: ManageProducts,
-},
+
 {
   path: '/projects/completed',
   name: 'CompletedProjects',
@@ -145,6 +148,12 @@ const routes = [  {
     meta: { requiresAuth: true }
   },
   {
+  path: '/recommendations',
+  name: 'recommendations',
+  component: Recommendations.vue,
+  meta: { requiresAuth: true }
+},
+  {
     path: '/order-history',
     name: 'order-history',
     component: OrderHistory,
@@ -171,11 +180,11 @@ const routes = [  {
     name: 'ResetPassword',
     component: ResetPassword,
   },
-  {
-    path: "/account",
-    name: "Account",
-    component: Account,
-  },
+  // {
+  //   path: "/account",
+  //   name: "UserProfile",
+  //   component: UserProfile,
+  // },
   {
     path: "/password-change",
     name: "PasswordChange",

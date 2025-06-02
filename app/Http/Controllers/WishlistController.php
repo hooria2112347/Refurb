@@ -18,8 +18,8 @@ class WishlistController extends Controller
         }
 
         try {
-            // Check if product exists
-            $product = Product::find($productId);
+            // Check if product exists using the correct primary key
+            $product = Product::where('product_id', $productId)->first();
             if (!$product) {
                 return response()->json(['message' => 'Product not found.'], 404);
             }
@@ -42,7 +42,7 @@ class WishlistController extends Controller
             return response()->json(['message' => 'Product added to wishlist.'], 201);
         } catch (\Exception $e) {
             Log::error('Error adding to wishlist: ' . $e->getMessage());
-            return response()->json(['error' => 'Server error'], 500);
+            return response()->json(['error' => 'Server error', 'details' => $e->getMessage()], 500);
         }
     }
 
@@ -65,7 +65,7 @@ class WishlistController extends Controller
             }
         } catch (\Exception $e) {
             Log::error('Error removing from wishlist: ' . $e->getMessage());
-            return response()->json(['error' => 'Server error'], 500);
+            return response()->json(['error' => 'Server error', 'details' => $e->getMessage()], 500);
         }
     }
 
@@ -83,22 +83,31 @@ class WishlistController extends Controller
 
             $response = $wishlist->map(function ($item) {
                 $product = $item->product;
+                
+                // Check if product exists (in case it was deleted)
+                if (!$product) {
+                    return null;
+                }
+                
                 return [
                     'id' => $product->product_id,
                     'name' => $product->name,
                     'description' => $product->description,
                     'price' => $product->price,
-                    'images' => $product->images->map(function ($image) {
-                        return asset('storage/' . $image->image_path);
+                    'original_price' => null, // Add this if you have original price
+                    'price_dropped' => false, // Add logic if you track price drops
+                     'images' => $product->images->map(function ($image) {
+                            $url = url('images/' . $image->image_path);
+                         return $url;    
                     }),
                     'added_at' => $item->created_at
                 ];
-            });
-
-            return response()->json($response, 200);
+            })->filter(); // Remove null entries
+           
+            return response()->json($response->values(), 200);
         } catch (\Exception $e) {
             Log::error('Error fetching wishlist: ' . $e->getMessage());
-            return response()->json(['error' => 'Server error'], 500);
+            return response()->json(['error' => 'Server error', 'details' => $e->getMessage()], 500);
         }
     }
 }

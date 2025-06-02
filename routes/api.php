@@ -15,6 +15,8 @@ use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\RecommendationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,7 +35,12 @@ Route::post('/password/reset', [PasswordResetController::class, 'resetPassword']
 
 // Public product browsing
 Route::get('/products/all', [ProductController::class, 'getAllProducts']);
+Route::get('/users/{userId}/products', [ProductController::class, 'getUserProducts']);
+// Route::get('/users/{userId}/products', [AuthController::class, 'getUserProducts']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
+
+// Public user profile routes (can be accessed without auth)
+Route::get('/users/{id}', [AuthController::class, 'showProfile']);
 
 /*
 |--------------------------------------------------------------------------
@@ -42,6 +49,14 @@ Route::get('/products/{id}', [ProductController::class, 'show']);
 */
 Route::middleware(['auth:sanctum'])->group(function () {
 
+
+    
+    // User profile and rating routes (protected versions)
+    Route::get('/users/{id}/ratings', [AuthController::class, 'getUserRatings']);
+    Route::post('/users/{id}/rate', [AuthController::class, 'rateUser']);
+
+    //orders
+    
  Route::get('orders/seller', [OrderController::class, 'getSellerOrders']);
  // User order routes
     Route::prefix('orders')->group(function () {
@@ -57,10 +72,37 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('/{orderId}/status', [OrderController::class, 'updateOrderItemStatus']);
     });
 
-    Route::get('/users/{id}', [AuthController::class, 'showProfile']);
+    // Recommendations
+    Route::get('/recommendations', [RecommendationController::class, 'getRecommendations']);
+    Route::get('/debug-recommendations', [RecommendationController::class, 'debugRecommendations']);
+    Route::get('/purchase-history', [PurchaseController::class, 'purchaseHistory']);
+
+    // User order routes
+    Route::prefix('orders')->group(function () {
+        // Customer routes
+        Route::post('/checkout', [OrderController::class, 'checkout']);
+        Route::get('/', [OrderController::class, 'getUserOrders']);
+        Route::get('/{orderId}', [OrderController::class, 'getOrderDetails']);
+        Route::put('/{orderId}/cancel', [OrderController::class, 'cancelOrder']);
+        
+        // Seller routes
+        Route::get('/seller', [OrderController::class, 'getSellerOrders']);
+        Route::put('/{orderId}/status', [OrderController::class, 'updateOrderItemStatus']);
+    });
+
+    // Authentication related routes
     Route::post('/change-password', [AuthController::class, 'changePassword']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    
+    // Protected user products route (for authenticated users)
+    Route::get('/users/{id}/products', [AuthController::class, 'getUserProducts']);
 
+       Route::get('/products', [ProductController::class, 'index']);
+    Route::post('/products', [ProductController::class, 'store']);
+    Route::get('/products/{id}', [ProductController::class, 'show']);
+    Route::put('/products/{id}', [ProductController::class, 'update']);
+    Route::delete('/products/{id}', [ProductController::class, 'destroy']);
+    Route::get('/products/all', [ProductController::class, 'getAllProducts']);
     // Show the currently authenticated user
     Route::get('/user', function (Request $request) {
         return response()->json($request->user());
@@ -163,7 +205,4 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/portfolio', [PortfolioController::class, 'index']);
     Route::put('/portfolio/{id}', [PortfolioController::class, 'updatePortfolioProject']);
     Route::delete('/portfolio/{id}', [PortfolioController::class, 'removeFromPortfolio']);
-
-
-    
 });
