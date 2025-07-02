@@ -1,38 +1,37 @@
 <template>
   <div class="browse-container">
-    <!-- Recommendations Banner (5-10% of page height) -->
-<div class="recommendations-banner">
-  <div class="recommendations-header">
-    <h3>{{ recommendationTitle }}</h3>
-    <div class="banner-controls">
-      <button class="control-btn" @click="prevRecommendation" :disabled="currentRecommendationIndex === 0">‹</button>
-      <button class="control-btn" @click="nextRecommendation" :disabled="currentRecommendationIndex >= recommendations.length - visibleRecommendations">›</button>
-    </div>
-  </div>
-  <div class="recommendations-slider">
-    <div class="recommendations-track" :style="{ transform: `translateX(-${currentRecommendationIndex * (100 / visibleRecommendations)}%)` }">
-      <div 
-        v-for="product in recommendations" 
-        :key="product.id" 
-        class="recommendation-card"
-        @click="viewProductDetails(product)"
-      >
-        <div class="recommendation-tag">{{ getRecommendationReason(product) }}</div>
-        <div class="recommendation-image">
-          <img 
-            :src="product.images && product.images.length ? product.images[0] : 'https://via.placeholder.com/150'" 
-            :alt="product.name"
-          />
+    <!-- Recommendations Banner (Compact Version) -->
+    <div class="recommendations-banner">
+      <div class="recommendations-header">
+        <h3>{{ recommendationTitle }}</h3>
+        <div class="banner-controls">
+          <button class="control-btn" @click="prevRecommendation" :disabled="currentRecommendationIndex === 0">‹</button>
+          <button class="control-btn" @click="nextRecommendation" :disabled="currentRecommendationIndex >= recommendations.length - visibleRecommendations">›</button>
         </div>
-        <!-- Product name displayed outside the card image -->
-        <div class="recommendation-details">
-          <h4 class="product-name">{{ product.name }}</h4>
-          <span class="recommendation-price">{{ product.price }} PKR</span>
+      </div>
+      <div class="recommendations-slider">
+        <div class="recommendations-track" :style="{ transform: `translateX(-${currentRecommendationIndex * (100 / visibleRecommendations)}%)` }">
+          <div 
+            v-for="product in recommendations" 
+            :key="product.id" 
+            class="recommendation-card"
+            @click="viewProductDetails(product)"
+          >
+            <div class="recommendation-tag">{{ getRecommendationReason(product) }}</div>
+            <div class="recommendation-image">
+              <img 
+                :src="product.images && product.images.length ? product.images[0] : 'https://via.placeholder.com/150'" 
+                :alt="product.name"
+              />
+            </div>
+            <div class="recommendation-details">
+              <h4 class="product-name">{{ product.name }}</h4>
+              <span class="recommendation-price">{{ product.price }} PKR</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
 
     <!-- Search and Filter Bar -->
     <div class="search-filter-bar">
@@ -56,7 +55,7 @@
       </div>
     </div>
     
-    <!-- Active Filters (only shown when filters are active) -->
+    <!-- Active Filters -->
     <div v-if="hasActiveFilters" class="active-filters">
       <span class="filters-label">Active filters:</span>
       <div class="filter-tags">
@@ -625,37 +624,82 @@ export default {
   },
 };
 </script>
-
 <style scoped>
+:root {
+  --primary-color: #9b7ebd;
+  --primary-dark: #7a629a;
+  --primary-light: #d4bee4;
+  --secondary-color: #3b1e54;
+  --accent-color: #e6d7f3;
+  --background-color: #ffffff;
+  --surface-color: #f8f9fa;
+  --text-primary: #2c3e50;
+  --text-secondary: #6c757d;
+  --text-muted: #8a8a8a;
+  --border-color: #e9ecef;
+  --border-light: #f1f3f4;
+  --success-color: #28a745;
+  --error-color: #dc3545;
+  --warning-color: #ffc107;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
 .browse-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0.5rem;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  padding: 1rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--background-color);
 }
 
-recommendations-banner {
-  background: linear-gradient(135deg, #f9f5fc 0%, #ffffff 100%);
-  border: 1px solid #e6d7f3;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 4px 15px rgba(155, 126, 189, 0.1);
+/* Enhanced Recommendations Banner with Colors */
+.recommendations-banner {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  border: 1px solid var(--primary-light);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.recommendations-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.1) 75%);
+  background-size: 20px 20px;
+  animation: movePattern 10s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes movePattern {
+  0% { background-position: 0 0; }
+  100% { background-position: 20px 20px; }
 }
 
 .recommendations-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.75rem;
+  position: relative;
+  z-index: 2;
 }
 
 .recommendations-header h3 {
   margin: 0;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 700;
-  color: #3b1e54;
-  text-shadow: 0 1px 2px rgba(155, 126, 189, 0.1);
+  color: var(--background-color);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  letter-spacing: 0.5px;
 }
 
 .banner-controls {
@@ -666,26 +710,26 @@ recommendations-banner {
 .control-btn {
   width: 36px;
   height: 36px;
-  border: 2px solid #e6d7f3;
-  background: linear-gradient(135deg, #ffffff 0%, #f9f5fc 100%);
+  border: 2px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
   border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.1rem;
-  font-weight: bold;
-  color: #9b7ebd;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(155, 126, 189, 0.15);
+  font-weight: 700;
+  color: var(--background-color);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .control-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #9b7ebd 0%, #d4bee4 100%);
-  border-color: #9b7ebd;
-  color: #ffffff;
+  background: rgba(255,255,255,0.25);
+  border-color: rgba(255,255,255,0.5);
   transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 4px 15px rgba(155, 126, 189, 0.3);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.2);
 }
 
 .control-btn:disabled {
@@ -694,295 +738,160 @@ recommendations-banner {
   transform: none;
 }
 
+/* Auto-moving Banner Animation */
 .recommendations-slider {
   overflow: hidden;
-  height: 280px; /* Increased height to accommodate product names */
-  border-radius: 0.5rem;
+  height: 200px;
+  border-radius: 8px;
+  position: relative;
+  z-index: 2;
 }
 
 .recommendations-track {
   display: flex;
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   height: 100%;
   gap: 1rem;
+  animation: autoSlide 20s linear infinite;
+  transition: transform 0.3s ease;
+}
+
+.recommendations-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes autoSlide {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 .recommendation-card {
-  flex: 0 0 calc(25% - 0.9375rem); /* Show 4 cards at once */
+  flex: 0 0 calc(25% - 0.75rem);
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #ffffff 0%, #f9f5fc 100%);
-  border-radius: 0.75rem;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 2px solid #e6d7f3;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255,255,255,0.2);
   overflow: hidden;
   position: relative;
-  box-shadow: 0 4px 15px rgba(155, 126, 189, 0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .recommendation-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 12px 30px rgba(155, 126, 189, 0.25);
-  border-color: #9b7ebd;
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  border-color: rgba(255,255,255,0.4);
+  background: rgba(255,255,255,1);
 }
 
 .recommendation-tag {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  background: linear-gradient(135deg, #9b7ebd 0%, #d4bee4 100%);
-  color: #ffffff;
-  padding: 0.25rem 0.6rem;
-  border-radius: 1rem;
+  background: linear-gradient(135deg, var(--primary-light), var(--accent-color));
+  color: var(--secondary-color);
+  padding: 0.3rem 0.6rem;
+  border-radius: 15px;
   font-size: 0.65rem;
   font-weight: 600;
   z-index: 3;
-  box-shadow: 0 2px 8px rgba(155, 126, 189, 0.3);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   max-width: 70%;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  animation: pulse 2s ease-in-out infinite;
+  border: 1px solid rgba(255,255,255,0.8);
+  color: white;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 }
 
 .recommendation-image {
   width: 100%;
-  height: 180px; /* Adjusted height */
+  height: 120px;
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
-  border-radius: 0.5rem 0.5rem 0 0;
 }
 
 .recommendation-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.4s ease;
+  filter: brightness(1.05) saturate(1.1);
 }
 
 .recommendation-card:hover .recommendation-image img {
-  transform: scale(1.1);
+  transform: scale(1.08) rotate(1deg);
 }
 
-/* NEW: Product details section outside the image */
 .recommendation-details {
-  padding: 1rem;
+  padding: 0.6rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   flex: 1;
-  background: linear-gradient(135deg, #ffffff 0%, #f9f5fc 100%);
-  border-radius: 0 0 0.5rem 0.5rem;
+  background: rgba(255,255,255,0.95);
 }
 
 .product-name {
-  margin: 0 0 0.6rem 0;
-  font-size: 0.95rem !important;
+  margin: 0 0 0.5rem 0;
+  font-size: 0.8rem !important;
   font-weight: 700 !important;
-  color: #3b1e54 !important;
+  color: var(--secondary-color) !important;
   line-height: 1.3 !important;
-  text-align: center;
-  max-height: none;
-  overflow: visible;
-  text-overflow: unset;
-  display: block;
-  -webkit-line-clamp: unset;
-  -webkit-box-orient: unset;
-  white-space: normal;
-  word-wrap: break-word;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .recommendation-price {
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: #9b7ebd;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--background-color);
   margin-top: auto;
-  padding: 0.4rem 0.8rem;
-  background: linear-gradient(135deg, #e6d7f3 0%, #f9f5fc 100%);
-  border-radius: 1rem;
+  padding: 0.3rem 0.6rem;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  border-radius: 6px;
   text-align: center;
-  box-shadow: 0 2px 6px rgba(155, 126, 189, 0.15);
+  width: fit-content;
+  align-self: flex-end;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  transition: all 0.2s ease;
 }
 
-/* Responsive Adjustments */
-@media (max-width: 1024px) {
-  .recommendations-banner {
-    padding: 1.25rem;
-  }
-  
-  .recommendations-header h3 {
-    font-size: 1.2rem;
-  }
-  
-  .recommendation-card {
-    flex: 0 0 calc(33.333% - 0.833rem); /* Show 3 cards on tablet */
-  }
-  
-  .recommendations-slider {
-    height: 270px;
-  }
-  
-  .recommendation-image {
-    height: 170px;
-  }
-  
-  .product-name {
-    font-size: 0.9rem !important;
-  }
-}
-
-@media (max-width: 768px) {
-  .recommendations-banner {
-    padding: 1rem;
-    border-radius: 0.5rem;
-  }
-  
-  .recommendations-header {
-    margin-bottom: 1rem;
-  }
-  
-  .recommendations-header h3 {
-    font-size: 1.1rem;
-  }
-  
-  .control-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 1rem;
-  }
-  
-  .recommendations-slider {
-    height: 250px;
-  }
-  
-  .recommendation-card {
-    flex: 0 0 calc(50% - 0.625rem); /* Show 2 cards on tablet */
-  }
-  
-  .recommendation-image {
-    height: 150px;
-  }
-  
-  .recommendation-details {
-    padding: 0.8rem;
-  }
-  
-  .product-name {
-    font-size: 0.85rem !important;
-    margin-bottom: 0.5rem;
-  }
-  
-  .recommendation-price {
-    font-size: 0.8rem;
-    padding: 0.3rem 0.6rem;
-  }
-}
-
-@media (max-width: 640px) {
-  .recommendations-banner {
-    padding: 0.8rem;
-    margin-bottom: 1rem;
-  }
-  
-  .recommendations-header {
-    margin-bottom: 0.8rem;
-  }
-  
-  .recommendations-header h3 {
-    font-size: 1rem;
-  }
-  
-  .control-btn {
-    width: 30px;
-    height: 30px;
-    font-size: 0.9rem;
-  }
-  
-  .recommendations-slider {
-    height: 230px;
-  }
-  
-  .recommendation-card {
-    flex: 0 0 calc(50% - 0.625rem); /* Keep 2 cards on mobile */
-  }
-  
-  .recommendations-track {
-    gap: 1rem;
-  }
-  
-  .recommendation-image {
-    height: 130px;
-  }
-  
-  .recommendation-details {
-    padding: 0.75rem;
-  }
-  
-  .product-name {
-    font-size: 0.8rem !important;
-    margin-bottom: 0.4rem;
-  }
-  
-  .recommendation-price {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-  }
-  
-  .recommendation-tag {
-    font-size: 0.6rem;
-    padding: 0.2rem 0.5rem;
-    top: 0.4rem;
-    right: 0.4rem;
-    max-width: 60%;
-  }
-}
-
-@media (max-width: 480px) {
-  .recommendations-track {
-    gap: 0.8rem;
-  }
-  
-  .recommendation-card {
-    flex: 0 0 calc(50% - 0.4rem);
-  }
-  
-  .recommendations-slider {
-    height: 220px;
-  }
-  
-  .recommendation-image {
-    height: 120px;
-  }
-  
-  .recommendation-details {
-    padding: 0.6rem;
-  }
-  
-  .product-name {
-    font-size: 0.75rem !important;
-  }
-  
-  .recommendation-price {
-    font-size: 0.7rem;
-  }
+.recommendation-card:hover .recommendation-price {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
 /* Search and Filter Bar */
 .search-filter-bar {
-  margin-bottom: 0.75rem;
-  background-color: #f9f9f9;
-  border-radius: 0.25rem;
-  padding: 0.75rem;
+  /* margin-bottom: 1rem; */
+  background-color: var(--surface-color);
+  /* border-radius: 6px; */
+  /* padding: 1rem; */
+  border: 1px solid var(--border-light);
 }
 
 .search-category-container {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  /* gap: 1rem; */
   width: 100%;
 }
 
@@ -993,121 +902,146 @@ recommendations-banner {
 
 .search-input input {
   width: 100%;
-  padding: 0.4rem 0.5rem;
-  padding-right: 1.75rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 0.25rem;
-  font-size: 0.8rem;
-  transition: border-color 0.2s;
+  /* padding: 0.75rem 1rem; */
+  /* padding-right: 2.5rem; */
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  background: var(--background-color);
 }
 
 .search-input input:focus {
-  border-color: #b894d4;
+  border-color: var(--primary-color);
   outline: none;
+  box-shadow: 0 0 0 2px rgba(155, 126, 189, 0.1);
 }
 
 .search-icon {
   position: absolute;
-  right: 0.5rem;
+  right: 1rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #8a8a8a;
-  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-size: 1rem;
 }
 
 .category-select {
-  padding: 0.4rem 0.5rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 0.25rem;
-  background-color: white;
-  font-size: 0.8rem;
-  min-width: 7rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--background-color);
+  font-size: 0.9rem;
+  min-width: 150px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.category-select:focus {
+  border-color: var(--primary-color);
+  outline: none;
 }
 
 /* Active Filters */
 .active-filters {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  margin-bottom: 0.75rem;
-  background-color: #f5f5f5;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  background-color: var(--accent-color);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  border: 1px solid var(--primary-light);
 }
 
 .filters-label {
-  color: #666;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .filter-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
+  gap: 0.5rem;
 }
 
 .filter-tag {
-  background-color: #e6d7f3;
-  color: #3b1e54;
-  padding: 0.2rem 0.4rem;
-  border-radius: 0.25rem;
+  background-color: var(--primary-color);
+  color: var(--background-color);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
   display: flex;
   align-items: center;
+  font-size: 0.8rem;
 }
 
 .filter-tag span {
-  margin-left: 0.3rem;
-  font-weight: bold;
+  margin-left: 0.5rem;
+  font-weight: 600;
   cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.filter-tag span:hover {
+  opacity: 0.8;
 }
 
 .clear-all {
   margin-left: auto;
   background: none;
   border: none;
-  color: #9b7ebd;
-  font-size: 0.75rem;
+  color: var(--primary-color);
+  font-size: 0.8rem;
   cursor: pointer;
-  text-decoration: underline;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.clear-all:hover {
+  background-color: var(--primary-light);
 }
 
 /* Results */
 .products-content {
-  padding-top: 0.25rem;
+  padding-top: 0.5rem;
 }
 
 .result-count {
-  font-size: 0.75rem;
-  color: #666;
-  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  font-weight: 500;
 }
 
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr); 
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
 }
 
 .product-card {
-  border: 1px solid #eaeaea;
-  border-radius: 0.25rem;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
   overflow: hidden;
-  transition: transform 0.15s, box-shadow 0.15s;
-  background: white;
+  transition: all 0.2s ease;
+  background: var(--background-color);
   cursor: pointer;
-  min-height: 230px;
+  box-shadow: var(--shadow-sm);
 }
 
 .product-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.07);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-light);
 }
 
 .image-container {
   position: relative;
-  height: 160px;
+  height: 180px;
   overflow: hidden;
 }
 
@@ -1115,7 +1049,7 @@ recommendations-banner {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s;
+  transition: transform 0.3s ease;
 }
 
 .product-card:hover .product-image {
@@ -1124,12 +1058,12 @@ recommendations-banner {
 
 .card-actions {
   position: absolute;
-  top: 0.4rem;
-  right: 0.4rem;
+  top: 0.75rem;
+  right: 0.75rem;
   display: flex;
-  gap: 0.3rem;
+  gap: 0.5rem;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s ease;
 }
 
 .product-card:hover .card-actions {
@@ -1140,63 +1074,80 @@ recommendations-banner {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background-color: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  background-color: var(--background-color);
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
-  border: none;
+  border: 1px solid var(--border-light);
   font-size: 1rem;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .wishlist-btn {
-  color: #ccc;
+  color: var(--text-muted);
 }
 
 .wishlist-btn.active {
-  color: #ff6b6b;
+  color: #e74c3c;
+  background-color: #fdeaea;
+  border-color: #e74c3c;
 }
 
 .cart-btn {
-  color: #9b7ebd;
-  font-weight: bold;
+  color: var(--primary-color);
+  font-weight: 600;
+  border-color: var(--primary-light);
 }
 
 .wishlist-btn:hover, .cart-btn:hover {
-  transform: scale(1.1);
+  transform: scale(1.05);
+}
+
+.cart-btn:hover {
+  background-color: var(--primary-color);
+  color: var(--background-color);
 }
 
 .product-info {
-  padding: 0.75rem;
+  padding: 1rem;
 }
 
 .product-info h3 {
-  margin: 0;
-  font-size: 0.9rem;
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
   font-weight: 600;
-  color: #333;
-  margin-bottom: 0.3rem;
-  line-height: 1.2;
-  height: 2.4em;
+  color: var(--text-primary);
+  line-height: 1.3;
+  height: auto;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .product-meta {
   display: flex;
   justify-content: space-between;
-  font-size: 0.8rem;
+  align-items: center;
+  font-size: 0.85rem;
 }
 
 .category {
-  color: #888;
+  color: var(--text-secondary);
+  background: var(--surface-color);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .price1 {
   font-weight: 600;
-  color: #333;
+  color: var(--primary-color);
+  font-size: 0.9rem;
 }
 
 /* Pagination Controls */
@@ -1204,22 +1155,26 @@ recommendations-banner {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.75rem;
-  margin: 1rem 0;
+  gap: 1rem;
+  margin: 2rem 0;
 }
 
 .pagination-btn {
-  padding: 0.25rem 0.5rem;
-  background-color: #f9f5fc;
-  border: 1px solid #e0e0e0;
-  border-radius: 0.25rem;
+  padding: 0.5rem 1rem;
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 0.75rem;
-  transition: all 0.2s;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  color: var(--text-primary);
 }
 
 .pagination-btn:hover:not(:disabled) {
-  background-color: #e6d7f3;
+  background-color: var(--primary-color);
+  color: var(--background-color);
+  border-color: var(--primary-color);
 }
 
 .pagination-btn:disabled {
@@ -1228,8 +1183,10 @@ recommendations-banner {
 }
 
 .page-info {
-  font-size: 0.75rem;
-  color: #666;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  padding: 0 1rem;
 }
 
 /* Loading and Error States */
@@ -1238,19 +1195,19 @@ recommendations-banner {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem 0;
-  color: #666;
-  font-size: 0.85rem;
+  padding: 3rem 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
 }
 
 .loading-spinner {
-  width: 1.5rem;
-  height: 1.5rem;
-  border: 2px solid #f3f3f3;
-  border-top: 2px solid #9b7ebd;
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid var(--border-light);
+  border-top: 3px solid var(--primary-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 @keyframes spin {
@@ -1260,28 +1217,41 @@ recommendations-banner {
 
 .error-state {
   text-align: center;
-  padding: 1rem;
-  color: #e74c3c;
+  padding: 1.5rem;
+  color: var(--error-color);
   background-color: #fdeaea;
-  border-radius: 0.25rem;
-  font-size: 0.85rem;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  font-size: 0.9rem;
   margin: 1rem 0;
 }
 
 .no-products {
   text-align: center;
-  padding: 1.5rem 0;
-  color: #666;
+  padding: 3rem 0;
+  color: var(--text-secondary);
+}
+
+.no-products p {
+  margin-bottom: 1rem;
+  font-size: 1rem;
 }
 
 .no-products button {
-  margin-top: 0.5rem;
-  padding: 0.3rem 0.6rem;
-  background-color: #d4bee4;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--primary-color);
+  color: var(--background-color);
   border: none;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
   cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.no-products button:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
 }
 
 /* Modal */
@@ -1299,66 +1269,82 @@ recommendations-banner {
 }
 
 .modal-content {
-  background-color: white;
-  padding: 1.25rem;
-  border-radius: 0.25rem;
+  background-color: var(--background-color);
+  padding: 2rem;
+  border-radius: 8px;
   width: 90%;
-  max-width: 320px;
+  max-width: 400px;
   text-align: center;
+  box-shadow: var(--shadow-lg);
 }
 
 .modal-content h2 {
   margin-top: 0;
-  font-size: 1.1rem;
-  color: #333;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  font-weight: 600;
 }
 
 .modal-content p {
-  font-size: 0.85rem;
-  color: #666;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
 }
 
 .modal-actions {
   display: flex;
   justify-content: center;
-  gap: 0.75rem;
-  margin-top: 1rem;
+  gap: 1rem;
 }
 
 .primary-button, .secondary-button {
-  padding: 0.4rem 0.75rem;
-  border-radius: 0.25rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
   cursor: pointer;
-  border: none;
-  font-size: 0.8rem;
+  border: 1px solid transparent;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-block;
 }
 
 .primary-button {
-  background-color: #d4bee4;
-  color: #3b1e54;
-  text-decoration: none;
+  background-color: var(--primary-color);
+  color: var(--background-color);
+  border-color: var(--primary-color);
+}
+
+.primary-button:hover {
+  background-color: var(--primary-dark);
 }
 
 .secondary-button {
-  background-color: #f0f0f0;
-  color: #333;
+  background-color: var(--surface-color);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.secondary-button:hover {
+  background-color: var(--border-color);
 }
 
 /* Toast */
 .toast-notification {
   position: fixed;
-  bottom: 1rem;
-  right: 1rem;
-  background-color: #d4bee4;
-  color: #3b1e54;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.25rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  bottom: 2rem;
+  right: 2rem;
+  background-color: var(--success-color);
+  color: var(--background-color);
+  padding: 1rem 1.5rem;
+  border-radius: 6px;
+  box-shadow: var(--shadow-lg);
   opacity: 0;
-  transform: translateY(10px);
-  transition: all 0.3s;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
   z-index: 1000;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .toast-notification.show {
@@ -1366,73 +1352,124 @@ recommendations-banner {
   transform: translateY(0);
 }
 
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-  .recommendations-banner {
-    height: 100px;
-    padding: 0.75rem;
+.toast-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .recommendations-slider {
+    height: 190px;
   }
   
   .recommendation-card {
-    flex: 0 0 33.333%; /* Show 3 cards on tablet */
-  }
-  
-  .recommendations-header h3 {
-    font-size: 0.9rem;
+    flex: 0 0 calc(33.333% - 0.67rem);
   }
   
   .recommendation-image {
-    width: 60px;
-    height: 58px;
+    height: 110px;
+  }
+  
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .browse-container {
+    padding: 0.75rem;
+  }
+  
+  .recommendations-banner {
+    padding: 0.75rem;
+  }
+  
+  .recommendations-slider {
+    height: 180px;
+  }
+  
+  .recommendation-card {
+    flex: 0 0 calc(50% - 0.5rem);
+  }
+  
+  .recommendation-image {
+    height: 100px;
   }
   
   .search-category-container {
     flex-direction: column;
-    align-items: stretch;
+    gap: 0.75rem;
   }
-
+  
   .category-select {
     width: 100%;
+    min-width: unset;
   }
   
   .products-grid {
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.75rem;
   }
   
   .image-container {
-    height: 110px;
+    height: 150px;
   }
   
-  .pagination-controls {
-    flex-wrap: wrap;
+  .product-info {
+    padding: 0.75rem;
   }
 }
 
 @media (max-width: 480px) {
-  .recommendations-banner {
-    height: 90px;
+  .browse-container {
     padding: 0.5rem;
   }
   
-  .recommendation-card {
-    flex: 0 0 50%; /* Show 2 cards on mobile */
+  .recommendations-slider {
+    height: 170px;
   }
   
   .recommendation-image {
-    width: 50px;
-    height: 48px;
+    height: 90px;
   }
   
-  .recommendation-info h4 {
-    font-size: 0.7rem;
+  .recommendation-details {
+    padding: 0.5rem;
+  }
+  
+  .product-name {
+    font-size: 0.75rem !important;
   }
   
   .recommendation-price {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
   }
   
   .products-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .image-container {
+    height: 120px;
+  }
+  
+  .product-info {
+    padding: 0.5rem;
+  }
+  
+  .product-info h3 {
+    font-size: 0.85rem;
+  }
+  
+  .product-meta {
+    font-size: 0.75rem;
+  }
+  
+  .price1 {
+    font-size: 0.8rem;
   }
 }
 </style>

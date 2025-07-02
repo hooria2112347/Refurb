@@ -3,7 +3,10 @@
   <div id="app">
     <header>
       <div class="nav-container">
-        <h1 class="logo">Refurb</h1>
+        <div class="brand-section">
+          <h1 class="logo">Refurb</h1>
+          <p class="slogan">Transforming waste into wonderful creations</p>
+        </div>
         <nav class="main-nav">
           <router-link to="/" class="nav-link">Home</router-link>
 
@@ -391,40 +394,61 @@ export default {
   min-height: calc(100vh - 200px); /* Adjust based on header/footer height */
 }
 
-/* Header styles (keeping your existing styles) */
+/* Enhanced Header styles */
 .nav-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 2rem;
+  padding: 1.5rem ;
   background-color: #ffffff;
-  border-bottom: 1px solid #eaeaea;
+  border-bottom: 2px solid #eaeaea;
   position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.brand-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .logo {
-  font-size: 1.8rem;
+  font-size: 2rem;
   color: #3B1E54;
   margin: 0;
   font-weight: bold;
+  letter-spacing: -0.5px;
+}
+
+.slogan {
+  font-size: 0.85rem;
+  color: #9B7EBD;
+  margin: 0;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0.3px;
 }
 
 .main-nav {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 2rem;
 }
 
 .nav-link {
   text-decoration: none;
   color: #3B1E54;
   font-weight: 500;
-  padding: 0.5rem;
-  transition: color 0.3s ease;
+  padding: 0.75rem 1rem;
+  transition: all 0.3s ease;
+  border-radius: 6px;
+  position: relative;
 }
 
 .nav-link:hover {
   color: #9B7EBD;
+  background-color: rgba(155, 126, 189, 0.1);
+  transform: translateY(-1px);
 }
 
 /* Dropdown menu styling */
@@ -435,53 +459,65 @@ export default {
 .dropbtn {
   background-color: #D4BEE4;
   color: #3B1E54;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.25rem;
   font-size: 1rem;
   border: none;
   cursor: pointer;
-  border-radius: 5px;
-  transition: background-color 0.3s ease;
+  border-radius: 8px;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .dropbtn:hover {
   background-color: #EEEEEE;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
 }
 
 .arrow {
-  margin-left: 0.5rem;
+  margin-left: 0.75rem;
   font-size: 0.8rem;
+  transition: transform 0.3s ease;
+}
+
+.dropdown:hover .arrow {
+  transform: rotate(180deg);
 }
 
 .dropdown-content {
   position: absolute;
   right: 0;
   background-color: white;
-  min-width: 160px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  min-width: 180px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   z-index: 1;
-  border-radius: 5px;
+  border-radius: 8px;
   overflow: hidden;
-  margin-top: 0.5rem;
+  margin-top: 0.75rem;
   opacity: 0;
   transform: translateY(-10px);
   transition: opacity 0.3s ease, transform 0.3s ease;
+  border: 1px solid #eaeaea;
 }
 
 .dropdown-content a,
 .dropdown-content router-link {
   color: #3C552D;
-  padding: 0.75rem 1rem;
+  padding: 1rem 1.25rem;
   display: block;
   text-align: left;
   text-decoration: none;
   transition: background-color 0.2s ease;
+  font-weight: 500;
 }
 
 .dropdown-content a:hover,
 .dropdown-content router-link:hover {
-  background-color: #f1f1f1;
+  background-color: #f8f9fa;
+  color: #3B1E54;
 }
 
 .dropdown:hover .dropdown-content {
@@ -498,9 +534,12 @@ export default {
 
 .cart-icon {
   position: relative;
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   cursor: pointer;
   color: #3B1E54;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: all 0.3s ease;
 }
 
 .nav-link.cart-link a {
@@ -510,6 +549,8 @@ export default {
 
 .cart-icon:hover {
   color: #9B7EBD;
+  background-color: rgba(155, 126, 189, 0.1);
+  transform: translateY(-1px);
 }
 
 .cart-count {
@@ -519,13 +560,14 @@ export default {
   background-color: #CA7373;
   color: white;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  font-size: 0.7rem;
+  width: 20px;
+  height: 20px;
+  font-size: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Footer Styles */
@@ -595,7 +637,7 @@ export default {
   font-size: 0.85rem;
 }
 
-/* Modal styles (keeping your existing styles) */
+/* Modal styles */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -657,34 +699,46 @@ export default {
 /* Responsive Design */
 @media (max-width: 768px) {
   .nav-container {
-    padding: 0.75rem 1.5rem;
+    padding: 1rem 1.5rem;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .brand-section {
+    text-align: center;
   }
 
   .logo {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
+  }
+
+  .slogan {
+    font-size: 0.8rem;
   }
 
   .main-nav {
     gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .nav-link {
-    padding: 0.4rem;
+    padding: 0.5rem 0.8rem;
     font-size: 0.9rem;
   }
 
   .dropbtn {
-    padding: 0.4rem 0.8rem;
+    padding: 0.5rem 1rem;
     font-size: 0.9rem;
   }
 
   .dropdown-content {
-    min-width: 140px;
+    min-width: 160px;
   }
 
   .dropdown-content a,
   .dropdown-content router-link {
-    padding: 0.6rem 0.8rem;
+    padding: 0.8rem 1rem;
     font-size: 0.9rem;
   }
 
@@ -702,13 +756,25 @@ export default {
 }
 
 @media (max-width: 480px) {
+  .nav-container {
+    padding: 1rem;
+  }
+
+  .logo {
+    font-size: 1.6rem;
+  }
+
+  .slogan {
+    font-size: 0.75rem;
+  }
+
   .main-nav {
     gap: 0.5rem;
   }
 
   .nav-link {
     font-size: 0.8rem;
-    padding: 0.3rem;
+    padding: 0.4rem 0.6rem;
   }
 
   .footer-container {
