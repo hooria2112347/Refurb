@@ -9,12 +9,12 @@
         </p>
         <div class="hero-buttons">
           <button @click="exploreItems" class="hero-button">Explore Items</button>
-          <button 
+          <!-- <button 
             @click="viewPortfolioOrProjects" 
             class="hero-button portfolio-button"
           >
             {{ isArtist ? 'View Portfolio' : 'View Projects' }}
-          </button>
+          </button> -->
         </div>
       </div>
       <div class="hero-image-wrapper">

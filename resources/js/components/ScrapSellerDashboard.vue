@@ -1,14 +1,14 @@
 <template>
   <div class="scrap-seller-dashboard">
     <!-- Side navigation for Scrap Seller -->
-    <aside class="side-nav">
-      <!-- Non-collapsible links -->
-      <!-- <router-link to="/scrap-seller-dashboard">Overview</router-link>
-      <router-link to="/account">Account</router-link> -->
-      <router-link to="/orders-received">View Orders Received</router-link>
+   <aside class="side-nav">
+        <router-link :to="overviewRoute" exact-active-class="active">Overview</router-link>
+         <router-link to="/orders-received">View Orders Received</router-link>
       <router-link to="/order-history">Orders History</router-link>
-      
-      <!-- Selling Collapsible -->
+        <!-- <router-link to="/account" exact-active-class="active">Account</router-link> -->
+        <router-link to="/password-change" exact-active-class="active">Change Password</router-link>
+           <!-- Selling Collapsible -->
+     
       <div 
         class="collapsible" 
         :class="{ open: openSection === 'selling' }"

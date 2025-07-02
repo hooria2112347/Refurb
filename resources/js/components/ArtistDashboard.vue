@@ -3,9 +3,9 @@
     <!-- Side navigation for Artist -->
     <aside class="side-nav">
       <router-link to="/artist-dashboard">Overview</router-link>
-      <router-link to="/portfolio">Portfolio</router-link>
-      <router-link to="/account">Account</router-link>
-
+      <router-link :to="'/user-profile/' + currentUserId">Account</router-link>
+<router-link to="/orders-received">View Orders Received</router-link>
+      <router-link to="/order-history">Orders History</router-link>
       <!-- Projects Collapsible -->
       <div 
         class="collapsible" 
@@ -95,13 +95,17 @@ export default {
       // Tracks which section is currently open: 'projects', 'collaboration', or 'requests'.
       // If null, no section is open.
       openSection: null,
+      currentUserId: null,
     };
   },
   mounted() {
-    // Optional: Confirm user is Artist
+    // Get user session and extract user ID
     const session = localStorage.getItem("userSession");
     if (session) {
       const userData = JSON.parse(session);
+      this.currentUserId = userData.id || userData.user_id; // Handle different possible property names
+      
+      // Confirm user is Artist
       if (userData.role !== "artist") {
         this.$router.push("/");
       }

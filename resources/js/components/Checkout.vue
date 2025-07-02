@@ -86,6 +86,11 @@
                 <div class="checkout-form bg-white rounded-lg shadow-sm p-6">
                   <h3 class="text-lg font-semibold text-gray-800 mb-4">Delivery Information</h3>
                   
+                  <!-- Form Validation Errors -->
+                  <div v-if="formErrors.general" class="form-error mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                    <p class="text-red-600 text-sm">{{ formErrors.general }}</p>
+                  </div>
+                  
                   <form @submit.prevent="placeOrder">
                     <div class="form-group mb-4">
                       <label class="block text-gray-700 text-sm font-medium mb-2" for="name">
@@ -95,10 +100,14 @@
                         type="text"
                         id="name"
                         v-model="formData.name"
-                        class="form-input w-full px-3 py-2 border border-gray-300 rounded-md"
+                        :class="[
+                          'form-input w-full px-3 py-2 border rounded-md',
+                          formErrors.name ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                        ]"
                         placeholder="Enter your full name"
                         required
                       />
+                      <p v-if="formErrors.name" class="text-red-600 text-sm mt-1">{{ formErrors.name }}</p>
                     </div>
                     
                     <div class="form-group mb-4">
@@ -109,10 +118,18 @@
                         type="tel"
                         id="phone"
                         v-model="formData.phone"
-                        class="form-input w-full px-3 py-2 border border-gray-300 rounded-md"
-                        placeholder="Enter your phone number"
+                        @input="handlePhoneInput"
+                        @keypress="restrictToNumbers"
+                        @paste="handlePhonePaste"
+                        :class="[
+                          'form-input w-full px-3 py-2 border rounded-md',
+                          formErrors.phone ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                        ]"
+                        placeholder="Enter your phone number (numbers only)"
+                        maxlength="15"
                         required
                       />
+                      <p v-if="formErrors.phone" class="text-red-600 text-sm mt-1">{{ formErrors.phone }}</p>
                     </div>
                     
                     <div class="form-group mb-4">
@@ -122,11 +139,15 @@
                       <textarea 
                         id="address"
                         v-model="formData.address"
-                        class="form-textarea w-full px-3 py-2 border border-gray-300 rounded-md"
+                        :class="[
+                          'form-textarea w-full px-3 py-2 border rounded-md',
+                          formErrors.address ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                        ]"
                         placeholder="Enter your complete address"
                         rows="3"
                         required
                       ></textarea>
+                      <p v-if="formErrors.address" class="text-red-600 text-sm mt-1">{{ formErrors.address }}</p>
                     </div>
                     
                     <div class="form-group mb-6">
@@ -214,11 +235,62 @@ export default {
         address: '',
         notes: '',
         paymentMethod: 'cod'
+      },
+      formErrors: {
+        general: '',
+        name: '',
+        phone: '',
+        address: ''
       }
     };
   },
   
   methods: {
+    // Restrict keypress to numbers only
+    restrictToNumbers(event) {
+      const key = event.key;
+      // Allow numbers, backspace, delete, tab, escape, enter
+      if (!/[0-9]/.test(key) && 
+          !['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(key)) {
+        event.preventDefault();
+      }
+    },
+    
+    // Handle input to remove any non-numeric characters
+    handlePhoneInput(event) {
+      const input = event.target;
+      const value = input.value;
+      // Remove any non-numeric characters
+      const numericValue = value.replace(/[^0-9]/g, '');
+      
+      // Update the model value
+      this.formData.phone = numericValue;
+      
+      // Update the input value to ensure consistency
+      if (input.value !== numericValue) {
+        input.value = numericValue;
+      }
+    },
+    
+    // Handle paste events to filter out non-numeric characters
+    handlePhonePaste(event) {
+      event.preventDefault();
+      const paste = (event.clipboardData || window.clipboardData).getData('text');
+      const numericPaste = paste.replace(/[^0-9]/g, '');
+      
+      // Get current cursor position
+      const input = event.target;
+      const start = input.selectionStart;
+      const end = input.selectionEnd;
+      
+      // Insert the numeric paste at cursor position
+      const currentValue = this.formData.phone;
+      const newValue = currentValue.substring(0, start) + numericPaste + currentValue.substring(end);
+      
+      // Respect maxlength
+      this.formData.phone = newValue.substring(0, 15);
+    },
+    
     async fetchCart() {
       this.loading = true;
       this.error = null;
@@ -271,7 +343,19 @@ export default {
       return this.calculateSubtotal() + this.shipping;
     },
     
+    clearFormErrors() {
+      this.formErrors = {
+        general: '',
+        name: '',
+        phone: '',
+        address: ''
+      };
+    },
+    
     async placeOrder() {
+      // Clear previous errors
+      this.clearFormErrors();
+      
       if (!this.validateForm()) {
         return;
       }
@@ -283,7 +367,6 @@ export default {
       }
       
       this.isSubmitting = true;
-      this.error = null;
       
       try {
         const orderData = {
@@ -340,12 +423,13 @@ export default {
         // localStorage.removeItem('cart');
       } catch (err) {
         console.error("Error placing order:", err);
-        this.error = err.message || "Could not place your order. Please try again.";
+        this.formErrors.general = err.message || "Could not place your order. Please try again.";
+        
         // Scroll to error message
         this.$nextTick(() => {
-          const errorElement = document.querySelector('.error-state');
+          const errorElement = document.querySelector('.form-error');
           if (errorElement) {
-            errorElement.scrollIntoView({ behavior: 'smooth' });
+            errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
         });
       } finally {
@@ -354,30 +438,45 @@ export default {
     },
     
     validateForm() {
-      // Basic form validation
+      let isValid = true;
+      
+      // Validate name
       if (!this.formData.name || this.formData.name.trim() === '') {
-        this.error = "Please enter your full name";
-        return false;
+        this.formErrors.name = "Please enter your full name";
+        isValid = false;
       }
       
+      // Validate phone
       if (!this.formData.phone || this.formData.phone.trim() === '') {
-        this.error = "Please enter your phone number";
-        return false;
+        this.formErrors.phone = "Please enter your phone number";
+        isValid = false;
+      } else {
+        // Validate phone number format (now only checking for numeric and length)
+        const phoneRegex = /^[0-9]{10,15}$/;
+        if (!phoneRegex.test(this.formData.phone.trim())) {
+          this.formErrors.phone = "Please enter a valid phone number (10-15 digits)";
+          isValid = false;
+        }
       }
       
-      // Validate phone number format (optional)
-      const phoneRegex = /^[0-9+\-\s]{10,15}$/;
-      if (this.formData.phone.trim() && !phoneRegex.test(this.formData.phone.trim())) {
-        this.error = "Please enter a valid phone number";
-        return false;
-      }
-      
+      // Validate address
       if (!this.formData.address || this.formData.address.trim() === '') {
-        this.error = "Please enter your delivery address";
-        return false;
+        this.formErrors.address = "Please enter your delivery address";
+        isValid = false;
       }
       
-      return true;
+      // If there are validation errors, scroll to the first error field
+      if (!isValid) {
+        this.$nextTick(() => {
+          const firstErrorField = document.querySelector('.border-red-300');
+          if (firstErrorField) {
+            firstErrorField.focus();
+            firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        });
+      }
+      
+      return isValid;
     }
   },
   
@@ -386,7 +485,6 @@ export default {
   }
 };
 </script>
-  
 <style scoped>
   .checkout-page {
     min-height: 80vh;

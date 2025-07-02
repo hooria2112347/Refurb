@@ -1,20 +1,7 @@
 <template>
     <div class="user-account-dashboard">
       <!-- Side navigation -->
-      <aside class="side-nav">
-        <router-link :to="overviewRoute" exact-active-class="active">Overview</router-link>
-         <router-link to="/orders-received">View Orders Received</router-link>
-      <router-link to="/order-history">Orders History</router-link>
-        <!-- <router-link to="/account" exact-active-class="active">Account</router-link> -->
-        <router-link to="/password-change" exact-active-class="active">Change Password</router-link>
-           <!-- Selling Collapsible -->
-     
-        <div class="collapsible-content">
-          <router-link to="/add-product">Add Product</router-link>
-          <router-link to="/manage-products">Manage Products</router-link>
-        </div>
-      
-      </aside>
+
   
       <section class="dashboard-content">
         <h2>Orders Received</h2>
@@ -362,37 +349,97 @@ fetchUserDetails() {
     min-height: 100vh;
   }
   
-  .side-nav {
-    width: 220px;
-    background-color: #ffffff;
-    padding: 1rem;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
-    border-right: 1px solid #e4e4e4;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .side-nav a {
-    display: block;
-    margin-bottom: 0.8rem;
-    padding: 10px;
-    color: #3B1E54;
-    text-decoration: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 500;
-    transition: background-color 0.3s, color 0.3s;
-  }
-  
-  .side-nav a:hover {
-    background-color: #D4BEE4; 
-    color: #3B1E54;
-  }
-  
-  .side-nav a.active {
-    background-color: #9B7EBD;
-    color: #3B1E54;
-  }
+.side-nav {
+  width: 220px;
+  background-color: #ffffff;
+  padding: 1rem;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+  border-right: 1px solid #e4e4e4;
+  display: flex;
+  flex-direction: column;
+}
+
+.side-nav a {
+  display: block;
+  margin-bottom: 0.8rem;
+  padding: 10px;
+  color: #3B1E54;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.side-nav a:hover {
+  background-color: #D4BEE4;
+  color: #3B1E54;
+}
+
+.side-nav a.active {
+  background-color: #9B7EBD;
+  color: #3B1E54;
+}
+
+/* COLLAPSIBLE MENU SECTIONS */
+.collapsible {
+  margin-bottom: 0.8rem;
+  border-bottom: 1px solid #e4e4e4;
+}
+
+.collapsible-trigger {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #3B1E54;
+  padding: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  transition: background-color 0.3s, color 0.3s;
+  border-radius: 8px;
+}
+
+.collapsible-trigger:hover {
+  background-color: #D4BEE4;
+  color: #3B1E54;
+}
+
+/* Arrow icon */
+.arrow {
+  border: solid #3C552D;
+  border-width: 0 2px 2px 0;
+  display: inline-block;
+  padding: 4px;
+  transform: rotate(45deg);
+  margin-left: 8px;
+  transition: transform 0.3s ease;
+}
+
+/* Collapsible Content */
+.collapsible-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  margin-left: 1.5rem;
+}
+
+/* When "open" is toggled, rotate arrow and reveal content */
+.collapsible.open .arrow {
+  transform: rotate(-135deg);
+}
+
+.collapsible.open .collapsible-content {
+  max-height: 300px; /* Adjust if needed */
+  transition: max-height 0.3s ease;
+}
+
+/* Sub-links inside the collapsible content */
+.collapsible-content a {
+  font-size: 15px;
+  font-weight: 400;
+  border-radius: 6px;
+}
   
   .dashboard-content {
     flex: 1;

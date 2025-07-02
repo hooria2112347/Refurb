@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 
 // Importing all components
 import UserProfile from './components/UserProfile.vue'; // Import the user profile component
+import FAQ from './components/FAQ.vue';
 import Home from './components/Home.vue';
 import ProductDetails from './components/ProductDetails.vue';
 import ArtistDetail from './components/ArtistDetail.vue';
@@ -14,6 +15,7 @@ import AddProduct from './components/AddProduct.vue';
 import PasswordChange from './components/PasswordChange.vue';
 import ManageProducts from './components/ManageProducts.vue';
 import ForgetPassword from './components/ForgetPassword.vue'; // Import ForgetPassword component
+import About from './components/About.vue';
 import VerifyCode from '@/components/VerifyCode.vue';
 import ResetPassword from '@/components/ResetPassword.vue';
 import ViewCustomRequests from './components/ViewCustomRequests.vue';
@@ -55,7 +57,11 @@ const routes = [  {
   name: 'MySentInvitations',
   component: MySentInvitations
 },
-
+{
+  path:'/FAQ',
+  name: 'FAQ',
+  component: FAQ
+},
 {
   path: '/projects/completed',
   name: 'CompletedProjects',
@@ -85,10 +91,14 @@ const routes = [  {
   component: ProductDetails,
   props: true, // Pass the `id` as a prop to the ProductDetails component
 },
-
+{
+  path: '/about',
+  name:'about',
+  component: About,
+},
 {
   path: '/:pathMatch(.*)*',
-  redirect: '/manage-products', // Redirect unknown routes to Manage Products
+  redirect: '/home', 
 }, {
   path: '/scrap-items',   // Route for browsing all scrap products
   name: 'browse-scrap',

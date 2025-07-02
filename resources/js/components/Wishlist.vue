@@ -63,8 +63,9 @@
                     <button @click="removeFromWishlist(item.id)" class="delete-btn" title="Remove from wishlist">
                       <span class="trash-icon">🗑️</span>
                     </button>
-                    <button @click="addToCart(item.id)" class="cart-btn" title="Add to cart">
-                      <span class="cart-icon">+</span>
+                    <button @click="addToCart(item.id)" class="cart-btn" title="Add to cart" :disabled="isAddingToCart">
+                      <span v-if="!isAddingToCart" class="cart-icon">+</span>
+                      <span v-else class="spinner-small"></span>
                     </button>
                   </div>
                 </div>
@@ -75,7 +76,7 @@
       </div>
     </div>
     
-    <!-- Confirmation Modal -->
+    <!-- Remove Confirmation Modal -->
     <div v-if="showConfirmModal" class="modal-overlay">
       <div class="modal-content">
         <h3 class="text-lg font-semibold mb-2">Remove from Wishlist?</h3>
@@ -83,6 +84,19 @@
         <div class="modal-actions">
           <button @click="confirmRemove" class="confirm-btn">Yes, Remove</button>
           <button @click="cancelRemove" class="cancel-btn">Cancel</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Cart Success Modal -->
+    <div v-if="showCartSuccessModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="success-icon mb-4 text-5xl text-green-500 text-center">🛒</div>
+        <h3 class="text-lg font-semibold mb-2">Added to Cart!</h3>
+        <p class="text-gray-600 mb-4">{{ addedItemName }} has been added to your cart successfully.</p>
+        <div class="modal-actions">
+          <router-link to="/cart" class="view-cart-btn">View Cart</router-link>
+          <button @click="closeCartSuccessModal" class="continue-shopping-btn">Continue Shopping</button>
         </div>
       </div>
     </div>
@@ -110,7 +124,10 @@ export default {
       error: null,
       showConfirmModal: false,
       itemToRemove: null,
-      showLoginModal: false
+      showLoginModal: false,
+      showCartSuccessModal: false,
+      addedItemName: '',
+      isAddingToCart: false
     };
   },
   
@@ -205,6 +222,13 @@ export default {
     async addToCart(productId) {
       const token = localStorage.getItem("access_token");
       
+      if (!token) {
+        this.showLoginModal = true;
+        return;
+      }
+      
+      this.isAddingToCart = true;
+      
       try {
         const response = await fetch(`http://127.0.0.1:8000/api/cart/add/${productId}`, {
           method: 'POST',
@@ -216,16 +240,33 @@ export default {
         });
         
         if (response.ok) {
-          // Show success message
-          alert('Item added to cart successfully!');
+          // Find the item name for the success message
+          const addedItem = this.wishlistItems.find(item => item.id === productId);
+          this.addedItemName = addedItem ? addedItem.name : 'Item';
+          
+          // Show success modal
+          this.showCartSuccessModal = true;
         } else {
-          throw new Error('Failed to add item to cart');
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to add item to cart');
         }
       } catch (err) {
         console.error("Error adding item to cart:", err);
-        alert('Could not add item to cart. Please try again.');
+        this.error = err.message || 'Could not add item to cart. Please try again.';
+        
+        // Clear error after 5 seconds
+        setTimeout(() => {
+          this.error = null;
+        }, 5000);
+      } finally {
+        this.isAddingToCart = false;
       }
     },
+    
+    closeCartSuccessModal() {
+      this.showCartSuccessModal = false;
+      this.addedItemName = '';
+    }
   },
   
   mounted() {
@@ -264,6 +305,16 @@ export default {
   height: 50px;
   margin: 0 auto 20px;
   animation: spin 1s linear infinite;
+}
+
+.spinner-small {
+  border: 2px solid rgba(59, 30, 84, 0.3);
+  border-radius: 50%;
+  border-top: 2px solid #3B1E54;
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
 }
 
 @keyframes spin {
@@ -331,12 +382,6 @@ export default {
   transform: translateY(-2px);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
-
-/* Add All to Cart Button */
-.add-all-cart-wrapper {
-  margin-bottom: 20px;
-}
-
 
 /* Wishlist Items Styling */
 .wishlist-list {
@@ -452,8 +497,13 @@ export default {
   border: none;
 }
 
-.cart-btn:hover {
+.cart-btn:hover:not(:disabled) {
   background-color: #EEEEEE;
+}
+
+.cart-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .trash-icon, .cart-icon {
@@ -491,6 +541,10 @@ export default {
   margin-bottom: 12px;
 }
 
+.success-icon {
+  color: #10B981;
+}
+
 .modal-actions {
   display: flex;
   justify-content: center;
@@ -498,7 +552,7 @@ export default {
   margin-top: 28px;
 }
 
-.confirm-btn, .primary-button {
+.confirm-btn, .primary-button, .view-cart-btn {
   background-color: #9B7EBD;
   color: white;
   border: none;
@@ -510,13 +564,13 @@ export default {
   text-decoration: none;
 }
 
-.confirm-btn:hover, .primary-button:hover {
+.confirm-btn:hover, .primary-button:hover, .view-cart-btn:hover {
   background-color: #8a68ad;
   transform: translateY(-1px);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.cancel-btn, .secondary-button {
+.cancel-btn, .secondary-button, .continue-shopping-btn {
   background-color: white;
   border: 1px solid #e2e8f0;
   color: #718096;
@@ -527,7 +581,7 @@ export default {
   transition: all 0.2s ease;
 }
 
-.cancel-btn:hover, .secondary-button:hover {
+.cancel-btn:hover, .secondary-button:hover, .continue-shopping-btn:hover {
   background-color: #f7fafc;
   color: #4a5568;
 }
@@ -554,6 +608,11 @@ export default {
     margin-left: 0;
     margin-top: 16px;
     align-self: flex-end;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+    gap: 12px;
   }
 }
 </style>

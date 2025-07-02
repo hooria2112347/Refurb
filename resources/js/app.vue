@@ -45,8 +45,32 @@
       </div>
     </header>
 
-    <!-- Routed component -->
-    <router-view></router-view>
+    <!-- Main content area -->
+    <main class="main-content">
+      <router-view></router-view>
+    </main>
+    
+    <!-- Footer - will appear on all pages -->
+    <footer class="site-footer">
+      <div class="footer-container">
+        <div class="footer-content">
+          <div class="footer-section">
+            <h3 class="footer-title">Refurb</h3>
+            <p class="footer-description">Transforming waste into wonderful creations</p>
+          </div>
+          
+          <div class="footer-links">
+            <router-link to="/">Home</router-link>
+            <router-link to="/about">About Us</router-link>
+            <router-link to="/faq">FAQ</router-link>
+          </div>
+        </div>
+        
+        <div class="footer-bottom">
+          <p>&copy; 2025 Refurb. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
     
     <!-- Modal for cart login -->
     <div v-if="cartLoginModalVisible" class="modal-overlay">
@@ -61,6 +85,7 @@
     </div>
   </div>
 </template>
+
 <script>
 import axios from "axios";
 
@@ -74,7 +99,8 @@ export default {
       isDropdownOpen: false,
       cartItemCount: 0,
       cartLoginModalVisible: false,
-      cartUpdateInterval: null
+      cartUpdateInterval: null,
+      newsletterEmail: ""
     };
   },
   computed: {
@@ -94,6 +120,21 @@ export default {
     },
   },
   methods: {
+    subscribeNewsletter() {
+      if (!this.newsletterEmail) {
+        alert("Please enter a valid email address");
+        return;
+      }
+      
+      // Add your newsletter subscription logic here
+      console.log("Subscribing email:", this.newsletterEmail);
+      // You can make an API call to your backend here
+      
+      // Reset the input
+      this.newsletterEmail = "";
+      alert("Thank you for subscribing to our newsletter!");
+    },
+    
     showCartLoginModal() {
       this.cartLoginModalVisible = true;
     },
@@ -338,7 +379,19 @@ export default {
 </script>
 
 <style scoped>
-/* Global styles for the App */
+/* App Layout */
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+  min-height: calc(100vh - 200px); /* Adjust based on header/footer height */
+}
+
+/* Header styles (keeping your existing styles) */
 .nav-container {
   display: flex;
   align-items: center;
@@ -475,7 +528,74 @@ export default {
   font-weight: bold;
 }
 
-/* Modal styles */
+/* Footer Styles */
+.site-footer {
+  background-color: #ffffff;
+  border-top: 1px solid #eaeaea;
+  color: #3B1E54;
+  margin-top: auto;
+}
+
+.footer-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.footer-section {
+  flex: 1;
+}
+
+.footer-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0 0 0.5rem 0;
+  color: #3B1E54;
+}
+
+.footer-description {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.footer-links {
+  display: flex;
+  gap: 2rem;
+  justify-content: flex-end;
+}
+
+.footer-links a {
+  color: #3B1E54;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.footer-links a:hover {
+  color: #9B7EBD;
+}
+
+.footer-bottom {
+  text-align: center;
+  padding-top: 1rem;
+  border-top: 1px solid #eaeaea;
+}
+
+.footer-bottom p {
+  margin: 0;
+  color: #666;
+  font-size: 0.85rem;
+}
+
+/* Modal styles (keeping your existing styles) */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -534,7 +654,7 @@ export default {
   background-color: #b3b3b3;
 }
 
-/* Responsive styles */
+/* Responsive Design */
 @media (max-width: 768px) {
   .nav-container {
     padding: 0.75rem 1.5rem;
@@ -566,6 +686,38 @@ export default {
   .dropdown-content router-link {
     padding: 0.6rem 0.8rem;
     font-size: 0.9rem;
+  }
+
+  /* Footer responsive */
+  .footer-content {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .footer-links {
+    justify-content: center;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-nav {
+    gap: 0.5rem;
+  }
+
+  .nav-link {
+    font-size: 0.8rem;
+    padding: 0.3rem;
+  }
+
+  .footer-container {
+    padding: 1.5rem 1rem;
+  }
+
+  .footer-links {
+    flex-direction: column;
+    gap: 0.5rem;
   }
 }
 </style>

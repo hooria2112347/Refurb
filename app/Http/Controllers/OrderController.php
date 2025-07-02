@@ -212,16 +212,28 @@ public function getSellerOrders()
             ->map(function ($order) {
                 // Filter only the seller's items and transform data
                 $sellerItems = $order->orderItems->map(function ($item) {
+                    // Updated image fetching to match ProductController
+                    $imagePath = null;
+                    if ($item->product->images->first()) {
+                        $filename = $item->product->images->first()->image_path;
+                        $imagePath = url('images/' . $filename);
+                        
+                        // Log image path for debugging
+                        Log::info('Seller orders image path:', [
+                            'filename' => $filename,
+                            'full_url' => $imagePath,
+                            'file_exists' => file_exists(public_path('images/' . $filename))
+                        ]);
+                    }
+                    
                     return [
                         'id' => $item->id,
                         'product_id' => $item->product_id,
                         'name' => $item->product->name,
                         'price' => $item->price,
                         'quantity' => $item->quantity,
-                        'status' => $item->status ?? 'pending', // Make sure status exists
-                        'image_path' => $item->product->images->first() 
-                            ? asset('storage/' . $item->product->images->first()->image_path) 
-                            : null
+                        'status' => $item->status ?? 'pending',
+                        'image_path' => $imagePath
                     ];
                 });
                 
@@ -249,6 +261,7 @@ public function getSellerOrders()
         return response()->json(['error' => 'Server error: ' . $e->getMessage()], 500);
     }
 }
+
 public function getUserOrders()
 {
     if (!auth()->check()) {
@@ -270,25 +283,32 @@ public function getUserOrders()
                     'payment_method' => $order->payment_method,
                     'created_at' => $order->created_at,
                     'items' => $order->orderItems->map(function ($item) {
-                        // Fix: Correctly format image path
+                        // Updated image fetching to match ProductController
                         $imagePath = null;
                         if ($item->product->images->first()) {
-                            $imagePath = asset('storage/' . $item->product->images->first()->image_path);
+                            $filename = $item->product->images->first()->image_path;
+                            $imagePath = url('images/' . $filename);
+                            
+                            // Log image path for debugging
+                            Log::info('User orders image path:', [
+                                'filename' => $filename,
+                                'full_url' => $imagePath,
+                                'file_exists' => file_exists(public_path('images/' . $filename))
+                            ]);
                         }
                         
                         return [
-                            'id' => $item->id, // Add id field which is used in v-for key
+                            'id' => $item->id,
                             'product_id' => $item->product_id,
                             'name' => $item->product->name,
                             'price' => $item->price,
                             'quantity' => $item->quantity,
-                            'image_path' => $imagePath // Match the property name used in Vue template
+                            'image_path' => $imagePath
                         ];
                     })
                 ];
             });
             
-        // Return directly the array of orders (option 1)
         return response()->json($orders, 200);
         } catch (\Exception $e) {
             Log::error('Error fetching user orders: ' . $e->getMessage());
@@ -324,15 +344,27 @@ public function getUserOrders()
                     'notes' => $order->notes,
                     'created_at' => $order->created_at,
                     'items' => $order->orderItems->map(function ($item) {
+                        // Updated image fetching to match ProductController
+                        $imagePath = null;
+                        if ($item->product->images->first()) {
+                            $filename = $item->product->images->first()->image_path;
+                            $imagePath = url('images/' . $filename);
+                            
+                            // Log image path for debugging
+                            Log::info('Order details image path:', [
+                                'filename' => $filename,
+                                'full_url' => $imagePath,
+                                'file_exists' => file_exists(public_path('images/' . $filename))
+                            ]);
+                        }
+                        
                         return [
                             'product_id' => $item->product_id,
                             'name' => $item->product->name,
                             'price' => $item->price,
                             'quantity' => $item->quantity,
                             'subtotal' => $item->price * $item->quantity,
-                            'image' => $item->product->images->first() ? 
-                                asset('storage/' . $item->product->images->first()->image_path) : 
-                                null
+                            'image' => $imagePath
                         ];
                     })
                 ]

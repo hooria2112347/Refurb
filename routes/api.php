@@ -49,7 +49,6 @@ Route::get('/users/{id}', [AuthController::class, 'showProfile']);
 */
 Route::middleware(['auth:sanctum'])->group(function () {
 
-
     
     // User profile and rating routes (protected versions)
     Route::get('/users/{id}/ratings', [AuthController::class, 'getUserRatings']);
@@ -205,4 +204,5 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/portfolio', [PortfolioController::class, 'index']);
     Route::put('/portfolio/{id}', [PortfolioController::class, 'updatePortfolioProject']);
     Route::delete('/portfolio/{id}', [PortfolioController::class, 'removeFromPortfolio']);
+    
 });

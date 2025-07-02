@@ -28,34 +28,6 @@
             </span>
           </div>
         </div>
-
-        <!-- Rating Display -->
-        <div class="rating-section">
-          <div class="rating-display">
-            <div class="stars">
-              <span 
-                v-for="star in 5" 
-                :key="star"
-                class="star"
-                :class="{ active: star <= averageRating }"
-              >
-                ★
-              </span>
-            </div>
-            <span class="rating-text">
-              {{ averageRating.toFixed(1) }} ({{ totalRatings }} {{ totalRatings === 1 ? 'review' : 'reviews' }})
-            </span>
-          </div>
-          
-          <!-- Rate User Button (only if not current user) -->
-          <button 
-            v-if="canRateUser" 
-            @click="showRatingModal = true"
-            class="rate-button"
-          >
-            Rate User
-          </button>
-        </div>
       </div>
 
       <!-- Stats Cards -->
@@ -63,14 +35,6 @@
         <div class="stat-card">
           <div class="stat-number">{{ userProducts.length }}</div>
           <div class="stat-label">Products Listed</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number">{{ averageRating.toFixed(1) }}</div>
-          <div class="stat-label">Average Rating</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number">{{ totalRatings }}</div>
-          <div class="stat-label">Total Reviews</div>
         </div>
         <div class="stat-card">
           <div class="stat-number">{{ getMonthsSinceJoined() }}</div>
@@ -90,7 +54,8 @@
             v-for="product in userProducts" 
             :key="product.id"
             class="product-card"
-            @click="viewProduct(product.id)"
+            @click="!isCurrentUserProfile ? viewProduct(product.id) : null"
+            :class="{ 'clickable': !isCurrentUserProfile }"
           >
             <div class="product-image">
               <img 
@@ -102,6 +67,15 @@
               <div v-else class="no-image">
                 <span>📷</span>
               </div>
+              
+              <!-- Edit Button for Current User's Products -->
+              <button 
+                v-if="isCurrentUserProfile"
+                @click.stop="editProduct(product.id)"
+                class="edit-product-btn"
+              >
+                ✏️ Edit
+              </button>
             </div>
             
             <div class="product-details">
@@ -121,46 +95,6 @@
           <p>{{ user.name }} hasn't listed any products yet.</p>
         </div>
       </div>
-
-      <!-- User Reviews Section -->
-      <div class="reviews-section">
-        <h2 class="section-title">User Reviews</h2>
-        
-        <div v-if="userRatings.length > 0" class="reviews-list">
-          <div 
-            v-for="rating in userRatings" 
-            :key="rating.id"
-            class="review-card"
-          >
-            <div class="review-header">
-              <div class="reviewer-info">
-                <div class="reviewer-avatar">
-                  {{ rating.reviewer_name.charAt(0).toUpperCase() }}
-                </div>
-                <div>
-                  <div class="reviewer-name">{{ rating.reviewer_name }}</div>
-                  <div class="review-date">{{ formatDate(rating.created_at) }}</div>
-                </div>
-              </div>
-              <div class="review-rating">
-                <span 
-                  v-for="star in 5" 
-                  :key="star"
-                  class="star small"
-                  :class="{ active: star <= rating.rating }"
-                >
-                  ★
-                </span>
-              </div>
-            </div>
-            <p class="review-comment">{{ rating.comment }}</p>
-          </div>
-        </div>
-        
-        <div v-else class="no-reviews">
-          <p>No reviews yet.</p>
-        </div>
-      </div>
     </div>
 
     <!-- Error State -->
@@ -170,108 +104,72 @@
       <p>The user profile you're looking for doesn't exist or couldn't be loaded.</p>
       <button @click="$router.go(-1)" class="back-button">Go Back</button>
     </div>
-
-    <!-- Rating Modal -->
-    <div v-if="showRatingModal" class="modal-overlay" @click="closeModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>Rate {{ user.name }}</h3>
-          <button @click="closeModal" class="close-button">×</button>
-        </div>
-        
-        <div class="modal-body">
-          <div class="rating-input">
-            <p>How would you rate this user?</p>
-            <div class="stars-input">
-              <span 
-                v-for="star in 5" 
-                :key="star"
-                class="star interactive"
-                :class="{ active: star <= newRating.rating }"
-                @click="newRating.rating = star"
-                @mouseover="hoverRating = star"
-                @mouseleave="hoverRating = 0"
-              >
-                ★
-              </span>
-            </div>
-          </div>
-          
-          <div class="comment-input">
-            <label for="comment">Your Review (Optional)</label>
-            <textarea 
-              id="comment"
-              v-model="newRating.comment"
-              placeholder="Share your experience with this user..."
-              rows="4"
-            ></textarea>
-          </div>
-        </div>
-        
-        <div class="modal-footer">
-          <button @click="closeModal" class="cancel-button">Cancel</button>
-          <button 
-            @click="submitRating" 
-            :disabled="newRating.rating === 0 || submitting"
-            class="submit-button"
-          >
-            {{ submitting ? 'Submitting...' : 'Submit Rating' }}
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script>
 import axios from 'axios';
-// Updated methods section for your Vue component
 
 export default {
   data() {
     return {
       user: null,
       userProducts: [],
-      userRatings: [],
-      loading: true,
-      showRatingModal: false,
-      submitting: false,
-      hoverRating: 0,
-      newRating: {
-        rating: 0,
-        comment: ''
-      }
+      loading: true
     };
   },
   
   computed: {
-    averageRating() {
-      return this.user?.average_rating || 0;
-    },
-    
-    totalRatings() {
-      return this.user?.rating_count || 0;
-    },
-    
-    canRateUser() {
-      // Only allow rating if user is logged in and it's not their own profile
+    isCurrentUserProfile() {
       const currentUser = this.getCurrentUser();
-      return currentUser && currentUser.id && currentUser.id !== this.user?.id;
+      if (!currentUser?.id || !this.user?.id) {
+        return false;
+      }
+      
+      // Compare as strings to handle type differences
+      return currentUser.id.toString() === this.user.id.toString();
     }
   },
   
   mounted() {
     this.fetchUserProfile();
     this.fetchUserProducts();
-    this.fetchUserRatings();
   },
   
   methods: {
-    // Helper methods for authentication
+    getCurrentUser() {
+      // Try Vuex store first
+      if (this.$store?.state?.user) {
+        return this.$store.state.user;
+      }
+      
+      // Try localStorage
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          return JSON.parse(userStr);
+        } catch (e) {
+          console.error('Error parsing user from localStorage:', e);
+        }
+      }
+      
+      // Try sessionStorage
+      const sessionUserStr = sessionStorage.getItem('user');
+      if (sessionUserStr) {
+        try {
+          return JSON.parse(sessionUserStr);
+        } catch (e) {
+          console.error('Error parsing user from sessionStorage:', e);
+        }
+      }
+      
+      return null;
+    },
+
     getAuthHeaders() {
       const token = localStorage.getItem('access_token') || 
-                    this.$store?.state?.token || 
-                    sessionStorage.getItem('access_token');
+                    sessionStorage.getItem('access_token') ||
+                    this.$store?.state?.token;
       
       return token ? {
         'Authorization': `Bearer ${token}`,
@@ -283,27 +181,6 @@ export default {
       };
     },
 
-    getCurrentUser() {
-      // Try to get user from Vuex store first
-      if (this.$store?.state?.user) {
-        return this.$store.state.user;
-      }
-      
-      // Fallback to localStorage
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        try {
-          return JSON.parse(userStr);
-        } catch (e) {
-          console.error('Error parsing user from localStorage:', e);
-          return null;
-        }
-      }
-      
-      return null;
-    },
-
-    // API methods
     async fetchUserProfile() {
       const userId = this.$route.params.id;
       try {
@@ -311,7 +188,6 @@ export default {
           headers: this.getAuthHeaders()
         });
         this.user = response.data;
-        console.log('User profile loaded:', this.user); // Debug log
       } catch (error) {
         console.error('Error fetching user profile:', error);
         this.user = null;
@@ -332,109 +208,9 @@ export default {
         this.userProducts = [];
       }
     },
-
-    async fetchUserRatings() {
-      const userId = this.$route.params.id;
-      try {
-        const response = await axios.get(`/api/users/${userId}/ratings`, {
-          headers: this.getAuthHeaders()
-        });
-        
-        // Your AuthController returns an object with ratings array
-        this.userRatings = response.data.ratings || [];
-        
-        // Update user rating stats if returned
-        if (this.user) {
-          this.user.rating_count = response.data.total_ratings;
-          this.user.average_rating = response.data.average_rating;
-        }
-      } catch (error) {
-        console.error('Error fetching user ratings:', error);
-        this.userRatings = [];
-      }
-    },
-
-    async submitRating() {
-      console.log('Submit rating called'); // Debug log
-      
-      if (this.newRating.rating === 0) {
-        alert('Please select a rating');
-        return;
-      }
-      
-      const currentUser = this.getCurrentUser();
-      console.log('Current user:', currentUser); // Debug log
-      
-      if (!currentUser || !currentUser.id) {
-        alert('Please log in to rate users');
-        return;
-      }
-      
-      this.submitting = true;
-      const userId = this.$route.params.id;
-      
-      console.log('Submitting rating:', {
-        userId,
-        rating: this.newRating.rating,
-        comment: this.newRating.comment
-      }); // Debug log
-      
-      try {
-        const response = await axios.post(`/api/users/${userId}/rate`, {
-          rating: this.newRating.rating,
-          comment: this.newRating.comment || ''
-        }, {
-          headers: this.getAuthHeaders()
-        });
-        
-        console.log('Rating response:', response.data); // Debug log
-        
-        // Update user data with new rating info
-        if (response.data.new_average !== undefined) {
-          this.user.average_rating = response.data.new_average;
-          this.user.rating_count = response.data.total_ratings;
-        }
-        
-        // Refresh ratings and profile
-        await this.fetchUserRatings();
-        await this.fetchUserProfile();
-        
-        this.closeModal();
-        
-        // Show success message
-        if (this.$toast) {
-          this.$toast.success('Rating submitted successfully!');
-        } else {
-          alert('Rating submitted successfully!');
-        }
-        
-      } catch (error) {
-        console.error('Error submitting rating:', error);
-        
-        let errorMessage = 'Failed to submit rating. Please try again.';
-        
-        if (error.response) {
-          console.log('Error response:', error.response.data); // Debug log
-          
-          if (error.response.status === 401) {
-            errorMessage = 'Please log in to rate users.';
-          } else if (error.response.status === 403) {
-            errorMessage = 'You cannot rate yourself.';
-          } else if (error.response.data?.message) {
-            errorMessage = error.response.data.message;
-          }
-        }
-        
-        alert(errorMessage);
-      } finally {
-        this.submitting = false;
-      }
-    },
     
-    closeModal() {
-      this.showRatingModal = false;
-      this.newRating = { rating: 0, comment: '' };
-      this.hoverRating = 0;
+    editProduct(productId) {
+      this.$router.push(`/products/${productId}/edit`);
     },
     
     viewProduct(productId) {
@@ -476,48 +252,95 @@ export default {
       event.target.style.display = 'none';
       event.target.parentElement.innerHTML = '<div class="no-image"><span>📷</span></div>';
     }
-  
-,
-
-getAuthHeaders() {
-  const token = localStorage.getItem('access_token') || 
-                this.$store?.state?.token || 
-                sessionStorage.getItem('access_token');
-  
-  return token ? {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  } : {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  };
-},
-
-getCurrentUser() {
-  // Try to get user from Vuex store first
-  if (this.$store?.state?.user) {
-    return this.$store.state.user;
-  }
-  
-  // Fallback to localStorage
-  const userStr = localStorage.getItem('user');
-  if (userStr) {
-    try {
-      return JSON.parse(userStr);
-    } catch (e) {
-      console.error('Error parsing user from localStorage:', e);
-      return null;
-    }
-  }
-  
-  return null;
-}
   }
 };
 </script>
 
 <style scoped>
+.debug-info {
+  background: #f0f0f0;
+  padding: 10px;
+  border-radius: 4px;
+  margin: 10px 0;
+}
+
+.inline-rating-form {
+  margin-top: 10px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.rating-input-inline {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.rating-dropdown-inline {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.comment-input-inline {
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.submit-rating-btn {
+  padding: 8px 16px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.submit-rating-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cancel-rating-btn {
+  padding: 8px 16px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.edit-product-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.product-card:not(.clickable) {
+  cursor: default;
+}
+
+.product-image {
+  position: relative;
+}
+
 .user-profile {
   max-width: 1200px;
   margin: 0 auto;
@@ -919,145 +742,6 @@ getCurrentUser() {
   text-align: center;
   padding: 40px;
   color: #64748b;
-}
-
-/* Modal Styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 16px;
-  max-width: 500px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-}
-
-.modal-header {
-  padding: 24px 24px 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: #1e293b;
-}
-
-.close-button {
-  background: none;
-  border: none;
-  font-size: 2rem;
-  cursor: pointer;
-  color: #64748b;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.close-button:hover {
-  background: #f1f5f9;
-}
-
-.modal-body {
-  padding: 24px;
-}
-
-.rating-input {
-  margin-bottom: 24px;
-  text-align: center;
-}
-
-.rating-input p {
-  margin: 0 0 16px 0;
-  color: #374151;
-  font-weight: 500;
-}
-
-.stars-input {
-  display: flex;
-  justify-content: center;
-  gap: 4px;
-}
-
-.comment-input label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: #374151;
-}
-
-.comment-input textarea {
-  width: 100%;
-  padding: 12px;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
-  font-family: inherit;
-  resize: vertical;
-  transition: border-color 0.2s;
-}
-
-.comment-input textarea:focus {
-  outline: none;
-  border-color: #3b82f6;
-}
-
-.modal-footer {
-  padding: 0 24px 24px;
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-.cancel-button, .submit-button {
-  padding: 10px 24px;
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.cancel-button {
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px solid #e2e8f0;
-}
-
-.cancel-button:hover {
-  background: #e2e8f0;
-}
-
-.submit-button {
-  background: #3b82f6;
-  color: white;
-  border: 1px solid #3b82f6;
-}
-
-.submit-button:hover:not(:disabled) {
-  background: #2563eb;
-}
-
-.submit-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 /* Error States */

@@ -37,7 +37,7 @@
           type="tel"
           id="phone"
           v-model="form.phone"
-          placeholder="Phone Number"
+          placeholder="Phone Number (e.g., +1234567890 or 1234567890)"
           required
           @input="handlePhoneInput"
         />
@@ -122,13 +122,68 @@ export default {
     };
   },
   methods: {
-    // Remove all non-digit characters from phone and limit to 11 digits
+    // Allow digits, plus sign, spaces, hyphens, and parentheses, then clean for validation
     handlePhoneInput(event) {
-      let cleaned = event.target.value.replace(/[^\d]/g, "");
-      if (cleaned.length > 11) {
-        cleaned = cleaned.slice(0, 11);
+      // Allow international format characters during input
+      let value = event.target.value.replace(/[^\d\+\-\s\(\)]/g, "");
+      
+      // Limit total length to prevent extremely long numbers
+      if (value.length > 20) {
+        value = value.slice(0, 20);
       }
-      this.form.phone = cleaned;
+      
+      this.form.phone = value;
+    },
+
+    // International phone number validation
+    isValidPhoneNumber(phone) {
+      // Remove all non-digit characters for validation
+      const cleanedPhone = phone.replace(/[^\d]/g, "");
+      
+      // Check if it's empty
+      if (!cleanedPhone) {
+        return false;
+      }
+      
+      // International phone number validation
+      // Most international numbers are between 7-15 digits (ITU-T E.164 standard)
+      // Examples:
+      // - US: 10 digits (1234567890)
+      // - UK: 10-11 digits
+      // - Germany: 11-12 digits
+      // - Pakistan: 10-11 digits
+      // - India: 10 digits
+      // - China: 11 digits
+      // - Japan: 10-11 digits
+      
+      const minLength = 7;  // Minimum international standard
+      const maxLength = 15; // Maximum international standard (ITU-T E.164)
+      
+      // Check length
+      if (cleanedPhone.length < minLength || cleanedPhone.length > maxLength) {
+        return false;
+      }
+      
+      // Additional checks for common patterns
+      // Reject obviously invalid patterns
+      
+      // All same digits (like 1111111111)
+      if (/^(\d)\1+$/.test(cleanedPhone)) {
+        return false;
+      }
+      
+      // Sequential digits (like 1234567890)
+      const isSequential = cleanedPhone.split('').every((digit, index) => {
+        if (index === 0) return true;
+        return parseInt(digit) === parseInt(cleanedPhone[index - 1]) + 1;
+      });
+      
+      if (isSequential) {
+        return false;
+      }
+      
+      // If it passes all checks, it's valid
+      return true;
     },
 
     // Validate fields locally before sending to server
@@ -163,9 +218,12 @@ export default {
         }
       }
 
-      // Check Phone
+      // International Phone validation
       if (!this.form.phone) {
         this.fieldErrors.phone = "Phone number is required.";
+        isValid = false;
+      } else if (!this.isValidPhoneNumber(this.form.phone)) {
+        this.fieldErrors.phone = "Please enter a valid phone number (7-15 digits). Examples: +1234567890, 1234567890, or (123) 456-7890.";
         isValid = false;
       }
 
