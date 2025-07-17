@@ -1077,7 +1077,7 @@ export default {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background-color: var(--background-color);
+  background-color: rgba(255,255.255.0.9);
   box-shadow: var(--shadow-sm);
   cursor: pointer;
   border: 1px solid var(--border-light);
@@ -1334,8 +1334,8 @@ export default {
   position: fixed;
   bottom: 2rem;
   right: 2rem;
-  background-color: var(--success-color);
-  color: var(--background-color);
+  background: linear-gradient(135deg, #9b7ebd,#7a629a);
+  color: white;
   padding: 1rem 1.5rem;
   border-radius: 6px;
   box-shadow: var(--shadow-lg);

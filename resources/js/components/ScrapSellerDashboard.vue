@@ -2,7 +2,7 @@
   <div class="scrap-seller-dashboard">
     <!-- Side navigation for Scrap Seller -->
    <aside class="side-nav">
-        <router-link :to="overviewRoute" exact-active-class="active">Overview</router-link>
+        <router-link :to="overviewRoute" exact-active-class="active">Overview</router-link> <router-link :to="'/user-profile/' + currentUserId">Account</router-link>
          <router-link to="/orders-received">View Orders Received</router-link>
       <router-link to="/order-history">Orders History</router-link>
         <!-- <router-link to="/account" exact-active-class="active">Account</router-link> -->
@@ -60,25 +60,30 @@ export default {
     return {
       // Tracks which collapsible section is open. Possible values:
       // 'selling', 'requests', or null if none is open.
-      openSection: null
+      openSection: null,
+      currentUserId: null,
     };
   },
   mounted() {
-    // Optional: Confirm user is Scrap Seller
-    const session = localStorage.getItem('userSession');
+    // Get user session and extract user ID
+    const session = localStorage.getItem("userSession");
     if (session) {
       const userData = JSON.parse(session);
-      if (userData.role !== 'scrapSeller') {
-        this.$router.push('/');
+      this.currentUserId = userData.id || userData.user_id; // Handle different possible property names
+      
+      // Confirm user is Scrap Seller
+      if (userData.role !== "scrapSeller") {
+        this.$router.push("/");
       }
     } else {
-      this.$router.push('/login');
+      this.$router.push("/login");
     }
   },
   methods: {
-    toggleAccordion(section) {
-      // If clicking the same section, close it. Otherwise, open the new one.
-      this.openSection = this.openSection === section ? null : section;
+    toggleAccordion(sectionName) {
+      // If the requested section is already open, close it.
+      // Otherwise, open the new section and close any previously opened one.
+      this.openSection = this.openSection === sectionName ? null : sectionName;
     }
   }
 };
